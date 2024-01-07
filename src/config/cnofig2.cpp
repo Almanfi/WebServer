@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/07 23:40:48 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/08 00:14:26 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,9 @@ map<string, int> server::directive = {
 
 server::server(Parser& p) : p(p) {
 }
+
+// server::server() : p(*(new Parser("default.config"))) {
+// }
 
 server::~server() {
 }
@@ -78,9 +81,9 @@ const string& server::validateIp(const string& ip) {
     }
     if (!ss.eof() || i != 4)
         throw std::runtime_error("Invalid IP address");
-    return ;
+    return (ip);
 }
-int validetePort(const string& portStr) {
+int server::validatePort(const string& portStr) {
     if (portStr[0] == '+' || portStr[0] == '-'
         || (portStr[0] == '0' && portStr.size() > 1));
         throw locExp::NOT_VALID_PORT();
@@ -138,6 +141,7 @@ void server::checkServerInfo() {
 }
 
 location::location(Parser& p, server& serv, const string& uri) : p(p), serv(serv), uri(uri) {
+    cout << "location constructor" << endl;
 }
 
 location::~location() {
@@ -267,7 +271,7 @@ void Config::set(const string& token) {
                     throw std::runtime_error("Error: Missing uri at line " + std::to_string(p.getLineNum()));
                 }
                 locations.push_back(location(p, serv, uri));
-                serv.location.insert(std::make_pair(locations.back().getUri(), &locations.back()));
+                serv.locations.insert(std::make_pair(locations.back().getUri(), &locations.back()));
                 continue ;
             }
             serv.setServerInfo(newToken);
@@ -317,7 +321,7 @@ void Config::print () {
         cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
         cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
         cout << "server " << i << " error_page is " << servers[i].error_page << endl;
-        cout << "server " << i << " location size is " << servers[i].location.size() << endl;
+        cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
     //     for (map<string, location*>::iterator it = servers[i].location.begin(); it != servers[i].location.end(); it++) {
     //         for (size_t j = 0; j < it->second->uri.size(); j++) {
     //             cout << it->second->uri[j] << " ";
@@ -342,7 +346,7 @@ void Config::print () {
 }
 
 int main() {
-    Config conf("./config/default.config");
+    Config conf("../config/default.config");
     conf.read();
     conf.print();
 
