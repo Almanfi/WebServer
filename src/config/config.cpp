@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:52:48 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/06 00:13:50 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/06 21:16:02 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,7 +88,7 @@ void locationContext::parseLocationContext() {
             break;
         setLocationData(token);
     }
-    if (parent.isEndingLine() == false) {
+    if (parent.isEndingLine() == false && parent.getToken() != ";") {
         std::cerr << "Error:(in parseLocationContext) Invalid token '" << parent.getToken() << "' at line " << parent.getLineNum() << std::endl;
         throw std::exception();
     }
@@ -226,15 +226,17 @@ void serverContext::setErrorPage() {
 void serverContext::createNewLocation() {
     locationContext newLocation(parent, *this);
     newLocation.parseLocationContext();
-    location.insert(std::pair<string, locationContext>(newLocation.root, newLocation));
+    location.insert(std::pair<string, locationContext>(newLocation.uri, newLocation));
 }
 
 void serverContext::setLocation(const string& token) {
     cout << "setLocation" << endl;
     if (token == "location") {
+        cout << "creating new location" << endl;
         createNewLocation();
     }
     else {
+        cout << "setting location data " << token << endl;
         locationContext& loc = location.find("/")->second;
         loc.setLocationData(token);
     }
@@ -295,6 +297,7 @@ void ConfigParser::parseServerContext() {
         throw std::exception();
     }
     server.push_back(serverContext(*this));
+    cout << "adding new server " << server.size() << endl;
     std::string token;
     while (true) {
         token = getToken();
@@ -322,6 +325,8 @@ void ConfigParser::parseServerContext() {
         throw std::exception();
     }
     scopes.pop_back();
+    cout << "*************serverparsing done**************" << endl;
+    cout << "on this serever rout is " << server.back().location.find("/")->second.root << endl;
 }
 
 bool ConfigParser::findBracket(const std::string& bracket) {
@@ -370,8 +375,9 @@ bool ConfigParser::isEndingLine() {
 std::string ConfigParser::getToken() {
     size_t& i = linePos;
     if (i >= line.length()) {
-        if (!std::getline(configFile, line))
-            line = "";
+        if (!std::getline(configFile, line)) {
+            return string("");
+        }
         lineNumber++;
         cout << "line " << lineNumber << ": " << line << endl;
         i = 0;
@@ -414,6 +420,9 @@ std::vector<configScope>& ConfigParser::getScopes() {
     return scopes;
 }
 
+std::vector<serverContext> ConfigParser::getServer() {
+    return server;
+}
 
 // const std::vector<string> ConfigParser::mainContextWords = {"server", "location"};
 // const std::vector<string> ConfigParser::serverContextWords = {"listen", "server_name", "error_page", "location", "root", "index", "autoindex", "client_max_body_size", "cgi", "upload_store", "upload_pass", "upload_pass_args", "methods", "return", "auth_basic", "auth_basic_user_file"};
@@ -424,6 +433,38 @@ int main() {
     if (parser.parse()) {
         std::cout << "parsing done"<< std::endl;
     }
+    vector<serverContext> server = parser.getServer();
+    for (vector<serverContext>::iterator it = server.begin(); it != server.end(); it++) {
+        cout << "server name: ";
+        for (vector<string>::iterator it2 = it->server_name.begin(); it2 != it->server_name.end(); it2++) {
+            cout << *it2 << " ";
+        }
+        cout << endl;
+        cout << "listen ip: " << it->listenIp << endl;
+        cout << "listen port: " << it->listenPort << endl;
+        cout << "error page: " << it->error_page << endl;
+        cout << "**location: " << it->location.size() << endl;
+        for (map<string, locationContext>::iterator it2 = it->location.begin(); it2 != it->location.end(); it2++) {
+            cout << "*URI: " << it2->second.uri << endl;
+            cout << " root: " << it2->second.root << endl;
+            cout << " index: " << it2->second.index << endl;
+            cout << " autoindex: " << it2->second.autoindex << endl;
+            cout << " client_max_body_size: " << it2->second.client_max_body_size << endl;
+            cout << " cgi: " << it2->second.cgi << endl;
+            cout << " upload_store: " << it2->second.upload_store << endl;
+            cout << " upload_pass: " << it2->second.upload_pass << endl;
+            cout << " upload_pass_args: " << it2->second.upload_pass_args << endl;
+            cout << " methods: " << it2->second.methods << endl;
+            cout << " return: " << it2->second.return_val << endl;
+            cout << " auth_basic: " << it2->second.auth_basic << endl;
+            cout << " auth_basic_user_file: " << it2->second.auth_basic_user_file << endl;
+        }
+    }
+    // locationContext& loc = parser.getServer()[0].location.find("/")->second;
+    // cout << loc.root << endl;
+    // cout << parser.getServer().size() << endl;
+    // cout << parser.getServer()[0].listenPort << endl;
+    // cout << parser.getServer()[1].listenPort << endl;
 
     return 0;
 }
