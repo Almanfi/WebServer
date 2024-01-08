@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/08 00:14:05 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/08 15:59:17 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -181,7 +181,8 @@ struct server {
     server();
     server(Parser& p);
     ~server();
-    void setServerInfo(const string& token);
+    void setMainLocation(string& token);
+    void setServerInfo(string& token);
     void parseListen();
     void parseServerName();
     const string& validateIp(const string& ip);
@@ -222,7 +223,8 @@ class location {
 public:
     location(Parser& p, server& serv, const string& uri);
     ~location();
-    void setLocationInfo(const string& token);
+    void set();
+    void setLocationInfo(string& token);
     void checkLocationInfo();
     string& getUri() const;
 private:
@@ -232,6 +234,5 @@ private:
     server& serv;
     Parser& p;
 };
-
 
 #endif // CONFIG_HPP

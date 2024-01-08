@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/08 00:14:26 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/08 15:59:33 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,15 +27,24 @@ server::server(Parser& p) : p(p) {
 server::~server() {
 }
 
-void server::setServerInfo(const string& token) {
+void server::setMainLocation(string& token) {
+    map<string, location*>::iterator it = locations.find("/");
+    if (it == locations.end()) {
+        locations.insert(std::make_pair("/", new location(p, *this, "/")));
+    }
+    location& loc = *(locations.find("/")->second);
+    loc.setLocationInfo(token);
+}
+
+void server::setServerInfo(string& token) {
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
-        throw locExp::DIRECT_NOT_VALID();
+        setMainLocation(token);
     }
-    if (token == "location") {
-        // location loc(p, *this, p.getToken());
-        return ;
-    }
+    // if (token == "location") {
+    //     // location loc(p, *this, p.getToken());
+    //     return ;
+    // }
     if (info.find(token) != info.end()) {
         throw locExp::DIRECT_ALREADY_SET();
     }
@@ -44,7 +53,7 @@ void server::setServerInfo(const string& token) {
     string newToken = "";
     while (true) {
         newToken = p.getToken();
-        if (newToken == ";") {
+        if (newToken == ";" || newToken.empty()) {
             break;
         }
         if (count > 1) {
@@ -60,6 +69,7 @@ void server::setServerInfo(const string& token) {
     //     throw locExp::DIRECT_NOT_VALID();
     // }
     info[token] = value;
+    token = newToken;
 }
 
 const string& server::validateIp(const string& ip) {
@@ -85,14 +95,13 @@ const string& server::validateIp(const string& ip) {
 }
 int server::validatePort(const string& portStr) {
     if (portStr[0] == '+' || portStr[0] == '-'
-        || (portStr[0] == '0' && portStr.size() > 1));
+        || (portStr[0] == '0' && portStr.size() > 1))
         throw locExp::NOT_VALID_PORT();
     std::stringstream ss(portStr);
     int port;
     ss >> port;
     if (ss.fail() || !ss.eof() || port < 0 || port > 65535)
         throw locExp::NOT_VALID_PORT();
-    cout << port << endl;
     return (port);
 }
 
@@ -141,7 +150,8 @@ void server::checkServerInfo() {
 }
 
 location::location(Parser& p, server& serv, const string& uri) : p(p), serv(serv), uri(uri) {
-    cout << "location constructor" << endl;
+    // cout << "location constructor for " << endl;
+    // cout << "uri is " << location::uri << endl;
 }
 
 location::~location() {
@@ -163,11 +173,35 @@ map<string, int> location::directive = {
     std::make_pair("access_log", 1)
 };
 
+void location::set() {
+    vector<configScope>& scope = p.getScopes();
+    scope.push_back(LOCATION);
+    // string theToken = p.getToken();
+    // cout << "theToken is " << theToken << endl;
+    if (p.getToken() != "{") {
+        throw std::runtime_error("Error: Missing opening bracket '{' at line " + std::to_string(p.getLineNum()));
+    }
+    std::string token;
+    while (true) {
+        token = p.getToken();
+        if (token == "}" || token.empty()) {
+            break;
+        }
+        setLocationInfo(token);
+    }
+    if (scope.back() != LOCATION || token.empty()) {
+        throw std::runtime_error("Error: Missing closing bracket '}' at line " + std::to_string(p.getLineNum()));
+    }
+    scope.pop_back();
+    checkLocationInfo();
+}
+
 string& location::getUri() const {
+    // cout << "getUri is " << uri << endl;
     return (const_cast<string&>(uri));
 }
 
-void location::setLocationInfo(const string& token) {
+void location::setLocationInfo(string& token) {
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
         throw locExp::DIRECT_NOT_VALID();
@@ -180,7 +214,7 @@ void location::setLocationInfo(const string& token) {
     string newToken = "";
     while (true) {
         newToken = p.getToken();
-        if (newToken == ";") {
+        if (newToken == ";" || newToken.empty()) {
             break;
         }
         if (count > 1) {
@@ -193,6 +227,7 @@ void location::setLocationInfo(const string& token) {
         throw locExp::TOO_MANY_ARGS();
     }
     info[token] = value;
+    token = newToken;
 }
 
 void location::checkLocationInfo() {
@@ -266,18 +301,23 @@ void Config::set(const string& token) {
             }
             if (newToken == "location") {
                 hasLocation = true;
-                string uri = p.getToken();
-                if (uri.empty()) {
+                string uri = p.getToken(); // validate URI!
+                if (uri.empty() || uri == "{") {
                     throw std::runtime_error("Error: Missing uri at line " + std::to_string(p.getLineNum()));
                 }
                 locations.push_back(location(p, serv, uri));
+                location& loc = locations.back();
+                loc.set();
                 serv.locations.insert(std::make_pair(locations.back().getUri(), &locations.back()));
+                cout << "location uri is " << locations.back().getUri() << " with location add = " << &locations.back() << endl;
                 continue ;
             }
             serv.setServerInfo(newToken);
         }
-        if (hasLocation == false) {
+        if (serv.locations.find("/") == serv.locations.end()) {
             locations.push_back(location(p, serv, "/"));
+            location& loc = locations.back();
+            serv.locations.insert(std::make_pair("/", &loc));
         }
         serv.checkServerInfo();
         if (scopes.back() != SERVER) {
@@ -322,10 +362,10 @@ void Config::print () {
         cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
         cout << "server " << i << " error_page is " << servers[i].error_page << endl;
         cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
-    //     for (map<string, location*>::iterator it = servers[i].location.begin(); it != servers[i].location.end(); it++) {
-    //         for (size_t j = 0; j < it->second->uri.size(); j++) {
-    //             cout << it->second->uri[j] << " ";
-    //         }
+        cout << "here 1" << endl;
+        for (map<string, location*>::iterator it = servers[i].locations.begin(); it != servers[i].locations.end(); it++) {
+            cout << "here 2" << endl;
+            cout << "URI is " << it->first << " or insde value " << it->second->getUri() << endl;
     //         cout << "server " << i << " location " << it->first << " root is " << it->second->info["root"] << endl;
     //         cout << "server " << i << " location " << it->first << " index is " << it->second->info["index"] << endl;
     //         cout << "server " << i << " location " << it->first << " autoindex is " << it->second->info["autoindex"] << endl;
@@ -340,12 +380,19 @@ void Config::print () {
     //         cout << "server " << i << " location " << it->first << " auth_basic_user_file is " << it->second->info["auth_basic_user_file"] << endl;
     //         cout << "server " << i << " location " << it->first << " access_log is " << it->second->info["access_log"] << endl;
     //     }
-    // }
+    }
     cout << "*************printing done**************" << endl;
 }
 }
 
 int main() {
+    // Parser p("../config/default.config");
+    // while (true) {
+    //     string token = p.getToken();
+    //     if (token.empty())
+    //         break;
+    //     cout << "token is ->" << token << endl;
+    // }
     Config conf("../config/default.config");
     conf.read();
     conf.print();
@@ -528,6 +575,8 @@ std::string Parser::getToken() {
                 i = line.length();
                 std::cout << "Comment : skip line after ';'!" << std::endl;
             }
+            else if (line[i] == '}' || line[i] == ';')
+                ;
             else {
                 std::cerr << "Error: found token after ';' " << " at line " << lineNumber << std::endl;
                 throw std::exception();
