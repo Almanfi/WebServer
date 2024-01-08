@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/08 15:59:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/08 21:14:09 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <deque>
 #include <cstdlib>
 
 using std::cin;
@@ -30,6 +31,7 @@ using std::endl;
 using std::string;
 using std::map;
 using std::vector;
+using std::deque;
 
 
 typedef enum e_configScope {
@@ -165,11 +167,12 @@ public:
     void read();
     void print();
     void set(const string& token);
+    deque<location>& getLocations();
 private:
     void readMainContext();
     Parser p;
-    vector<server> servers;
-    vector<location> locations;
+    deque<server> servers;
+    deque<location> locations;
     static map<string, int> directive;
 };
 
@@ -178,9 +181,9 @@ struct server {
     string  listenIp;
     int     listenPort;
     string  error_page;
-    server();
-    server(Parser& p);
+    server(Config& c, Parser& p);
     ~server();
+    void linkLocation();
     void setMainLocation(string& token);
     void setServerInfo(string& token);
     void parseListen();
@@ -193,6 +196,7 @@ private:
     static map<string, int> directive;
     map<string, string> info;
     Parser& p;
+    Config& c;
 };
 
 class locExp {
@@ -221,16 +225,22 @@ public:
 
 class location {
 public:
-    location(Parser& p, server& serv, const string& uri);
+    location(Config& c, Parser& p, server& serv, const string& uri);
     ~location();
     void set();
+    void setNewLoc();
     void setLocationInfo(string& token);
     void checkLocationInfo();
     string& getUri() const;
+    string getInfo(const string& key);
+    void addToInLoc(location* loc);
+    void print(int space);
+    deque<location*> inLoc;
 private:
     string uri;
     map<string, string> info;
     static map<string, int> directive;
+    Config& c;
     server& serv;
     Parser& p;
 };

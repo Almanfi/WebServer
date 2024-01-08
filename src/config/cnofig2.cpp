@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/08 15:59:33 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/08 21:13:45 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,12 @@
 map<string, int> server::directive = {
     std::make_pair("server_name", 0),
     std::make_pair("listen", 1),
-    std::make_pair("error_page", 1)
+    std::make_pair("error_page", 0)
 };
 
-server::server(Parser& p) : p(p) {
+server::server(Config& c, Parser& p) : c(c), p(p) {
 }
 
-// server::server() : p(*(new Parser("default.config"))) {
-// }
 
 server::~server() {
 }
@@ -30,7 +28,10 @@ server::~server() {
 void server::setMainLocation(string& token) {
     map<string, location*>::iterator it = locations.find("/");
     if (it == locations.end()) {
-        locations.insert(std::make_pair("/", new location(p, *this, "/")));
+        deque<location>& allLoc = c.getLocations();
+        allLoc.push_back(location(c, p, *this, "/"));
+        location& loc = allLoc.back();
+        locations.insert(std::make_pair("/", &loc));
     }
     location& loc = *(locations.find("/")->second);
     loc.setLocationInfo(token);
@@ -40,6 +41,7 @@ void server::setServerInfo(string& token) {
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
         setMainLocation(token);
+        return ;
     }
     // if (token == "location") {
     //     // location loc(p, *this, p.getToken());
@@ -56,7 +58,7 @@ void server::setServerInfo(string& token) {
         if (newToken == ";" || newToken.empty()) {
             break;
         }
-        if (count > 1) {
+        if (count >= 1) {
             value += " ";
         }
         value += newToken;
@@ -149,12 +151,25 @@ void server::checkServerInfo() {
     parseServerName();
 }
 
-location::location(Parser& p, server& serv, const string& uri) : p(p), serv(serv), uri(uri) {
+void server::linkLocation() {
+    location& rootLoc = *(locations.find("/")->second);
+    for (map<string, location*>::iterator it = locations.begin(); it != locations.end(); it++) {
+        if (it->first == "/")
+            continue ;
+        rootLoc.addToInLoc(it->second);
+    }
+}
+
+location::location(Config& c, Parser& p, server& serv, const string& uri) : c(c), p(p), serv(serv), uri(uri) {
     // cout << "location constructor for " << endl;
     // cout << "uri is " << location::uri << endl;
 }
 
 location::~location() {
+}
+
+void location::addToInLoc(location* loc) {
+    inLoc.push_back(loc);
 }
 
 map<string, int> location::directive = {
@@ -172,6 +187,19 @@ map<string, int> location::directive = {
     std::make_pair("auth_basic_user_file", 1),
     std::make_pair("access_log", 1)
 };
+
+void location::setNewLoc() {
+    deque<location>& locations = c.getLocations();
+    string uri = p.getToken(); // validate URI!
+    if (uri.empty() || uri == "{") {
+        throw std::runtime_error("Error: Missing uri at line " + std::to_string(p.getLineNum()));
+    }
+    locations.push_back(location(c, p, serv, uri));
+    location& loc = locations.back();
+    loc.set();
+    // serv.locations.insert(std::make_pair(locations.back().getUri(), &locations.back()));
+    addToInLoc(&loc);
+}
 
 void location::set() {
     vector<configScope>& scope = p.getScopes();
@@ -202,6 +230,10 @@ string& location::getUri() const {
 }
 
 void location::setLocationInfo(string& token) {
+    if (token == "location") {
+        setNewLoc();
+        return ;
+    }
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
         throw locExp::DIRECT_NOT_VALID();
@@ -232,6 +264,43 @@ void location::setLocationInfo(string& token) {
 
 void location::checkLocationInfo() {
 }
+
+
+string location::getInfo(const string& key) {
+    map<string, string>::iterator it = info.find(key);
+    if (it == info.end())
+        return "";
+    return (it->second);
+}
+
+void location::print(int space) {
+    string sp = "";
+    for (int i = 0; i < space; i++)
+        sp += "\t";
+    cout << sp << "URI is " << uri << endl;
+    cout << sp << "   *root\t\t\tis " << getInfo("root") << endl;
+    cout << sp << "   *index\t\t\tis " << getInfo("index") << endl;
+    cout << sp << "   *autoindex\t\t\tis " << getInfo("autoindex") << endl;
+    cout << sp << "   *client_max_body_size\tis " << getInfo("client_max_body_size") << endl;
+    cout << sp << "   *cgi\t\t\t\tis " << getInfo("cgi") << endl;
+    cout << sp << "   *upload_store\t\tis " << getInfo("upload_store") << endl;
+    cout << sp << "   *upload_pass\t\t\tis " << getInfo("upload_pass") << endl;
+    cout << sp << "   *upload_pass_args\t\tis " << getInfo("upload_pass_args") << endl;
+    cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
+    cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
+    cout << sp << "   *auth_basic\t\t\tis " << getInfo("auth_basic") << endl;
+    cout << sp << "   *auth_basic_user_file\tis " << getInfo("auth_basic_user_file") << endl;
+    cout << sp << "   *access_log\t\t\tis " << getInfo("access_log") << endl;
+    for (size_t i = 0; i < inLoc.size(); i++) {
+        cout << "____________________ prionting inLoc " << i << " ____________________" << endl;
+        inLoc[i]->print(space + 1);
+    }
+}
+
+
+
+
+
 
 
 
@@ -277,7 +346,6 @@ void Config::readMainContext() {
 }
 
 void Config::set(const string& token) {
-    bool hasLocation = false;
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
         throw locExp::DIRECT_NOT_VALID();
@@ -292,7 +360,7 @@ void Config::set(const string& token) {
         if (newToken != "{") {
             throw std::runtime_error("Error: Missing opening bracket '{' at line " + std::to_string(p.getLineNum()));
         }
-        servers.push_back(server(p));
+        servers.push_back(server(*this, p));
         server& serv = servers.back();
         while (true) {
             newToken = p.getToken();
@@ -300,25 +368,25 @@ void Config::set(const string& token) {
                 break;
             }
             if (newToken == "location") {
-                hasLocation = true;
                 string uri = p.getToken(); // validate URI!
                 if (uri.empty() || uri == "{") {
                     throw std::runtime_error("Error: Missing uri at line " + std::to_string(p.getLineNum()));
                 }
-                locations.push_back(location(p, serv, uri));
+                locations.push_back(location(*this, p, serv, uri));
                 location& loc = locations.back();
                 loc.set();
-                serv.locations.insert(std::make_pair(locations.back().getUri(), &locations.back()));
-                cout << "location uri is " << locations.back().getUri() << " with location add = " << &locations.back() << endl;
+                serv.locations.insert(std::make_pair(loc.getUri(), &loc));
                 continue ;
             }
             serv.setServerInfo(newToken);
         }
         if (serv.locations.find("/") == serv.locations.end()) {
-            locations.push_back(location(p, serv, "/"));
+            locations.push_back(location(*this, p, serv, "/"));
             location& loc = locations.back();
             serv.locations.insert(std::make_pair("/", &loc));
         }
+        serv.linkLocation();
+        // cout << "===================uri is " << serv.locations.find("a")->second->getUri() << endl;
         serv.checkServerInfo();
         if (scopes.back() != SERVER) {
             throw std::runtime_error("Error: Missing closing bracket '}' at line " + std::to_string(p.getLineNum()));
@@ -348,6 +416,10 @@ void Config::set(const string& token) {
     // info[token] = value;
 }
 
+deque<location>& Config::getLocations() {
+    return (locations);
+}
+
 
 void Config::print () {
     cout << "*************printing**************" << endl;
@@ -363,24 +435,30 @@ void Config::print () {
         cout << "server " << i << " error_page is " << servers[i].error_page << endl;
         cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
         cout << "here 1" << endl;
-        for (map<string, location*>::iterator it = servers[i].locations.begin(); it != servers[i].locations.end(); it++) {
-            cout << "here 2" << endl;
-            cout << "URI is " << it->first << " or insde value " << it->second->getUri() << endl;
-    //         cout << "server " << i << " location " << it->first << " root is " << it->second->info["root"] << endl;
-    //         cout << "server " << i << " location " << it->first << " index is " << it->second->info["index"] << endl;
-    //         cout << "server " << i << " location " << it->first << " autoindex is " << it->second->info["autoindex"] << endl;
-    //         cout << "server " << i << " location " << it->first << " client_max_body_size is " << it->second->info["client_max_body_size"] << endl;
-    //         cout << "server " << i << " location " << it->first << " cgi is " << it->second->info["cgi"] << endl;
-    //         cout << "server " << i << " location " << it->first << " upload_store is " << it->second->info["upload_store"] << endl;
-    //         cout << "server " << i << " location " << it->first << " upload_pass is " << it->second->info["upload_pass"] << endl;
-    //         cout << "server " << i << " location " << it->first << " upload_pass_args is " << it->second->info["upload_pass_args"] << endl;
-    //         cout << "server " << i << " location " << it->first << " methods is " << it->second->info["methods"] << endl;
-    //         cout << "server " << i << " location " << it->first << " return is " << it->second->info["return"] << endl;
-    //         cout << "server " << i << " location " << it->first << " auth_basic is " << it->second->info["auth_basic"] << endl;
-    //         cout << "server " << i << " location " << it->first << " auth_basic_user_file is " << it->second->info["auth_basic_user_file"] << endl;
-    //         cout << "server " << i << " location " << it->first << " access_log is " << it->second->info["access_log"] << endl;
+        servers[i].locations.find("/")->second->print(0);
+        // for (map<string, location*>::iterator it = servers[i].locations.begin(); it != servers[i].locations.end(); it++) {
+        //     cout << "printing location " << it->first << endl;
+        //     it->second->print(0);
+            
+            // cout << "URI is " << it->first << endl;
+            
+            // cout << "   *root\t\t\tis " << it->second->getInfo("root") << endl;
+            // cout << "   *index\t\t\tis " << it->second->getInfo("index") << endl;
+            // cout << "   *autoindex\t\t\tis " << it->second->getInfo("autoindex") << endl;
+            // cout << "   *client_max_body_size\tis " << it->second->getInfo("client_max_body_size") << endl;
+            // cout << "   *cgi\t\t\t\tis " << it->second->getInfo("cgi") << endl;
+            // cout << "   *upload_store\t\tis " << it->second->getInfo("upload_store") << endl;
+            // cout << "   *upload_pass\t\t\tis " << it->second->getInfo("upload_pass") << endl;
+            // cout << "   *upload_pass_args\t\tis " << it->second->getInfo("upload_pass_args") << endl;
+            // cout << "   *methods\t\t\tis " << it->second->getInfo("methods") << endl;
+            // cout << "   *return\t\t\tis " << it->second->getInfo("return") << endl;
+            // cout << "   *auth_basic\t\t\tis " << it->second->getInfo("auth_basic") << endl;
+            // cout << "   *auth_basic_user_file\tis " << it->second->getInfo("auth_basic_user_file") << endl;
+            // cout << "   *access_log\t\t\tis " << it->second->getInfo("access_log") << endl;
+
+            
     //     }
-    }
+    // }
     cout << "*************printing done**************" << endl;
 }
 }
