@@ -1,7 +1,7 @@
 TARGET := webserver
 
-SRCS = $(shell find ./src -type f -name *.cpp)
-HEADS = $(shell find ./include -type f -name *.hpp)
+SRCS = $(shell find ./src -type f -name "*.cpp")
+HEADS = $(shell find ./include -type f -name "*.hpp")
 
 OBJS = $(SRCS:.cpp=.o)
 
