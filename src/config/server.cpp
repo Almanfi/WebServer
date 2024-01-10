@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 16:07:24 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 17:37:03 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,4 +201,10 @@ void Server::finalize() {
     }
     linkLocation();
     checkServerInfo();
+}
+
+string Server::getInfo(const string& key) {
+    if (info.find(key) != info.end())
+        return (info[key]);
+    return "";
 }

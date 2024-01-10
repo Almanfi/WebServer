@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/09 18:41:57 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 18:35:59 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,11 +26,13 @@ public:
     void propagate();
     string& getUri() const;
     void print(int space);
+    void printThis(int space);
     static void setAlloedDirective();
+    string getInfo(const string& key);
+    Location& getLocation(const string& uri);
 private:
     void setNewLoc();
     void checkLocationInfo();
-    string getInfo(const string& key);
     map<string, string> info;
     deque<Location*> inLoc;
     static map<string, int> directive;

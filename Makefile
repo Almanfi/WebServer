@@ -7,7 +7,7 @@ OBJS = $(SRCS:.cpp=.o)
 
 CXX = c++
 INCLUDES = -I./include -I./include/config -I./include/http -I./include/utils
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 $(INCLUDES)
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 $(INCLUDES) -fsanitize=address -g
 LDFLAGS = 
 
 all: $(TARGET)

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 16:02:11 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 18:48:12 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,13 +129,45 @@ void Location::checkLocationInfo() {
 
 string Location::getInfo(const string& key) {
     map<string, string>::iterator it = info.find(key);
-    if (it == info.end())
-        return "";
-    return (it->second);
+    if (it != info.end())
+        return (it->second);
+    return (serv.getInfo(key));
 }
 
 void Location::print(int space) {
-    string sp = "";
+    printThis(space);
+    for (size_t i = 0; i < inLoc.size(); i++) {
+        cout << "____________________ prionting inLoc " << i << " ____________________" << endl;
+        inLoc[i]->print(space + 1);
+    }
+}
+
+void Location::propagate() {
+    for (size_t i = 0; i < inLoc.size(); i++) {
+        for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
+            if (inLoc[i]->info.find(it->first) == inLoc[i]->info.end())
+                inLoc[i]->info.insert(std::make_pair(it->first, it->second));
+        }
+        inLoc[i]->propagate();
+    }
+}
+
+Location& Location::getLocation(const string& location) {
+    string loc = location;
+    while (loc != "") {
+        for (size_t i = 0; i < inLoc.size(); i++) {
+            if (inLoc[i]->uri == loc) {
+                return (inLoc[i]->getLocation(location));
+            }
+        }
+        size_t pos = loc.rfind("/") == string::npos ? 0 : loc.rfind("/");
+        loc = loc.substr(0, pos);
+    }
+    return (*this);
+}
+
+void Location::printThis(int space) {
+        string sp = "";
     for (int i = 0; i < space; i++)
         sp += "\t";
     cout << sp << "URI is " << uri << endl;
@@ -152,18 +184,4 @@ void Location::print(int space) {
     cout << sp << "   *auth_basic\t\t\tis " << getInfo("auth_basic") << endl;
     cout << sp << "   *auth_basic_user_file\tis " << getInfo("auth_basic_user_file") << endl;
     cout << sp << "   *access_log\t\t\tis " << getInfo("access_log") << endl;
-    for (size_t i = 0; i < inLoc.size(); i++) {
-        cout << "____________________ prionting inLoc " << i << " ____________________" << endl;
-        inLoc[i]->print(space + 1);
-    }
-}
-
-void Location::propagate() {
-    for (size_t i = 0; i < inLoc.size(); i++) {
-        for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
-            if (inLoc[i]->info.find(it->first) == inLoc[i]->info.end())
-                inLoc[i]->info.insert(std::make_pair(it->first, it->second));
-        }
-        inLoc[i]->propagate();
-    }
 }
