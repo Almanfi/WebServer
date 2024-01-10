@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/09 18:45:47 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 16:07:24 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 void Server::setAllowedDirective() {
     if (!directive.empty()) {
-        cerr << "Error: server directives already set" << endl;
         return ;
     }
     directive.insert(std::make_pair("server_name", 0));
@@ -107,14 +106,12 @@ const string& Server::validateIp(const string& ip) {
     ss >> num;
     if (ss.fail() || num < 0 || num > 255)
         throw std::runtime_error("Invalid IP address");
-    cout << num << endl;
     int i = 0;
     while (i++ < 3 && ss >> dot >> num) {
         if (ss.fail() || dot != '.')
             throw std::runtime_error("Invalid IP address");
         if (num < 0 || num > 255)
             throw std::runtime_error("Invalid IP address");
-        cout << num << endl;
     }
     if (!ss.eof() || i != 4)
         throw std::runtime_error("Invalid IP address");
@@ -178,7 +175,7 @@ void Server::parseErrorPage() {
 
 void Server::checkServerInfo() {
     if (info.find("listen") == info.end()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw locExp::LISTEN_NOT_FOUND();
     }
     parseListen();
     parseServerName();

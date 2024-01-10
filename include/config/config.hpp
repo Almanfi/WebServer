@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/09 18:44:32 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 16:04:44 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,11 @@ public:
     class NOT_VALID_PORT: public std::exception {
         virtual const char* what() const throw() {
             return "Error: not valid port";
+        }
+    };
+    class LISTEN_NOT_FOUND: public std::exception {
+        virtual const char* what() const throw() {
+            return "Error: no listen";
         }
     };
 };

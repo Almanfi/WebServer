@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/09 18:44:20 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 16:02:35 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ map<string, int> Config::directive;
 
 void Config::setAlloedDirective() {
     if (!directive.empty()) {
-        cerr << "Error: directive already set" << endl;
         return ;
     }
     directive.insert(std::make_pair("server", 0));
@@ -31,12 +30,12 @@ void Config::setAlloedDirective() {
 }
 
 void Config::read() {
-    try {
+    // try {
         readMainContext();
-    }
-    catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
-    }
+    // }
+    // catch (std::exception& e) {
+        // std::cerr << e.what() << std::endl;
+    // }
 }
 
 void Config::readMainContext() {
@@ -47,6 +46,8 @@ void Config::readMainContext() {
         token = p.getToken();
         if (token.empty())
             break;
+        if (token == ";") 
+            continue;
         set(token);
     }
     if (scopes.back() != MAIN) {
@@ -73,6 +74,8 @@ void Config::setServer() {
             newToken = p.getToken();
             if (newToken == "}" || newToken.empty())
                 break;
+            if (newToken == ";")
+                continue;
             serv.setServerInfo(newToken);
         }
         serv.finalize();

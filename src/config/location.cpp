@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/09 18:44:49 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 16:02:11 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@ map<string, int> Location::directive;
 
 void Location::setAlloedDirective() {
     if (!directive.empty()) {
-        cerr << "Error: location directives already set" << endl;
         return ;
     }
     directive.insert(std::make_pair("root", 1));
@@ -35,7 +34,7 @@ void Location::setAlloedDirective() {
     directive.insert(std::make_pair("upload_store", 1));
     directive.insert(std::make_pair("upload_pass", 1));
     directive.insert(std::make_pair("upload_pass_args", 1));
-    directive.insert(std::make_pair("methods", 1));
+    directive.insert(std::make_pair("methods", 0));
     directive.insert(std::make_pair("return", 1));
     directive.insert(std::make_pair("auth_basic", 1));
     directive.insert(std::make_pair("auth_basic_user_file", 1));
@@ -74,6 +73,8 @@ void Location::set() {
         if (token == "}" || token.empty()) {
             break;
         }
+        if (token == ";")
+            continue;
         setLocationInfo(token);
     }
     if (scope.back() != LOCATION || token.empty()) {
@@ -109,7 +110,7 @@ void Location::setLocationInfo(string& token) {
         if (newToken == ";" || newToken.empty()) {
             break;
         }
-        if (count > 1) {
+        if (count >= 1) {
             value += " ";
         }
         value += newToken;

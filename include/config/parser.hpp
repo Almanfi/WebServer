@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:43 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/09 16:44:16 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/10 15:36:46 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,10 @@ class Parser {
 public:
     Parser(const std::string& filePath);
     ~Parser();
-    bool findBracket(const std::string& bracket);
+    // bool findBracket(const std::string& bracket);
     bool is_space(const char c);
     bool is_delimitter(const char c);
-    bool isEndingLine();
+    // bool isEndingLine();
     std::string getToken();
     int getLineNum();
     std::vector<configScope>& getScopes();
