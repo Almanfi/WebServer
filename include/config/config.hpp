@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 19:01:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/12 14:17:42 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ public:
     void print();
     void setAlloedDirective();
     Location& getLocation(const string& uri);
+    deque<Server>& getServers();
 private:
     void set(const string& token);
     void setServer();

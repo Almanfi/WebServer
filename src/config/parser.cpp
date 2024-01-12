@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:24 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 16:09:37 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/12 16:24:48 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,14 +75,14 @@ std::string Parser::getToken() {
             return string("");
         }
         lineNumber++;
-        cout << "line " << lineNumber << ": " << line << endl;
+        // cout << "line " << lineNumber << ": " << line << endl;
         i = 0;
     }
     while (is_space(line[i]))
         i++;
     if (line[i] == '#' || i >= line.length()) {
         i = line.length();
-        std::cout << "Comment : skip line!" << std::endl;
+        // std::cout << "Comment : skip line!" << std::endl;
         return getToken();
     }
     if (is_delimitter(line[i])) {

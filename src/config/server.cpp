@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 17:37:03 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/12 14:35:02 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,15 +132,20 @@ int Server::validatePort(const string& portStr) {
 void Server::parseListen() {
     string listen = info["listen"];
     size_t colon = listen.find(":");
+    string ipStr;
+    string portStr;
     if (colon == string::npos) {
-        listenIp = "";
-        listenPort = validatePort(listen);
-        return ;
+        ipStr = "127.0.0.1";
+        portStr = listen;
     }
-    string ipStr = listen.substr(0, colon);
+    else {
+        ipStr = listen.substr(0, colon);
+        portStr = listen.substr(colon + 1);
+    }
     listenIp = validateIp(ipStr);
-    string portStr = listen.substr(colon + 1);
     listenPort = validatePort(portStr);
+    info.insert(std::make_pair("host", ipStr));
+    info.insert(std::make_pair("port", portStr));
 }
 
 void Server::parseServerName() {

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 18:47:51 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/12 14:17:33 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -161,6 +161,10 @@ Location& Config::getLocation(const string& uri) {
         throw std::runtime_error("Error: server not found");
     }
     return (serv->locations.find("/")->second->getLocation(location));
+}
+
+deque<Server>& Config::getServers() {
+    return (servers);
 }
 
 void Config::print () {

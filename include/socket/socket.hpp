@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/11 23:37:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/12 16:29:16 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,8 @@
 # include <string>
 # include <vector>
 # include <map>
+# include <deque>
+# include <algorithm>
 # include <sys/socket.h>
 # include <sys/types.h>
 # include <netdb.h>
@@ -33,7 +35,7 @@
 class Socket {
 public:
     Socket(const string& ip, const string& port);
-    // Socket(Server* server);
+    Socket(Server& serv);
     // Socket(int sockid);
     ~Socket();
     int sockAccept();
@@ -42,15 +44,15 @@ public:
     void setServer(Server* server);
     void setEpollfd(int epollfd);
 private:
-    void sockBind();
+    void sockBind(addrinfo *res);
     void sockListen();
     int sockid;
     Server* server;
-    addrinfo *res;
 };
 
 class Epoll {
 public:
+    Epoll(Config& config);
     Epoll(Socket* socket);
     ~Epoll();
     void loop();
@@ -60,7 +62,7 @@ public:
     void setServer(Server* server);
 private:
     // std::vector<client> clients;
-
+    deque<Socket*> servSocket;
     epoll_event events[10];
     epoll_event event;
     Socket* socket;
