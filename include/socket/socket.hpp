@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/13 13:48:07 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/13 23:29:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,21 +33,100 @@
 
 typedef int sock_fd;
 
-#define MAX_LISTEN 10 // max number of clients in the queue
+#define HOST "host"
+#define PORT "port"
 
+#define MAX_LISTEN 10 // max number of clients in the queue
 
 class Socket {
 public:
+    Socket();
     Socket(const string& ip, const string& port);
-    Socket(Server& serv);
-    ~Socket();
+    Socket(const Server& serv);
+    virtual ~Socket();
     sock_fd sockAccept();
     sock_fd getSockid();
-private:
+protected:
     void sockBind(addrinfo *res);
     void sockListen();
     sock_fd sockid;
+    bool close_on_exit;
     // Server* server;
+};
+
+class SBuffer {
+public:
+    SBuffer();
+    SBuffer(size_t size);
+    void bzero();
+    size_t size();
+    SBuffer(const SBuffer& other);
+    SBuffer& operator=(const SBuffer& other);
+    ~SBuffer();
+    char* operator&();
+    char  operator*();
+    char* operator+(size_t pos);
+    char* operator-(size_t pos);
+    char& operator[](size_t pos);
+private:
+    size_t Size;
+    char* buffer;
+};
+
+std::ostream& operator<<(std::ostream& os, SBuffer& buffer);
+
+#define RECIEVE_MAX_SIZE 4096
+
+typedef enum {
+    NONE,
+    READ,
+    WRITE,
+    ERROR,
+    CLOSE
+}   cnx_state;
+
+class Client {
+public:
+    Client(sock_fd fd);
+    Client(const Client& other);
+    Client& operator=(const Client& other);
+    ~Client();
+    sock_fd getFd();
+    ssize_t send();
+    ssize_t recieve();
+    void closeOnExit();
+private:
+    sock_fd     fd;
+    bool        autoClose;
+    cnx_state   state;
+    SBuffer     buffer;
+    // char        buffer[RECIEVE_MAX_SIZE];
+    int         buffer_pos;
+    char*       old_buffer;
+    string      data;
+};
+
+class ServerSocket : public Socket {
+public:
+    ServerSocket();
+    ServerSocket(Server& serv);
+    ServerSocket(const ServerSocket& other);
+    ServerSocket& operator=(const ServerSocket& other);
+    virtual ~ServerSocket();
+    Server* getServer();
+    map<sock_fd, Client>& getClients();
+    void addClient(sock_fd fd);
+    void removeClient(sock_fd fd);
+    bool isClient(sock_fd fd);
+    // void sendToAll();
+    ssize_t sendTo(sock_fd fd);
+    // void recieveFromAll();
+    ssize_t recieveFrom(sock_fd fd);
+
+    void closeOnExit();
+private:
+    Server* server;
+    map<sock_fd, Client> clients;
 };
 
 class Epoll {
@@ -64,7 +143,11 @@ private:
     void addEvent(sock_fd fd, uint32_t events);
     void delEvent(sock_fd fd);
     bool eventOnServer(sock_fd fd);
-    deque<Socket*> servSocket;
+    map<sock_fd, ServerSocket> servSockets;
+    ServerSocket*   servSock;
+    // Socket*         sock;
+    // Client*         client;
+    // deque<Socket*> servSocket;
     epoll_event events[10];
     epoll_event event;
     Socket* socket;

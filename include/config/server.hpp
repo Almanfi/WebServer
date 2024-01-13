@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:43:49 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 17:31:05 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/13 21:57:07 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ public:
     void checkServerInfo();
     void finalize();
     void setAllowedDirective();
-    string getInfo(const string& key);
+    string getInfo(const string& key) const;
     map<string, Location*> locations; // uri, location
 private:
     static map<string, int> directive;

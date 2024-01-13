@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/12 14:35:02 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/13 22:00:37 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,8 +208,9 @@ void Server::finalize() {
     checkServerInfo();
 }
 
-string Server::getInfo(const string& key) {
-    if (info.find(key) != info.end())
-        return (info[key]);
+string Server::getInfo(const string& key) const {
+    map<string, string>::const_iterator it = info.find(key);
+    if (it != info.end())
+        return (it->second);
     return "";
 }
