@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/12 16:29:16 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/13 13:48:07 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,23 +31,23 @@
 
 # include "config.hpp"
 
+typedef int sock_fd;
+
+#define MAX_LISTEN 10 // max number of clients in the queue
+
 
 class Socket {
 public:
     Socket(const string& ip, const string& port);
     Socket(Server& serv);
-    // Socket(int sockid);
     ~Socket();
-    int sockAccept();
-    void sockClose();
-    int getSockid();
-    void setServer(Server* server);
-    void setEpollfd(int epollfd);
+    sock_fd sockAccept();
+    sock_fd getSockid();
 private:
     void sockBind(addrinfo *res);
     void sockListen();
-    int sockid;
-    Server* server;
+    sock_fd sockid;
+    // Server* server;
 };
 
 class Epoll {
@@ -56,20 +56,20 @@ public:
     Epoll(Socket* socket);
     ~Epoll();
     void loop();
-    void addSocket(Socket* socket);
+    void checkEvents(int n);
     void removeSocket(Socket* socket);
     void wait();
     void setServer(Server* server);
 private:
-    // std::vector<client> clients;
+    void addEvent(sock_fd fd, uint32_t events);
+    void delEvent(sock_fd fd);
+    bool eventOnServer(sock_fd fd);
     deque<Socket*> servSocket;
     epoll_event events[10];
     epoll_event event;
     Socket* socket;
     int epollfd;
     vector<int> fds;
-    // struct epoll_event event;
-    // struct epoll_event* events;
     Server* server;
 };
 

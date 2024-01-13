@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/25 12:36:29 by bamrouch          #+#    #+#             */
-/*   Updated: 2024/01/12 16:19:41 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/13 14:21:21 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,16 +78,16 @@ void Socket::sockBind(addrinfo *res) {
 }
 
 void Socket::sockListen() {
-    if (listen(sockid, 10) == -1) {
+    if (listen(sockid, MAX_LISTEN) == -1) {
         perror("listen");
         throw std::exception();
     }
 }
 
-int Socket::sockAccept() {
+sock_fd Socket::sockAccept() {
     struct sockaddr_storage client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
-    int client_fd = accept(sockid, (struct sockaddr *)&client_addr, &client_addr_len);
+    sock_fd client_fd = accept(sockid, (struct sockaddr *)&client_addr, &client_addr_len);
     if (client_fd == -1) {
         perror("accept");
         throw std::exception();
@@ -95,52 +95,45 @@ int Socket::sockAccept() {
     return (client_fd);
 }
 
-void Socket::sockClose() {
-    close(sockid);
-}
-
-int Socket::getSockid() {
+sock_fd Socket::getSockid() {
     return sockid;
 }
 
-void Socket::setServer(Server* server) {
-    this->server = server;
-}
-
 Epoll::Epoll(Config& config) {
-    (void) config;
+    std::memset(&event, 0, sizeof(event));
     deque<Server>& servers =  config.getServers();
-    epollfd = epoll_create(10);// test with 0 later
+    epollfd = epoll_create(10);// ignored nowdays, it just need to be greater than 0
     if (epollfd < 0) {
         perror("epoll_create");
         throw std::exception();
     }
     for (size_t i = 0; i < servers.size(); i++) {
         servSocket.push_back(new Socket(servers[i]));
-        std::memset(&event, 0, sizeof(event));
-        event.data.fd = servSocket.back()->getSockid();
-        event.events = EPOLLIN;
-        if (epoll_ctl(epollfd, EPOLL_CTL_ADD, servSocket.back()->getSockid(), &event) == -1) {
-            perror("epoll_ctl");
-            throw std::exception();
-        }
+        addEvent(servSocket.back()->getSockid(), EPOLLIN);
+        // event.data.fd = servSocket.back()->getSockid();
+        // event.events = EPOLLIN;
+        // if (epoll_ctl(epollfd, EPOLL_CTL_ADD, servSocket.back()->getSockid(), &event) == -1) {
+        //     perror("epoll_ctl");
+        //     throw std::exception();
+        // }
     }
     cout << "number of servers listening: " << servSocket.size() << endl;
 }
 
 Epoll::Epoll(Socket* socket) : socket(socket) {
-    epollfd = epoll_create(10);// test with 0 later
+    std::memset(&event, 0, sizeof(event));
+    epollfd = epoll_create(10); // ignored nowdays, it just need to be greater than 0
     if (epollfd < 0) {
         perror("epoll_create");
         throw std::exception();
     }
-    std::memset(&event, 0, sizeof(event));
-    event.data.fd = socket->getSockid();
-    event.events = EPOLLIN;
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSockid(), &event) == -1) {
-        perror("epoll_ctl");
-        throw std::exception();
-    }
+    addEvent(socket->getSockid(), EPOLLIN);
+    // event.data.fd = socket->getSockid();
+    // event.events = EPOLLIN;
+    // if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSockid(), &event) == -1) {
+    //     perror("epoll_ctl");
+    //     throw std::exception();
+    // }
 }
 
 Epoll::~Epoll() {
@@ -150,65 +143,73 @@ Epoll::~Epoll() {
     }
 }
 
+void Epoll::addEvent(sock_fd fd, uint32_t events) {
+    fds.push_back(fd);
+    event.data.fd = fd;
+    event.events = events;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event) == -1) {
+        perror("epoll_ctl");
+        throw std::exception();
+    }
+}
+
+void Epoll::delEvent(sock_fd fd) {
+    if (epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+        perror("epoll_ctl");
+        throw std::exception();
+    }
+    for (size_t j = 0; j < fds.size(); j++) {
+        if (fds[j] == fd) {
+            fds.erase(fds.begin() + j);
+            break;
+        }
+    }
+}
+
+bool Epoll::eventOnServer(sock_fd fd) {
+    size_t index;
+    for (index = 0; index < servSocket.size(); index++) {
+        if (fd == servSocket[index]->getSockid()) {
+            socket = servSocket[index];
+            break;
+        }
+    }
+    if (index < servSocket.size())
+        return true;
+    return false;
+}
+
+void Epoll::checkEvents(int n) {
+    for (int i = 0; i < n; i++) {
+        if (eventOnServer(events[i].data.fd)) {
+            sock_fd client_fd = socket->sockAccept();
+            addEvent(client_fd, EPOLLIN);
+            std::cout << "New client connected" << std::endl;
+        } else {
+            char buffer[1024];
+            ssize_t bytes_read = recv(events[i].data.fd, buffer, sizeof(buffer), 0);
+            if (bytes_read == -1) {
+                perror("recv");
+                throw std::exception();
+            } else if (bytes_read == 0) {
+                std::cout << "Client disconnected" << std::endl;
+                close(events[i].data.fd);
+                delEvent(events[i].data.fd);
+            } else {
+                std::string request(buffer, bytes_read);
+                std::cout << "Received request: " << request << std::endl;
+            }
+        }
+    }
+}
+
 void Epoll::loop() {
-    // int sockfd = socket->getSockid();
     while (true) {
-            // cout << "client size: " << fds.size() << endl;
             int n = epoll_wait(epollfd, events, 10, -1);
             if (n == -1) {
                 perror("epoll_wait");
                 throw std::exception();
             }
-            for (int i = 0; i < n; i++) {
-                size_t index;
-                for (index = 0; index < servSocket.size(); index++) {
-                    if (events[i].data.fd == servSocket[index]->getSockid()) {
-                        socket = servSocket[index];
-                        break;
-                    }
-                }
-                if (index < servSocket.size()) {
-                    int client_fd = socket->sockAccept();
-                    fds.push_back(client_fd);
-                    std::cout << "New client connected" << std::endl;
-                    event.data.fd = client_fd;
-                    event.events = EPOLLIN;
-                    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, client_fd, &event) == -1) {
-                        perror("epoll_ctl");
-                        throw std::exception();
-                    }
-                } else {
-                    char buffer[1024];
-                    ssize_t bytes_read = recv(events[i].data.fd, buffer, sizeof(buffer), 0);
-                    if (bytes_read == -1) {
-                        perror("recv");
-                        throw std::exception();
-                    } else if (bytes_read == 0) {
-                        std::cout << "Client disconnected" << std::endl;
-                        close(events[i].data.fd);
-                        epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        for (size_t j = 0; j < fds.size(); j++) {
-                            if (fds[j] == events[i].data.fd) {
-                                fds.erase(fds.begin() + j);
-                                break;
-                            }
-                        }
-                    } else {
-                        // Process the received data
-                        std::string request(buffer, bytes_read);
-                        std::cout << "Received request: " << request << std::endl;
-                        // Close the connection after finishing reading the request
-                        close(events[i].data.fd);
-                        epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        for (size_t j = 0; j < fds.size(); j++) {
-                            if (fds[j] == events[i].data.fd) {
-                                fds.erase(fds.begin() + j);
-                                break;
-                            }
-                        }
-                        std::exit(0);
-                    }
-                }
-            }
+            checkEvents(n);
         }
 }
