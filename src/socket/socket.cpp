@@ -6,12 +6,11 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/25 12:36:29 by bamrouch          #+#    #+#             */
-/*   Updated: 2024/01/14 17:34:36 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/14 22:42:29 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
-
 
 Socket::Socket() {
 }
@@ -214,23 +213,43 @@ void Epoll::delEvent(sock_fd fd) {
 //     return false;
 // }
 
+// bool Epoll::eventOnServer(sock_fd fd) {
+//     itrServSock it = servSockets.find(fd);
+//     if (it == servSockets.end())
+//     {
+//         for (itrServSock it = servSockets.begin();
+//                 it != servSockets.end(); it++)
+//         {
+            
+//             if (it->second->isClient(fd))
+//             {
+                
+//                 servSock = it->second;
+//                 return (false);
+//             }
+//         }
+//         throw std::runtime_error("eventOnServer: fd not found");
+//     }
+//     servSock = it->second;
+//     return (true);
+// }
+
 bool Epoll::eventOnServer(sock_fd fd) {
+    client = NULL;
     itrServSock it = servSockets.find(fd);
-    if (it == servSockets.end())
+    if (it != servSockets.end())
     {
-        for (itrServSock it = servSockets.begin();
-                it != servSockets.end(); it++)
-        {
-            if (it->second->isClient(fd))
-            {
-                servSock = it->second;
-                return (false);
-            }
-        }
-        throw std::runtime_error("eventOnServer: fd not found");
+        servSock = it->second;
+        return (true);
     }
-    servSock = it->second;
-    return (true);
+    for (itrServSock it = servSockets.begin();
+            it != servSockets.end(); it++)
+    {
+        client = it->second->getClient(fd);
+        if (client)
+            return (false);
+    }
+    throw std::runtime_error("eventOnServer: fd not found");
 }
 
 void Epoll::checkEvents(int n) {
@@ -241,19 +260,22 @@ void Epoll::checkEvents(int n) {
             addEvent(client_fd, EPOLLIN);
             std::cout << "New client connected" << std::endl;
         } else {
-            char buffer[1024];
-            ssize_t bytes_read = recv(events[i].data.fd, buffer, sizeof(buffer), 0);
-            if (bytes_read == -1) {
-                perror("recv");
-                throw std::exception();
-            } else if (bytes_read == 0) {
+            ssize_t bytes_read =  client->recieve();
+            // char buffer[1024];
+            // ssize_t bytes_read = recv(events[i].data.fd, buffer, sizeof(buffer), 0);
+            // if (bytes_read == -1) {
+            //     perror("recv");
+            //     throw std::exception();
+            // } else if (bytes_read == 0) {
+            if (bytes_read == 0) {
                 std::cout << "Client disconnected" << std::endl;
                 delEvent(events[i].data.fd);
                 servSock->removeClient(events[i].data.fd);
                 // close(events[i].data.fd);
             } else {
-                std::string request(buffer, bytes_read);
-                std::cout << "Received request: " << request << std::endl;
+                client->readBuffer();
+                // std::string request(buffer, bytes_read);
+                // std::cout << "Received request: " << request << std::endl;
             }
         }
     }
@@ -271,31 +293,35 @@ void Epoll::loop() {
 }
 
 
-SBuffer::SBuffer() : Size(RECIEVE_MAX_SIZE), buffer(new char[RECIEVE_MAX_SIZE]) {
+SBuffer::SBuffer() : pos(0), oldBuffer(NULL) {
 }
 
-SBuffer::SBuffer(size_t size) : Size(size) {
-    buffer = new char[size];
-}
+// SBuffer::SBuffer(size_t size) {
+// }
 
-SBuffer::SBuffer(const SBuffer& other) {
-    Size = other.Size;
-    buffer = new char[Size];
-    std::memcpy(buffer, other.buffer, Size);
+SBuffer::SBuffer(const SBuffer& other) : pos(other.pos), oldBuffer(NULL) {
+    if (other.oldBuffer){
+        size_t size = other.oldBuffer - other.buffer;
+        this->oldBuffer = buffer + size;
+    }
+    std::memcpy(buffer, other.buffer, SBUFFER_SIZE);
 }
 
 SBuffer& SBuffer::operator=(const SBuffer& other) {
     if (this != &other) {
-        delete[] buffer;
-        Size = other.Size;
-        buffer = new char[Size];
-        std::memcpy(buffer, other.buffer, Size);
+        pos = other.pos;
+        if (other.oldBuffer) {
+            size_t size = other.oldBuffer - other.buffer;
+            this->oldBuffer = buffer + size;
+        }
+        else
+            oldBuffer = NULL;
+        std::memcpy(buffer, other.buffer, SBUFFER_SIZE);
     }
     return (*this);
 }
 
 SBuffer::~SBuffer() {
-    delete[] buffer;
 }
 
 char* SBuffer::operator&() {
@@ -306,40 +332,75 @@ char SBuffer::operator*() {
     return (*buffer);
 }
 
-char* SBuffer::operator+(size_t pos) {
-    return (buffer + pos);
+char* SBuffer::operator+(size_t i) {
+    return (buffer + i);
 }
 
-char* SBuffer::operator-(size_t pos) {
-    return (buffer - pos);
+char* SBuffer::operator-(size_t i) {
+    return (buffer - i);
 }
 
-char& SBuffer::operator[](size_t pos) {
-    return (buffer[pos]);
+char& SBuffer::operator[](size_t i) {
+    return (buffer[i]);
 }
 
-void SBuffer::bzero() {
-    std::memset(buffer, 0, Size);
+// char* SBuffer::end() {
+//     return (oldBuffer);
+// }
+
+char* SBuffer::old() {
+    return (oldBuffer);
 }
 
 size_t SBuffer::size() {
-    return (Size);
+    return (pos);
+}
+
+void SBuffer::bzero() {
+    std::memset(buffer, 0, SBUFFER_SIZE);
+}
+
+ssize_t SBuffer::recv(sock_fd fd, int flags) {
+    // cout << "buffer: " << &buffer << endl;
+    // cout << "buffer[0]: " << buffer[0] << endl;
+    // cout << "pos: " << this->pos << endl;
+    // (void) flags;
+    // (void) fd;
+    pos = ::recv(fd, buffer, SBUFFER_SIZE - size(), flags);
+    if (pos == -1) {
+        perror("recv1");
+        throw std::exception();
+    }
+    // if (pos == SBUFFER_SIZE)
+    //     oldBuffer = NULL;
+    // else
+    //     oldBuffer = buffer + bytes_read;
+    return (pos);
+}
+
+void SBuffer::save() {
+    if (pos == SBUFFER_SIZE || pos == 0)
+        oldBuffer = NULL;
+    else
+        oldBuffer = buffer + pos;
 }
 
 std::ostream& operator<<(std::ostream& os, SBuffer& buffer) {
     os.write(&buffer, buffer.size());
+    os << "|" << buffer.size() << "|" << endl;// for debuging
     return (os);
 }
 
-Client::Client(sock_fd fd) : fd(fd), state(NONE), buffer_pos(0), old_buffer(NULL) {
+Client::Client(sock_fd fd) : fd(fd), state(NONE) {
 }
 
 Client::Client(const Client& other) {
     fd = other.fd;
     state = other.state;
     buffer = other.buffer;
-    buffer_pos = other.buffer_pos;
-    old_buffer = other.old_buffer;
+    // std::memcpy(buffer, other.buffer, RECIEVE_MAX_SIZE);
+    // buffer_pos = other.buffer_pos;
+    // old_buffer = other.old_buffer;
     data = other.data;
 }
 
@@ -348,8 +409,9 @@ Client& Client::operator=(const Client& other) {
         fd = other.fd;
         state = other.state;
         buffer = other.buffer;
-        buffer_pos = other.buffer_pos;
-        old_buffer = other.old_buffer;
+        // std::memcpy(buffer, other.buffer, RECIEVE_MAX_SIZE);
+        // buffer_pos = other.buffer_pos;
+        // old_buffer = other.old_buffer;
         data = other.data;
     }
     return (*this);
@@ -374,17 +436,25 @@ ssize_t Client::send() {
 }
 
 ssize_t Client::recieve() {
-    ssize_t bytes_read = recv(fd, &buffer, buffer.size(), 0);
-    if (bytes_read == -1) {
-        perror("recv");
-        throw std::exception();
-    } else if (bytes_read == 0) {
-        std::cout << "Client disconnected" << std::endl;
-        // delEvent(events[i].data.fd);
-    } else {
-        cout << "Received request: " << buffer << std::endl;
-    }
+    // ssize_t bytes_read = recv(fd, buffer, RECIEVE_MAX_SIZE, 0);
+    ssize_t bytes_read = buffer.recv(fd, 0);
+    // ssize_t bytes_read = 0;
+    // this->buffer_pos = bytes_read;
+    // if (bytes_read == 0) {
+    //     std::cout << "Client disconnected" << std::endl;
+    //     // delEvent(events[i].data.fd);
+    // } else {
+    //     cout << "Received request: " << buffer << std::endl;
+    // }
+    for (ssize_t i = 0; i < bytes_read; i++)
+        data += buffer[i];
     return (bytes_read);
+}
+
+void Client::readBuffer() {
+    // cout.write(buffer, buffer_pos);
+    cout    << "Received request: " << endl
+            << buffer << std::endl;
 }
 
 ServerSocket::ServerSocket() : Socket() {
@@ -446,5 +516,12 @@ bool ServerSocket::isClient(sock_fd fd) {
     if (clients.find(fd) != clients.end())
         return (true);
     return (false);
+}
+
+Client* ServerSocket::getClient(sock_fd fd) {
+    itrClient it = clients.find(fd);
+    if (it == clients.end())
+        return (NULL);
+    return (it->second);
 }
 

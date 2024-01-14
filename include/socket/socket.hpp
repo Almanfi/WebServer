@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/14 17:33:07 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/14 22:42:32 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,23 +54,33 @@ protected:
     // Server* server;
 };
 
+#define SBUFFER_SIZE 4096
+
 class SBuffer {
 public:
     SBuffer();
-    SBuffer(size_t size);
-    void bzero();
-    size_t size();
     SBuffer(const SBuffer& other);
     SBuffer& operator=(const SBuffer& other);
     ~SBuffer();
+    // SBuffer(size_t size);
+    void bzero();
+    ssize_t recv(sock_fd fd, int flags);
+    size_t size();
+    void save();
+    char* old();
+    // char* end();
     char* operator&();
     char  operator*();
-    char* operator+(size_t pos);
-    char* operator-(size_t pos);
-    char& operator[](size_t pos);
+    char* operator+(size_t i);
+    char* operator-(size_t i);
+    char& operator[](size_t i);
 private:
-    size_t Size;
-    char* buffer;
+    // size_t Size;
+    ssize_t pos;
+    // ssize_t index;
+    char *oldBuffer;
+    char buffer[SBUFFER_SIZE];
+    // char buff[SBUFFER_SIZE];
 };
 
 std::ostream& operator<<(std::ostream& os, SBuffer& buffer);
@@ -94,15 +104,17 @@ public:
     sock_fd getFd();
     ssize_t send();
     ssize_t recieve();
+    void readBuffer();
     // void closeOnExit();
 private:
     sock_fd     fd;
-    // bool        autoClose;
     cnx_state   state;
-    SBuffer     buffer;
     // char        buffer[RECIEVE_MAX_SIZE];
-    int         buffer_pos;
-    char*       old_buffer;
+    // ssize_t     buffer_pos;
+    SBuffer     buffer;
+    // bool        autoClose;
+    // char        buffer[RECIEVE_MAX_SIZE];
+    // char*       old_buffer;
     string      data;
 };
 
@@ -117,6 +129,7 @@ public:
     map<sock_fd, Client*>& getClients();
     void addClient(sock_fd fd);
     void removeClient(sock_fd fd);
+    Client* getClient(sock_fd fd);
     bool isClient(sock_fd fd);
     ssize_t sendTo(sock_fd fd);
     ssize_t recieveFrom(sock_fd fd);
@@ -143,6 +156,7 @@ private:
     bool eventOnServer(sock_fd fd);
     map<sock_fd, ServerSocket*> servSockets;
     ServerSocket*   servSock;
+    Client*         client;
     epoll_event events[10];
     epoll_event event;
     // Socket* socket;
