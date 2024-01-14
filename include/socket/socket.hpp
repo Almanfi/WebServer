@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/13 23:29:27 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/14 17:33:07 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ protected:
     void sockBind(addrinfo *res);
     void sockListen();
     sock_fd sockid;
-    bool close_on_exit;
+    // bool close_on_exit;
     // Server* server;
 };
 
@@ -94,10 +94,10 @@ public:
     sock_fd getFd();
     ssize_t send();
     ssize_t recieve();
-    void closeOnExit();
+    // void closeOnExit();
 private:
     sock_fd     fd;
-    bool        autoClose;
+    // bool        autoClose;
     cnx_state   state;
     SBuffer     buffer;
     // char        buffer[RECIEVE_MAX_SIZE];
@@ -114,25 +114,22 @@ public:
     ServerSocket& operator=(const ServerSocket& other);
     virtual ~ServerSocket();
     Server* getServer();
-    map<sock_fd, Client>& getClients();
+    map<sock_fd, Client*>& getClients();
     void addClient(sock_fd fd);
     void removeClient(sock_fd fd);
     bool isClient(sock_fd fd);
-    // void sendToAll();
     ssize_t sendTo(sock_fd fd);
-    // void recieveFromAll();
     ssize_t recieveFrom(sock_fd fd);
-
-    void closeOnExit();
 private:
+    typedef  map<sock_fd, Client*>::iterator itrClient;
     Server* server;
-    map<sock_fd, Client> clients;
+    map<sock_fd, Client*> clients;
 };
 
 class Epoll {
 public:
     Epoll(Config& config);
-    Epoll(Socket* socket);
+    // Epoll(Socket* socket);
     ~Epoll();
     void loop();
     void checkEvents(int n);
@@ -140,20 +137,18 @@ public:
     void wait();
     void setServer(Server* server);
 private:
+    typedef map<sock_fd, ServerSocket*>::iterator itrServSock;
     void addEvent(sock_fd fd, uint32_t events);
     void delEvent(sock_fd fd);
     bool eventOnServer(sock_fd fd);
-    map<sock_fd, ServerSocket> servSockets;
+    map<sock_fd, ServerSocket*> servSockets;
     ServerSocket*   servSock;
-    // Socket*         sock;
-    // Client*         client;
-    // deque<Socket*> servSocket;
     epoll_event events[10];
     epoll_event event;
-    Socket* socket;
+    // Socket* socket;
     int epollfd;
-    vector<int> fds;
-    Server* server;
+    // vector<int> fds;
+    // Server* server;
 };
 
 #endif // SOCKET_HPP

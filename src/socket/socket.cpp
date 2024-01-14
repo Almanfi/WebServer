@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/25 12:36:29 by bamrouch          #+#    #+#             */
-/*   Updated: 2024/01/13 23:35:05 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/14 17:34:36 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 Socket::Socket() {
 }
 
-Socket::Socket(const string& ip, const string& port) : close_on_exit(true) {
+Socket::Socket(const string& ip, const string& port) {
     addrinfo *res;
     addrinfo hints;
     std::memset(&hints, 0, sizeof(addrinfo));
@@ -43,7 +43,7 @@ Socket::Socket(const string& ip, const string& port) : close_on_exit(true) {
     freeaddrinfo(res);
 }
 
-Socket::Socket(const Server& serv) : close_on_exit(true) {
+Socket::Socket(const Server& serv) {
     addrinfo *res;
     addrinfo hints;
     std::memset(&hints, 0, sizeof(addrinfo));
@@ -71,8 +71,8 @@ Socket::Socket(const Server& serv) : close_on_exit(true) {
 }
 
 Socket::~Socket() {
-    if (close_on_exit)
-        close(sockid);
+    // if (close_on_exit)
+    close(sockid);
 }
 
 void Socket::sockBind(addrinfo *res) {
@@ -134,11 +134,12 @@ Epoll::Epoll(Config& config) {
         throw std::exception();
     }
     for (size_t i = 0; i < servers.size(); i++) {
-        ServerSocket    tmp(servers[i]);
+        ServerSocket*   tmp = new ServerSocket(servers[i]);
+        
         // std::make_pair(tmp.getSockid(), ServerSocket(tmp));
-        servSockets.insert(std::make_pair(tmp.getSockid(), tmp));
-        servSockets[tmp.getSockid()].closeOnExit();
-        addEvent(tmp.getSockid(), EPOLLIN);
+        servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
+        // servSockets[tmp.getSockid()].closeOnExit();
+        addEvent(tmp->getSockid(), EPOLLIN);
         // servSocket.push_back(new Socket(servers[i]));
         // addEvent(servSocket.back()->getSockid(), EPOLLIN);
         // event.data.fd = servSocket.back()->getSockid();
@@ -151,31 +152,34 @@ Epoll::Epoll(Config& config) {
     cout << "number of servers listening: " << servSockets.size() << endl;
 }
 
-Epoll::Epoll(Socket* socket) : socket(socket) {
-    std::memset(&event, 0, sizeof(event));
-    epollfd = epoll_create(10); // ignored nowdays, it just need to be greater than 0
-    if (epollfd < 0) {
-        perror("epoll_create");
-        throw std::exception();
-    }
-    addEvent(socket->getSockid(), EPOLLIN);
-    // event.data.fd = socket->getSockid();
-    // event.events = EPOLLIN;
-    // if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSockid(), &event) == -1) {
-    //     perror("epoll_ctl");
-    //     throw std::exception();
-    // }
-}
+// Epoll::Epoll(Socket* socket) : socket(socket) {
+//     std::memset(&event, 0, sizeof(event));
+//     epollfd = epoll_create(10); // ignored nowdays, it just need to be greater than 0
+//     if (epollfd < 0) {
+//         perror("epoll_create");
+//         throw std::exception();
+//     }
+//     addEvent(socket->getSockid(), EPOLLIN);
+//     // event.data.fd = socket->getSockid();
+//     // event.events = EPOLLIN;
+//     // if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSockid(), &event) == -1) {
+//     //     perror("epoll_ctl");
+//     //     throw std::exception();
+//     // }
+// }
 
 Epoll::~Epoll() {
     close(epollfd);
+    for (itrServSock it = servSockets.begin();
+            it != servSockets.end(); it++)
+        delete it->second;
     // for (size_t i = 0; i < servSocket.size(); i++) {
     //     delete &servSocket[i];
     // }
 }
 
 void Epoll::addEvent(sock_fd fd, uint32_t events) {
-    fds.push_back(fd);
+    // fds.push_back(fd);
     event.data.fd = fd;
     event.events = events;
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event) == -1) {
@@ -189,12 +193,12 @@ void Epoll::delEvent(sock_fd fd) {
         perror("epoll_ctl");
         throw std::exception();
     }
-    for (size_t j = 0; j < fds.size(); j++) {
-        if (fds[j] == fd) {
-            fds.erase(fds.begin() + j);
-            break;
-        }
-    }
+    // for (size_t j = 0; j < fds.size(); j++) {
+    //     if (fds[j] == fd) {
+    //         fds.erase(fds.begin() + j);
+    //         break;
+    //     }
+    // }
 }
 
 // bool Epoll::eventOnServer(sock_fd fd) {
@@ -211,20 +215,21 @@ void Epoll::delEvent(sock_fd fd) {
 // }
 
 bool Epoll::eventOnServer(sock_fd fd) {
-    map<sock_fd, ServerSocket>::iterator it = servSockets.find(fd);
+    itrServSock it = servSockets.find(fd);
     if (it == servSockets.end())
     {
-        for (map<sock_fd, ServerSocket>::iterator it = servSockets.begin();
+        for (itrServSock it = servSockets.begin();
                 it != servSockets.end(); it++)
-            if (it->second.isClient(fd))
+        {
+            if (it->second->isClient(fd))
             {
-                servSock = &it->second;
-                // client  = &(servSock->getClients().find(fd)->second);
+                servSock = it->second;
                 return (false);
             }
-        return (false);
+        }
+        throw std::runtime_error("eventOnServer: fd not found");
     }
-    servSock = &it->second;
+    servSock = it->second;
     return (true);
 }
 
@@ -326,7 +331,7 @@ std::ostream& operator<<(std::ostream& os, SBuffer& buffer) {
     return (os);
 }
 
-Client::Client(sock_fd fd) : fd(fd), autoClose(false), state(NONE), buffer_pos(0), old_buffer(NULL) {
+Client::Client(sock_fd fd) : fd(fd), state(NONE), buffer_pos(0), old_buffer(NULL) {
 }
 
 Client::Client(const Client& other) {
@@ -336,7 +341,6 @@ Client::Client(const Client& other) {
     buffer_pos = other.buffer_pos;
     old_buffer = other.old_buffer;
     data = other.data;
-    autoClose = other.autoClose;
 }
 
 Client& Client::operator=(const Client& other) {
@@ -347,14 +351,12 @@ Client& Client::operator=(const Client& other) {
         buffer_pos = other.buffer_pos;
         old_buffer = other.old_buffer;
         data = other.data;
-        autoClose = other.autoClose;
     }
     return (*this);
 }
 
 Client::~Client() {
-    if (autoClose)
-        close(fd);
+    close(fd);
 }
 
 sock_fd Client::getFd() {
@@ -385,29 +387,26 @@ ssize_t Client::recieve() {
     return (bytes_read);
 }
 
-void Client::closeOnExit() {
-    autoClose = true;
-}
-
 ServerSocket::ServerSocket() : Socket() {
 }
 
 ServerSocket::ServerSocket(Server& serv) : Socket(serv), server(&serv) {
-    close_on_exit = false;
 }
 
 ServerSocket::ServerSocket(const ServerSocket& other) : Socket(other), server(other.server) {
-    close_on_exit = false;
 }
 
 ServerSocket::~ServerSocket() {
+    for (itrClient it = clients.begin();
+            it != clients.end(); it++)
+        delete it->second;
 }
 
 Server* ServerSocket::getServer() {
     return (server);
 }
 
-map<sock_fd, Client>& ServerSocket::getClients() {
+map<sock_fd, Client*>& ServerSocket::getClients() {
     return (clients);
 }
 
@@ -415,38 +414,37 @@ void ServerSocket::addClient(sock_fd fd) {
     cout    << "new client added on server " 
             << server->getInfo(HOST) << ":"
             << server->getInfo(PORT) << endl;
-    clients.insert(std::make_pair(fd, Client(fd)));
-    clients.at(fd).closeOnExit();
+    clients.insert(std::make_pair(fd, new Client(fd)));
 }
 
 void ServerSocket::removeClient(sock_fd fd) {
     cout    << "deleting client on server " 
             << server->getInfo(HOST) << ":"
             << server->getInfo(PORT) << endl;
-    clients.erase(fd);
+    itrClient it = clients.find(fd);
+    if (it == clients.end())
+        return ;
+    delete it->second;
+    clients.erase(it);
 }
 
 ssize_t ServerSocket::sendTo(sock_fd fd) {
-    map<sock_fd, Client>::iterator it = clients.find(fd);
+    itrClient it = clients.find(fd);
     if (it == clients.end())
         return (-1);
-    return (it->second.send());
+    return (it->second->send());
 }
 
 ssize_t ServerSocket::recieveFrom(sock_fd fd) {
-    map<sock_fd, Client>::iterator it = clients.find(fd);
+    itrClient it = clients.find(fd);
     if (it == clients.end())
         return (-1);
-    return (it->second.recieve());
+    return (it->second->recieve());
 }
 
 bool ServerSocket::isClient(sock_fd fd) {
     if (clients.find(fd) != clients.end())
         return (true);
     return (false);
-}
-
-void ServerSocket::closeOnExit() {
-    close_on_exit = true;
 }
 
