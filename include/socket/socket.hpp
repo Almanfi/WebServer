@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/14 22:42:32 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/15 23:01:35 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,12 @@
 
 # include "config.hpp"
 
+// # include "request.hpp"
+
 typedef int sock_fd;
 
-#define HOST "host"
-#define PORT "port"
+#define S_HOST "host"
+#define S_PORT "port"
 
 #define MAX_LISTEN 10 // max number of clients in the queue
 
@@ -65,8 +67,12 @@ public:
     // SBuffer(size_t size);
     void bzero();
     ssize_t recv(sock_fd fd, int flags);
-    size_t size();
-    void save();
+    ssize_t begin();
+    ssize_t size();
+    void clear();
+    bool empty();
+    bool skip(ssize_t from);
+    void save(ssize_t from);
     char* old();
     // char* end();
     char* operator&();
@@ -77,7 +83,8 @@ public:
 private:
     // size_t Size;
     ssize_t pos;
-    // ssize_t index;
+    ssize_t start;
+    ssize_t bytesSize;
     char *oldBuffer;
     char buffer[SBUFFER_SIZE];
     // char buff[SBUFFER_SIZE];
@@ -95,26 +102,51 @@ typedef enum {
     CLOSE
 }   cnx_state;
 
+typedef map<string, string>  KeyVal;
+
+//HTTP HEADERS
+# define CONTENT_LENGTH "Content-Length"
+# define CONTENT_TYPE "Content-Type"
+# define HOST "Host"
+# define CONNECTION "Connection"
+# define DATE "Date"
+# define SERVER "Server"
+# define LOCATION "Location"
+
+class SBuffer;
+
+class Request {
+public:
+    Request();
+    // Request(const Client& client);
+    ~Request();
+    Request(const Request& other);
+    Request& operator=(const Request& other);
+    void    parseHeaders(SBuffer& buffer);
+    ssize_t parseRequest(SBuffer& buffer, int fd);
+    bool headerComplete;
+    KeyVal headers;
+    string  body;
+};
+
 class Client {
 public:
     Client(sock_fd fd);
     Client(const Client& other);
     Client& operator=(const Client& other);
     ~Client();
+    void handle();
     sock_fd getFd();
     ssize_t send();
     ssize_t recieve();
     void readBuffer();
-    // void closeOnExit();
+    cnx_state& getState();
 private:
     sock_fd     fd;
     cnx_state   state;
-    // char        buffer[RECIEVE_MAX_SIZE];
-    // ssize_t     buffer_pos;
     SBuffer     buffer;
-    // bool        autoClose;
-    // char        buffer[RECIEVE_MAX_SIZE];
-    // char*       old_buffer;
+    Request     request;
+    // ClientConf* conf;
     string      data;
 };
 
@@ -154,6 +186,7 @@ private:
     void addEvent(sock_fd fd, uint32_t events);
     void delEvent(sock_fd fd);
     bool eventOnServer(sock_fd fd);
+    void handleClient(int i);
     map<sock_fd, ServerSocket*> servSockets;
     ServerSocket*   servSock;
     Client*         client;

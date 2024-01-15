@@ -1,0 +1,90 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   request.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
+/*   Updated: 2024/01/15 23:39:41 by maboulkh         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+// #include "request.hpp"
+#include "socket.hpp"
+
+Request::Request() : headerComplete(false) {
+}
+
+Request::~Request() {
+}
+
+Request::Request(const Request& other) {
+    *this = other;
+}
+
+Request& Request::operator=(const Request& other) {
+    if (this != &other) {
+        headers = other.headers;
+        body = other.body;
+    }
+    return (*this);
+}
+
+void Request::parseHeaders(SBuffer& buffer) {
+    cout << "parsing headers" << endl;
+    char *buff = &buffer;
+    cout << "reding buffer : " << buffer.size()<< endl;
+    ssize_t size = buffer.size() - buffer.begin();
+    ssize_t i = buffer.begin();
+    while (i < size) {
+        if (!(buff[i] == '\r' && buff[i + 1] == '\n'))
+        {
+            i++;
+            continue ;
+        }
+        cout << "i " << i << endl;
+        cout << "line is  = " << string(buff, i) << endl;
+        if (i == 0) {
+            cout << "got here" << endl;
+            buffer.skip(buff - &buffer + 2);
+            // buffer.save(buff - &buffer + 2);
+            headerComplete = true;
+            body.empty();
+            cout << "end of headers" << endl;
+            return ;
+        }
+        string  line(buff, i);
+        size_t  pos = line.find(": ");
+        if (pos != string::npos) {
+            string  key(line, 0, pos);
+            string  value(line, pos + 2);
+            headers.insert(std::make_pair(key, value));
+        }
+        else {
+            string  key(line, 0, line.find(" "));
+            string  value(line, line.find(" ") + 1);
+            headers.insert(std::make_pair(key, value));
+        }
+        buff += i + 2;
+        size -= i + 2;
+        i = 0;
+    }
+    if (buffer.skip(buff - &buffer) == false) // buffer overflowing with no headers end
+        throw std::runtime_error("bad request headers too long");
+}
+
+ssize_t    Request::parseRequest(SBuffer& buffer ,int fd) {
+    ssize_t byte_recieved = buffer.recv(fd, 0); // check flags later
+    if (!headerComplete)
+        parseHeaders(buffer);
+    if (headerComplete) {
+        cout << "body size : " << body.size() << endl; // debuging
+        if (!buffer.empty())
+            body.append(&buffer, buffer.size() - buffer.begin());
+        cout << "body size : " << body.size() << endl;
+        buffer.clear();
+        // buffer.save(0); // debuging
+    }
+    return (byte_recieved);
+};
