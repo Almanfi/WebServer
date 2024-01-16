@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/16 01:20:32 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/16 17:04:35 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,7 +134,8 @@ sock_fd Client::getFd() {
 
 ssize_t Client::send() {
     cout << "++++++++++++ send ++++++++++++" << endl;
-    std::string response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
+    // std::string response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
+    std::string response = "HTTP/1.1 300\r\nLocation: https://www.google.com/\r\n\r\n";
     ssize_t bytes_sent = ::send(fd, response.c_str(), response.size(), 0);
     if (bytes_sent == -1) {
         perror("send");
