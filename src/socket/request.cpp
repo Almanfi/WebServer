@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/15 23:39:41 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/16 00:54:30 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,9 +34,10 @@ Request& Request::operator=(const Request& other) {
 void Request::parseHeaders(SBuffer& buffer) {
     cout << "parsing headers" << endl;
     char *buff = &buffer;
-    cout << "reding buffer : " << buffer.size()<< endl;
-    ssize_t size = buffer.size() - buffer.begin();
-    ssize_t i = buffer.begin();
+    // cout << "reding buffer : " << buffer.size()<< endl;
+    cout << "buffer : " << buffer << endl;
+    ssize_t size = buffer.size();
+    ssize_t i = 0;
     while (i < size) {
         if (!(buff[i] == '\r' && buff[i + 1] == '\n'))
         {
@@ -81,7 +82,7 @@ ssize_t    Request::parseRequest(SBuffer& buffer ,int fd) {
     if (headerComplete) {
         cout << "body size : " << body.size() << endl; // debuging
         if (!buffer.empty())
-            body.append(&buffer, buffer.size() - buffer.begin());
+            body.append(&buffer, buffer.size());
         cout << "body size : " << body.size() << endl;
         buffer.clear();
         // buffer.save(0); // debuging

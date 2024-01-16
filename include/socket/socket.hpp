@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/15 23:01:35 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/16 00:42:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,26 +68,21 @@ public:
     void bzero();
     ssize_t recv(sock_fd fd, int flags);
     ssize_t begin();
+    ssize_t end();
+    
     ssize_t size();
     void clear();
     bool empty();
-    bool skip(ssize_t from);
-    void save(ssize_t from);
-    char* old();
-    // char* end();
+    bool skip(ssize_t offset);
     char* operator&();
-    char  operator*();
+    char&  operator*();
     char* operator+(size_t i);
     char* operator-(size_t i);
     char& operator[](size_t i);
 private:
-    // size_t Size;
-    ssize_t pos;
     ssize_t start;
-    ssize_t bytesSize;
-    char *oldBuffer;
+    ssize_t count;
     char buffer[SBUFFER_SIZE];
-    // char buff[SBUFFER_SIZE];
 };
 
 std::ostream& operator<<(std::ostream& os, SBuffer& buffer);

@@ -6,39 +6,24 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/15 23:32:39 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/16 01:20:32 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-
-SBuffer::SBuffer() : pos(0), start(0), bytesSize(0), oldBuffer(NULL) {
+SBuffer::SBuffer() : start(0), count(0) {
 }
 
-// SBuffer::SBuffer(size_t size) {
-// }
-
-SBuffer::SBuffer(const SBuffer& other) : pos(other.pos), start(0), bytesSize(0), oldBuffer(NULL) {
-    if (other.oldBuffer){
-        size_t size = other.oldBuffer - other.buffer;
-        this->oldBuffer = buffer + size;
-    }
-    std::memcpy(buffer, other.buffer, SBUFFER_SIZE);
+SBuffer::SBuffer(const SBuffer& other) : start(other.start), count(other.count) {
+    std::memcpy(buffer + start, other.buffer + start, count); // TODO is this safe? debug
 }
 
 SBuffer& SBuffer::operator=(const SBuffer& other) {
     if (this != &other) {
-        pos = other.pos;
-        bytesSize = other.bytesSize;
+        count = other.count;
         start = other.start;
-        if (other.oldBuffer) {
-            size_t size = other.oldBuffer - other.buffer;
-            this->oldBuffer = buffer + size;
-        }
-        else
-            oldBuffer = NULL;
-        std::memcpy(buffer, other.buffer, SBUFFER_SIZE);
+        std::memcpy(buffer + start, other.buffer + start, count);
     }
     return (*this);
 }
@@ -47,31 +32,23 @@ SBuffer::~SBuffer() {
 }
 
 char* SBuffer::operator&() {
-    return (buffer);
+    return (buffer + start);
 }
 
-char SBuffer::operator*() {
-    return (*buffer);
+char& SBuffer::operator*() {
+    return (*(buffer + start));
 }
 
 char* SBuffer::operator+(size_t i) {
-    return (buffer + i);
+    return (buffer + start + i);
 }
 
 char* SBuffer::operator-(size_t i) {
-    return (buffer - i);
+    return (buffer + start - i);
 }
 
 char& SBuffer::operator[](size_t i) {
-    return (buffer[i]);
-}
-
-// char* SBuffer::end() {
-//     return (oldBuffer);
-// }
-
-char* SBuffer::old() {
-    return (oldBuffer);
+    return (buffer[start + i]);
 }
 
 ssize_t SBuffer::begin() {
@@ -79,11 +56,15 @@ ssize_t SBuffer::begin() {
 }
 
 ssize_t SBuffer::size() {
-    return (start + bytesSize);
+    return (count);
+}
+
+ssize_t SBuffer::end() {
+    return (start + count);
 }
 
 bool SBuffer::empty() {
-    return (bytesSize == 0);
+    return (count == 0);
 }
 
 void SBuffer::bzero() {
@@ -91,50 +72,28 @@ void SBuffer::bzero() {
 }
 
 ssize_t SBuffer::recv(sock_fd fd, int flags) {
-    ssize_t recvSize = ::recv(fd, buffer + size(), SBUFFER_SIZE - size(), flags);
+    // if (end() == SBUFFER_SIZE) // TODO is this necesary? might delete data
+    //     clear(); //
+    ssize_t recvSize = ::recv(fd, buffer + end(), SBUFFER_SIZE - end(), flags);
     if (recvSize == -1) {
         perror("recv1");
         throw std::exception();
     }
-    bytesSize += recvSize;
+    count += recvSize;
     return (recvSize);
-    // pos = ::recv(fd, buffer + start, SBUFFER_SIZE - size(), flags);
-    // if (pos == -1) {
-    //     perror("recv1");
-    //     throw std::exception();
-    // }
-    // return (pos);
 }
 
-bool SBuffer::skip(ssize_t newStart) {
-    if (newStart > start + bytesSize)
+bool SBuffer::skip(ssize_t offset) {
+    if (offset > count)
         return (false);
-    bytesSize -= newStart - start;
-    start = newStart;
+    count -= offset;
+    start += offset;
     return (true);
 }
 
 void SBuffer::clear() {
     start = 0;
-    bytesSize = 0;
-}
-
-void SBuffer::save(ssize_t from) {
-    if (from <= start || from > size()) {
-        start = 0;
-        oldBuffer = NULL;
-        return ;
-    }
-    if (start == SBUFFER_SIZE || start == 0)
-    {
-        start = 0;
-        oldBuffer = NULL;
-    }
-    else {
-        start = start + from;
-        oldBuffer = buffer + from;
-        // pos -= from;
-    }
+    count = 0;
 }
 
 std::ostream& operator<<(std::ostream& os, SBuffer& buffer) {
@@ -145,16 +104,14 @@ std::ostream& operator<<(std::ostream& os, SBuffer& buffer) {
 
 Client::Client(sock_fd fd) : fd(fd), state(NONE) {
     buffer.clear();
+    data.clear();
 }
 
-Client::Client(const Client& other) {
-    fd = other.fd;
-    state = other.state;
-    buffer = other.buffer;
-    // std::memcpy(buffer, other.buffer, RECIEVE_MAX_SIZE);
-    // buffer_pos = other.buffer_pos;
-    // old_buffer = other.old_buffer;
-    data = other.data;
+Client::Client(const Client& other) : 
+                                    fd(other.fd),
+                                    state(other.state),
+                                    buffer(other.buffer),
+                                    data(other.data) {
 }
 
 Client& Client::operator=(const Client& other) {
@@ -162,9 +119,6 @@ Client& Client::operator=(const Client& other) {
         fd = other.fd;
         state = other.state;
         buffer = other.buffer;
-        // std::memcpy(buffer, other.buffer, RECIEVE_MAX_SIZE);
-        // buffer_pos = other.buffer_pos;
-        // old_buffer = other.old_buffer;
         data = other.data;
     }
     return (*this);
@@ -196,29 +150,13 @@ void Client::handle() {
 
 ssize_t Client::recieve() {
     cout << "++++++++++++ recieve ++++++++++++" << endl;
-    // ssize_t bytes_read = buffer.recv(fd, 0);
-    // ssize_t bytes_read = recv(fd, buffer, RECIEVE_MAX_SIZE, 0);
-    // ssize_t bytes_read = 0;
-    // this->buffer_pos = bytes_read;
-    // if (bytes_read == 0) {
-    //     std::cout << "Client disconnected" << std::endl;
-    //     // delEvent(events[i].data.fd);
-    // } else {
-    //     cout << "Received request: " << buffer << std::endl;
-    // }
     ssize_t bytes_received = request.parseRequest(buffer, fd);
-    // if (bytes_received == 0) {
-    if (buffer.empty()) { // check later
+    if (buffer.empty() && request.headerComplete) // TODO check later
         state = WRITE;
-    }
     return (bytes_received);
-    // for (ssize_t i = 0; i < bytes_read; i++)
-    //     data += buffer[i];
-    // return (bytes_read);
 }
 
 void Client::readBuffer() {
-    // cout.write(buffer, buffer_pos);
     cout    << "Received request: " << endl
             << buffer << std::endl;
 }

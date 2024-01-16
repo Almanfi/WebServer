@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/15 22:19:55 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/16 01:22:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,7 +92,8 @@ void Epoll::handleClient(int i) {
     cnx_state prevState = state;
     switch (state) {
         case READ:
-            client->recieve();
+            if (client->recieve() == 0)
+                state = CLOSE;
             break ;
         case WRITE:
             client->send();
@@ -106,7 +107,6 @@ void Epoll::handleClient(int i) {
             throw std::runtime_error("Client::handle: invalid state");
     }
     if (prevState == READ && state == WRITE) {
-        epoll_event event;
         int fd = events[i].data.fd;
         event.data.fd = fd;
         event.events = EPOLLOUT;
