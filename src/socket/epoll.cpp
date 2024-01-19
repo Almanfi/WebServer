@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 20:53:13 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 22:58:59 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,8 +30,8 @@ Epoll::Epoll(Config& config) {
                 cout << "duplicate server found" << endl;
                 cout << "server " << servers[i].getInfo(S_HOST) << ":"
                     << servers[i].getInfo(S_PORT) << " added to server "
-                    << it->second->getServer()->getInfo(S_HOST) << ":"
-                    << it->second->getServer()->getInfo(S_PORT) << endl;
+                    << it->second->getServers()[0]->getInfo(S_HOST) << ":"
+                    << it->second->getServers()[0]->getInfo(S_PORT) << endl;
                 break ;
             }
         }
@@ -43,22 +43,6 @@ Epoll::Epoll(Config& config) {
     }
     cout << "number of servers listening: " << servSockets.size() << endl;
 }
-
-// Epoll::Epoll(Socket* socket) : socket(socket) {
-//     std::memset(&event, 0, sizeof(event));
-//     epollfd = epoll_create(10); // ignored nowdays, it just need to be greater than 0
-//     if (epollfd < 0) {
-//         perror("epoll_create");
-//         throw std::exception();
-//     }
-//     addEvent(socket->getSockid(), EPOLLIN);
-//     // event.data.fd = socket->getSockid();
-//     // event.events = EPOLLIN;
-//     // if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSockid(), &event) == -1) {
-//     //     perror("epoll_ctl");
-//     //     throw std::exception();
-//     // }
-// }
 
 Epoll::~Epoll() {
     close(epollfd);

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 21:44:00 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 23:01:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,25 +39,6 @@ typedef int sock_fd;
 #define S_PORT "port"
 
 #define MAX_LISTEN 10 // max number of clients in the queue
-
-class Socket {
-public:
-    Socket();
-    Socket(const string& ip, const string& port);
-    Socket(const Server& serv);
-    virtual ~Socket();
-    void init();
-    sock_fd sockAccept();
-    sock_fd getSockid();
-    bool isDupulicate(Socket& other);
-protected:
-    void sockBind(addrinfo *res);
-    void sockListen();
-    addrinfo *res;
-    sock_fd sockid;
-    // bool close_on_exit;
-    // Server* server;
-};
 
 #define SBUFFER_SIZE 4096
 
@@ -151,14 +132,19 @@ private:
     // ClientConf* conf;
 };
 
-class ServerSocket : public Socket {
+class ServerSocket {
 public:
     ServerSocket();
     ServerSocket(Server& serv);
     ServerSocket(const ServerSocket& other);
     ServerSocket& operator=(const ServerSocket& other);
     virtual ~ServerSocket();
-    Server* getServer();
+
+    void init();
+    sock_fd sockAccept();
+    sock_fd getSockid();
+    bool isDupulicate(ServerSocket& other);
+
     map<sock_fd, Client*>& getClients();
     void addClient(sock_fd fd);
     void removeClient(sock_fd fd);
@@ -168,7 +154,10 @@ public:
     ssize_t recieveFrom(sock_fd fd);
     void addServer(Server& serv);
     Location& getLocation(const string& uri);
+    deque<Server*>& getServers();
 private:
+    addrinfo *res;
+    sock_fd sockid;
     typedef  map<sock_fd, Client*>::iterator itrClient;
     deque<Server*> servers;
     map<sock_fd, Client*> clients;
@@ -177,13 +166,9 @@ private:
 class Epoll {
 public:
     Epoll(Config& config);
-    // Epoll(Socket* socket);
     ~Epoll();
     void loop();
     void checkEvents(int n);
-    void removeSocket(Socket* socket);
-    void wait();
-    void setServer(Server* server);
 private:
     typedef map<sock_fd, ServerSocket*>::iterator itrServSock;
     void addEvent(sock_fd fd, uint32_t events);
@@ -195,10 +180,7 @@ private:
     Client*         client;
     epoll_event events[10];
     epoll_event event;
-    // Socket* socket;
     int epollfd;
-    // vector<int> fds;
-    // Server* server;
 };
 
 #endif // SOCKET_HPP
