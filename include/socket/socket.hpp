@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/16 00:42:47 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 21:44:00 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,11 +46,14 @@ public:
     Socket(const string& ip, const string& port);
     Socket(const Server& serv);
     virtual ~Socket();
+    void init();
     sock_fd sockAccept();
     sock_fd getSockid();
+    bool isDupulicate(Socket& other);
 protected:
     void sockBind(addrinfo *res);
     void sockListen();
+    addrinfo *res;
     sock_fd sockid;
     // bool close_on_exit;
     // Server* server;
@@ -124,9 +127,11 @@ public:
     string  body;
 };
 
+class ServerSocket;
+
 class Client {
 public:
-    Client(sock_fd fd);
+    Client(sock_fd fd, ServerSocket& servSock);
     Client(const Client& other);
     Client& operator=(const Client& other);
     ~Client();
@@ -141,8 +146,9 @@ private:
     cnx_state   state;
     SBuffer     buffer;
     Request     request;
-    // ClientConf* conf;
     string      data;
+    ServerSocket& servSock;
+    // ClientConf* conf;
 };
 
 class ServerSocket : public Socket {
@@ -160,9 +166,11 @@ public:
     bool isClient(sock_fd fd);
     ssize_t sendTo(sock_fd fd);
     ssize_t recieveFrom(sock_fd fd);
+    void addServer(Server& serv);
+    Location& getLocation(const string& uri);
 private:
     typedef  map<sock_fd, Client*>::iterator itrClient;
-    Server* server;
+    deque<Server*> servers;
     map<sock_fd, Client*> clients;
 };
 

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/16 17:04:35 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 21:38:24 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,7 +102,7 @@ std::ostream& operator<<(std::ostream& os, SBuffer& buffer) {
     return (os);
 }
 
-Client::Client(sock_fd fd) : fd(fd), state(NONE) {
+Client::Client(sock_fd fd, ServerSocket& servSock) : fd(fd), state(NONE), servSock(servSock) {
     buffer.clear();
     data.clear();
 }
@@ -111,7 +111,8 @@ Client::Client(const Client& other) :
                                     fd(other.fd),
                                     state(other.state),
                                     buffer(other.buffer),
-                                    data(other.data) {
+                                    data(other.data),
+                                    servSock(other.servSock){
 }
 
 Client& Client::operator=(const Client& other) {

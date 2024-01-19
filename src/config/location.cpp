@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/10 18:48:12 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 21:12:32 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -160,7 +160,9 @@ Location& Location::getLocation(const string& location) {
                 return (inLoc[i]->getLocation(location));
             }
         }
-        size_t pos = loc.rfind("/") == string::npos ? 0 : loc.rfind("/");
+        size_t pos = loc.rfind("/");
+        if (pos == string::npos)
+            pos = 0;
         loc = loc.substr(0, pos);
     }
     return (*this);

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/13 22:00:37 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 17:49:17 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,22 +99,22 @@ void Server::setServerInfo(string& token) {
 }
 
 const string& Server::validateIp(const string& ip) {
-    std::stringstream ss(ip);
-    int num;
-    char dot;
+    // std::stringstream ss(ip);
+    // int num;
+    // char dot;
 
-    ss >> num;
-    if (ss.fail() || num < 0 || num > 255)
-        throw std::runtime_error("Invalid IP address");
-    int i = 0;
-    while (i++ < 3 && ss >> dot >> num) {
-        if (ss.fail() || dot != '.')
-            throw std::runtime_error("Invalid IP address");
-        if (num < 0 || num > 255)
-            throw std::runtime_error("Invalid IP address");
-    }
-    if (!ss.eof() || i != 4)
-        throw std::runtime_error("Invalid IP address");
+    // ss >> num;
+    // if (ss.fail() || num < 0 || num > 255)
+    //     throw std::runtime_error("Invalid IP address");
+    // int i = 0;
+    // while (i++ < 3 && ss >> dot >> num) {
+    //     if (ss.fail() || dot != '.')
+    //         throw std::runtime_error("Invalid IP address");
+    //     if (num < 0 || num > 255)
+    //         throw std::runtime_error("Invalid IP address");
+    // }
+    // if (!ss.eof() || i != 4)
+    //     throw std::runtime_error("Invalid IP address");
     return (ip);
 }
 int Server::validatePort(const string& portStr) {

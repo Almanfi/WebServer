@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/16 01:22:47 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 20:53:13 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,22 @@ Epoll::Epoll(Config& config) {
     }
     for (size_t i = 0; i < servers.size(); i++) {
         ServerSocket*   tmp = new ServerSocket(servers[i]);
+        for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
+            if (tmp->isDupulicate(*it->second)) {
+                it->second->addServer(servers[i]);
+                delete tmp;
+                tmp = NULL;
+                cout << "duplicate server found" << endl;
+                cout << "server " << servers[i].getInfo(S_HOST) << ":"
+                    << servers[i].getInfo(S_PORT) << " added to server "
+                    << it->second->getServer()->getInfo(S_HOST) << ":"
+                    << it->second->getServer()->getInfo(S_PORT) << endl;
+                break ;
+            }
+        }
+        if (!tmp)
+            continue ;
+        tmp->init();
         servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
         addEvent(tmp->getSockid(), EPOLLIN);
     }

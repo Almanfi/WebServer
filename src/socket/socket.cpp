@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/25 12:36:29 by bamrouch          #+#    #+#             */
-/*   Updated: 2024/01/15 20:16:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/19 21:48:33 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,6 @@ Socket::Socket(const string& ip, const string& port) {
 }
 
 Socket::Socket(const Server& serv) {
-    addrinfo *res;
     addrinfo hints;
     std::memset(&hints, 0, sizeof(addrinfo));
     hints.ai_family = AF_INET;
@@ -54,6 +53,9 @@ Socket::Socket(const Server& serv) {
         std::cerr << "getaddrinfo: " << gai_strerror(status) << std::endl;
         throw std::exception();
     }
+}
+
+void Socket::init() {
     sockid = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (sockid == -1) {
         perror("socket");
@@ -66,11 +68,18 @@ Socket::Socket(const Server& serv) {
     }
     sockBind(res);
     sockListen();
-    freeaddrinfo(res);
+}
+
+bool Socket::isDupulicate(Socket& other) {
+    if (res->ai_addrlen == other.res->ai_addrlen
+        && std::memcmp(res->ai_addr, other.res->ai_addr, res->ai_addrlen) == 0)
+            return (true);
+    return (false);
 }
 
 Socket::~Socket() {
     // if (close_on_exit)
+    freeaddrinfo(res);
     close(sockid);
 }
 
