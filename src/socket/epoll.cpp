@@ -6,13 +6,14 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 04:29:45 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 08:15:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
 Epoll::Epoll(Config& config) {
+    Header::initHeadersRules();
     std::memset(&event, 0, sizeof(event));
     deque<Server>& servers =  config.getServers();
     epollfd = epoll_create(10);// ignored nowdays, it just need to be greater than 0

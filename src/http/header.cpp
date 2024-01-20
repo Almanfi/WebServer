@@ -6,13 +6,13 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/20 07:06:09 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 08:34:21 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Header::Header() : flags(0){
+Header::Header() : flags(0), method(INVALID) {
 }
 
 Header::Header(const Header &src) : keyVal(src.keyVal), flags(src.flags) {
@@ -36,41 +36,33 @@ void Header::checkHeadersConflicts () {
 }
 
 void Header::checkRequiredHeaders() {
-    // if (!HAS_REQUEST_LINE(flags))
-    //     throw std::runtime_error("Missing Request-Line");
-    // if (!HAS_HOST(flags))
-    //     throw std::runtime_error("Missing Host");
-    // if (method == POST) {
-    //     if (!HAS_CONTENT_LENGTH(flags) && !HAS_TRANSFER_ENCODING(flags))
-    //         throw std::runtime_error("Missing Content-Length");
-    //     if (!HAS_CONTENT_TYPE(flags)) // TODO check if content type is really mandatory
-    //         throw std::runtime_error("Missing Content-Type");
-    // }
+    if (method == INVALID)
+        throw std::runtime_error("Missing Request-Line");
+    if (!HAS_HOST(flags))
+        throw std::runtime_error("Missing Host");
+    if (method == POST) {
+        if (!HAS_CONTENT_LENGTH(flags) && !HAS_TRANSFER_ENCODING(flags))
+            throw std::runtime_error("Missing Content-Length");
+        if (!HAS_CONTENT_TYPE(flags)) // TODO check if content type is really mandatory
+            throw std::runtime_error("Missing Content-Type");
+    }
 }
 
 void Header::check() {
-    cout << "checking headers" << endl;
     checkHeadersConflicts();
     checkRequiredHeaders();
-    cout << "headers are ok" << endl;
 }
 
 void Header::insertHeader(const string& key, const string& value) {
     validateHeader(key, value);
-    cout << "inserting header : " << key << " : " << value << endl;
     keyVal.insert(std::make_pair(key, value));
-    cout << "header inserted" << endl;
 }
 
 void Header::validateHeader(const string& key, const string& value) {
     if (validationMap.find(key) != validationMap.end())
         (this->*validationMap[key])(value);
     else
-    {
-        cout << "othere header bro" << endl;
-        cout << "key : " << key << endl;
         validateOther(key, value);
-    }
 }
 
 void Header::validateHeader(KeyVal::const_iterator& header) {
@@ -97,13 +89,14 @@ void Header::validateRequestLine(const string& value) {
         throw std::runtime_error("Method Not Implemented");
     else
         throw std::runtime_error("Invalid METHOD");
-    pos = value.find(" ", pos + 1);
+    size_t start = pos + 1;
+    pos = value.find(" ", start);
     if (pos == string::npos)
         throw std::runtime_error("Invalid Request-Line");
-    string uri = value.substr(0, pos);
+   uri = value.substr(start , pos - start);
     if (uri[0] != '/')
         throw std::runtime_error("Invalid URI");
-    string version = value.substr(0, pos + 1);
+    string version = value.substr(pos + 1);
     if (version != HTTP_VERSION)
         throw std::runtime_error("Invalid HTTP-Version");
     cout << "flags1 : " << flags << endl;
@@ -237,6 +230,9 @@ void Header::validateServer(const string& value) {
 }
 
 void Header::validateOther(const string& key, const string& value) {
+    if (std::binary_search(httpAllowedMethods.begin(), httpAllowedMethods.end(), key)
+        || std::binary_search(httpOtherMethods.begin(), httpOtherMethods.end(), key))
+        validateRequestLine(key + " " + value);
     if (key.empty() || value.empty())
         throw std::runtime_error("Invalid Header");
 }

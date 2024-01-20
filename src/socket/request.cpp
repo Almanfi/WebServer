@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 06:51:24 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 08:18:25 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,6 @@ void Request::parseHeaders(SBuffer& buffer) {
             i++;
             continue ;
         }
-        cout << "i " << i << endl;
         cout << "line is  = " << string(buff, i) << endl;
         if (i == 0) {
             cout << "got here" << endl;

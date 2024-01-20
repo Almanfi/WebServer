@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/12 14:17:33 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 08:35:45 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,34 +92,10 @@ void Config::set(const string& token) {
     if (it == directive.end()) {
         throw locExp::DIRECT_NOT_VALID();
     }
-    // if (info.find(token) != info.end()) {
-    //     throw locExp::DIRECT_ALREADY_SET();
-    // }
     if (token == "server") {
         setServer();
         return ;
     }
-    // int count = 0;
-    // string value = "";
-    // string newToken = "";
-    // while (true) {
-    //     newToken = p.getToken();
-    //     if (newToken == ";") {
-    //         break;
-    //     }
-    //     if (count > 1) {
-    //         value += " ";
-    //     }
-    //     value += newToken;
-    //     count++;
-    //     if (it->second && it->second < count) {
-    //         throw locExp::TOO_MANY_ARGS();
-    //     }
-    // }
-    // // if (newToken != ";") { // unnecessary!
-    // //     throw locExp::DIRECT_NOT_VALID();
-    // // }
-    // info[token] = value;
 }
 
 deque<Location>& Config::getLocations() {
@@ -130,21 +106,6 @@ Location& Config::getLocation(const string& uri) {
     string server_name = uri.substr(0, uri.find("/"));
     string location = uri.substr(uri.find("/") + 1);
     Server* serv = NULL;
-    // for (deque<Location>::iterator it = locations.begin(); it != locations.end(); it++) {
-    //     string server_names = it->getInfo("server_name");
-    //     size_t pos = server_names.find(server_name);
-    //     if (pos == string::npos || ((server_names[pos + server_name.size()] != ' ' && server_names[pos + server_name.size()] != '\0'))
-    //         || (pos!= 0 && server_names[pos - 1] != ' ')) {
-    //         continue;
-    //     }
-    //     if (it->getInfo("server_name").find(server_name) != string::npos && ) {
-    //         serv = &(*it);
-    //         break;
-    //     }
-    //     if (it->getUri() == uri) {
-    //         return *it;
-    //     }
-    // }
     for (deque<Server>::iterator it = servers.begin(); it != servers.end(); it++) {
         for (size_t i = 0; i < it->server_name.size(); i++) {
             if (it->server_name[i] == server_name) {
