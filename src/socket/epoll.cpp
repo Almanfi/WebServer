@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 22:58:59 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 04:29:45 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,22 +67,40 @@ void Epoll::delEvent(sock_fd fd) {
     }
 }
 
+void Epoll::addClient(sock_fd fd, uint32_t events) {
+    cout    << "new client added on server " 
+            << servSock->getServers()[0]->getInfo(S_HOST) << ":"
+            << servSock->getServers()[0]->getInfo(S_PORT) << endl;
+    clients.insert(std::make_pair(fd, new Client(fd, *servSock)));
+    addEvent(fd, events);
+}
+
+void Epoll::delClient(sock_fd fd) {
+    cout    << "deleting client on server "
+            << client->getServer().getInfo(S_HOST) << ":"
+            << client->getServer().getInfo(S_PORT) << endl;
+    itrClient it = clients.find(fd);
+    if (it == clients.end())
+        return ;
+    delEvent(fd);
+    delete it->second;
+    clients.erase(it);
+}
+
 bool Epoll::eventOnServer(sock_fd fd) {
-    client = NULL;
-    itrServSock it = servSockets.find(fd);
-    if (it != servSockets.end())
+    itrServSock servIt = servSockets.find(fd);
+    if (servIt != servSockets.end())
     {
-        servSock = it->second;
+        servSock = servIt->second;
         return (true);
     }
-    for (itrServSock it = servSockets.begin();
-            it != servSockets.end(); it++)
+    itrClient clientIt = clients.find(fd);
+    if (clientIt != clients.end())
     {
-        client = it->second->getClient(fd);
-        if (client)
-            return (false);
+        client = clientIt->second;
+        return (false);
     }
-    throw std::runtime_error("eventOnServer: fd not found");
+    throw std::runtime_error("Epoll::eventOnServer: invalid fd");
 }
 
 void Epoll::handleClient(int i) {
@@ -100,8 +118,7 @@ void Epoll::handleClient(int i) {
             break ;
         case CLOSE:
             cout << "++++++++++++ closing ++++++++++++" << endl;
-            delEvent(events[i].data.fd);
-            servSock->removeClient(events[i].data.fd);
+            delClient(events[i].data.fd);
             break ;
         default:
             throw std::runtime_error("Client::handle: invalid state");
@@ -115,15 +132,13 @@ void Epoll::handleClient(int i) {
             throw std::exception();
         }
     }
-    // if state chaged from READ to WRITE  change event to EPOLLOUT
 }
 
 void Epoll::checkEvents(int n) {
     for (int i = 0; i < n; i++) {
         if (eventOnServer(events[i].data.fd)) {
             sock_fd client_fd = servSock->sockAccept();
-            servSock->addClient(client_fd);
-            addEvent(client_fd, EPOLLIN);
+            addClient(client_fd, EPOLLIN);
             std::cout << "New client connected" << std::endl;
         } else
             handleClient(i);

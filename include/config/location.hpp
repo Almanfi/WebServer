@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/15 16:39:39 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 03:37:00 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,7 @@
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
 
-# include "configFlag.hpp"
-
-typedef Location ClientConf;
+# include "definition.hpp"
 
 class Location {
 public:

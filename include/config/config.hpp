@@ -6,14 +6,14 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/12 14:17:42 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 03:36:21 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
 
-# include "configFlag.hpp"
+# include "definition.hpp"
 # include "parser.hpp"
 # include "server.hpp"
 # include "location.hpp"

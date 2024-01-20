@@ -6,14 +6,14 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:43:49 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/13 21:57:07 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 03:36:11 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 # define SERVER_HPP
 
-# include "configFlag.hpp"
+# include "definition.hpp"
 
 class Server {
 public:

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 22:56:28 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 04:35:38 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,9 +43,9 @@ ServerSocket::ServerSocket(const ServerSocket& other) : res(NULL), sockid(other.
 }
 
 ServerSocket::~ServerSocket() {
-    for (itrClient it = clients.begin();
-            it != clients.end(); it++)
-        delete it->second;
+    // for (itrClient it = clients.begin();
+    //         it != clients.end(); it++)
+    //     delete it->second;
     freeaddrinfo(res);
     close(sockid);
 }
@@ -128,53 +128,4 @@ Location& ServerSocket::getLocation(const string& uri) {
 
 deque<Server*>& ServerSocket::getServers() {
     return (servers);
-}
-
-map<sock_fd, Client*>& ServerSocket::getClients() {
-    return (clients);
-}
-
-void ServerSocket::addClient(sock_fd fd) {
-    cout    << "new client added on server " 
-            << servers[0]->getInfo(S_HOST) << ":"
-            << servers[0]->getInfo(S_PORT) << endl;
-    clients.insert(std::make_pair(fd, new Client(fd, *this)));
-}
-
-void ServerSocket::removeClient(sock_fd fd) {
-    cout    << "deleting client on server " 
-            << servers[0]->getInfo(S_HOST) << ":"
-            << servers[0]->getInfo(S_PORT) << endl;
-    itrClient it = clients.find(fd);
-    if (it == clients.end())
-        return ;
-    delete it->second;
-    clients.erase(it);
-}
-
-ssize_t ServerSocket::sendTo(sock_fd fd) {
-    itrClient it = clients.find(fd);
-    if (it == clients.end())
-        return (-1);
-    return (it->second->send());
-}
-
-ssize_t ServerSocket::recieveFrom(sock_fd fd) {
-    itrClient it = clients.find(fd);
-    if (it == clients.end())
-        return (-1);
-    return (it->second->recieve());
-}
-
-bool ServerSocket::isClient(sock_fd fd) {
-    if (clients.find(fd) != clients.end())
-        return (true);
-    return (false);
-}
-
-Client* ServerSocket::getClient(sock_fd fd) {
-    itrClient it = clients.find(fd);
-    if (it == clients.end())
-        return (NULL);
-    return (it->second);
 }
