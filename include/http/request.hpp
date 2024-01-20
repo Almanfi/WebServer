@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 23:38:37 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 05:19:39 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,8 @@ public:
     void    parseHeaders(SBuffer& buffer);
     ssize_t parseRequest(SBuffer& buffer, int fd);
     bool headerComplete;
-    KeyVal headers;
+    Header  headers;
+    // KeyVal headers;
     string  body;
 };
 

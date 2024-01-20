@@ -6,11 +6,10 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/16 00:54:30 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 06:51:24 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-// #include "request.hpp"
 #include "socket.hpp"
 
 Request::Request() : headerComplete(false) {
@@ -38,6 +37,7 @@ void Request::parseHeaders(SBuffer& buffer) {
     cout << "buffer : " << buffer << endl;
     ssize_t size = buffer.size();
     ssize_t i = 0;
+    
     while (i < size) {
         if (!(buff[i] == '\r' && buff[i + 1] == '\n'))
         {
@@ -60,12 +60,14 @@ void Request::parseHeaders(SBuffer& buffer) {
         if (pos != string::npos) {
             string  key(line, 0, pos);
             string  value(line, pos + 2);
-            headers.insert(std::make_pair(key, value));
+            headers.insertHeader(key, value);
+            // headers.insert(std::make_pair(key, value));
         }
         else {
             string  key(line, 0, line.find(" "));
             string  value(line, line.find(" ") + 1);
-            headers.insert(std::make_pair(key, value));
+            headers.insertHeader(key, value);
+            // headers.insert(std::make_pair(key, value));
         }
         buff += i + 2;
         size -= i + 2;
@@ -79,7 +81,8 @@ ssize_t    Request::parseRequest(SBuffer& buffer ,int fd) {
     ssize_t byte_recieved = buffer.recv(fd, 0); // check flags later
     if (!headerComplete)
         parseHeaders(buffer);
-    if (headerComplete) {
+   if (headerComplete) {
+        headers.check();
         cout << "body size : " << body.size() << endl; // debuging
         if (!buffer.empty())
             body.append(&buffer, buffer.size());

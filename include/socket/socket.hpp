@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 03:51:51 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/20 05:19:45 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include "definition.hpp"
 # include "config.hpp"
 # include "sbuffer.hpp"
+# include "header.hpp"
 # include "request.hpp"
 # include "client.hpp"
 # include "serverSocket.hpp"
