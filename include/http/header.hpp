@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/20 06:45:21 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/21 14:35:05 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,7 +80,6 @@ public:
     Header &operator=(const Header &rhs);
     ~Header();
    
-    void validateHeaders();
     void validateHeader(const string& key, const string& value);
     void validateHeader(KeyVal::const_iterator& header);
     

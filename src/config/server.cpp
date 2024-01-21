@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 17:49:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/21 18:12:58 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ void Server::setAllowedDirective() {
     }
     directive.insert(std::make_pair("server_name", 0));
     directive.insert(std::make_pair("listen", 1));
-    directive.insert(std::make_pair("error_page", 0));
+    // directive.insert(std::make_pair("error_page", 0));
 }
 
 map<string, int> Server::directive;
@@ -26,7 +26,6 @@ map<string, int> Server::directive;
 Server::Server(Config& c, Parser& p) : c(c), p(p) {
     setAllowedDirective();
 }
-
 
 Server::~Server() {
 }
@@ -50,6 +49,11 @@ void Server::setNewLocation() {
         stringstream ss;
         ss << p.getLineNum();
         throw std::runtime_error("Error: Missing uri at line " + ss.str());
+    }
+    if (uri[0] != '/') {
+        stringstream ss;
+        ss << p.getLineNum();
+        throw std::runtime_error("Error: Invalid uri at line " + ss.str());
     }
     allLoc.push_back(Location(c, *this, p, uri));
     Location& loc = allLoc.back();

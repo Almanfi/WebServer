@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 21:12:32 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/21 18:02:23 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,15 +31,134 @@ void Location::setAlloedDirective() {
     directive.insert(std::make_pair("autoindex", 1));
     directive.insert(std::make_pair("client_max_body_size", 1));
     directive.insert(std::make_pair("cgi", 0));
-    directive.insert(std::make_pair("upload_store", 1));
-    directive.insert(std::make_pair("upload_pass", 1));
-    directive.insert(std::make_pair("upload_pass_args", 1));
     directive.insert(std::make_pair("methods", 0));
     directive.insert(std::make_pair("return", 1));
-    directive.insert(std::make_pair("auth_basic", 1));
-    directive.insert(std::make_pair("auth_basic_user_file", 1));
-    directive.insert(std::make_pair("access_log", 1));
+    directive.insert(std::make_pair("error_page", 1));
 }
+
+map<string, void (Location::*) (const string&)> Location::validationMap;
+vector<string> Location::httpAllowedMethods;
+
+void Location::initValidationMap() {
+    if (!validationMap.empty()) {
+        return ;
+    }
+    validationMap.insert(std::make_pair("root", &Location::validateRoot));
+    validationMap.insert(std::make_pair("index", &Location::validateIndex));
+    validationMap.insert(std::make_pair("autoindex", &Location::validateAutoindex));
+    validationMap.insert(std::make_pair("client_max_body_size", &Location::validateClientMaxBodySize));
+    validationMap.insert(std::make_pair("cgi", &Location::validateCgi));
+    validationMap.insert(std::make_pair("methods", &Location::validateMethods));
+    validationMap.insert(std::make_pair("return", &Location::validateReturn));
+    validationMap.insert(std::make_pair("error_page", &Location::validateErrorPage));
+
+    httpAllowedMethods.push_back("GET");
+    httpAllowedMethods.push_back("POST");
+    httpAllowedMethods.push_back("DELETE");
+}
+
+void Location::validateDirective(const string& key, const string& value) {
+    map<string, void (Location::*) (const string&)>::iterator it = validationMap.find(key);
+    if (it == validationMap.end()) {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+    (this->*(it->second))(value);
+}
+
+void Location::validateRoot(const string& value) {
+    if (value.empty() || value[0] != '/') {
+        throw std::runtime_error("Error: Invalid path");
+    }
+    if (value.find(" ") != string::npos) {
+        throw std::runtime_error("Error: path has too many args");
+    }
+}
+
+void Location::validateIndex(const string& value) {
+    if (value.empty()) {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+}
+
+void Location::validateAutoindex(const string& value) {
+    if (value != "on" && value != "off") {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+}
+
+void Location::validateClientMaxBodySize(const string& value) {
+    stringstream ss(value);
+    ssize_t val;
+    ss >> val;
+    if (value.empty() || ss.fail() || val < 0) {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+}
+
+void Location::validateCgi(const string& value) {
+    if (value.empty() || (value != "on" && value != "off")) {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+}
+//TODO come back add allowed methods
+void Location::validateMethods(const string& value) {
+    if (value.empty()) {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+    stringstream ss(value);
+    vector<string>& allowed = httpAllowedMethods;
+    string method;
+    while (ss >> method) {
+        if (method.empty()
+            || std::find(allowed.begin(), allowed.end(), method) == allowed.end()) {
+            throw std::runtime_error("Error: Invalid method");
+        }
+    }
+}
+
+void Location::validateReturn(const string& value) {
+    if (value.empty()) {
+        throw locExp::DIRECT_NOT_VALID();
+    }
+}
+
+void Location::validateErrorPage(const string& value) {
+    stringstream ss(value);
+    int val;
+    int count = 0;
+    while (ss >> val) {
+        count++;
+        if (val < 300 || val > 599)
+            throw std::runtime_error("Error: Invalid status code");
+    }
+    if (count == 0)
+        throw std::runtime_error("no status code");
+    ss.clear();
+    string path;
+    ss >> path;
+    if (ss.fail() || path.empty() || path[0] != '/') {
+        throw std::runtime_error("Error: Invalid path");
+    }
+    string extra;
+    ss >> extra;
+    if (!extra.empty() || !ss.eof()) {
+        throw std::runtime_error("Error: extra arguments for error_page");
+    }
+}
+
+void Location::insertDirective(const string& key, const string& value) {
+    validateDirective(key, value);
+    KeyVal::iterator it = info.find(key);
+    if (it != info.end()) {
+        if (key == "error_page") {
+            it->second += " ; " + value;
+            return ;
+        }
+        throw locExp::DIRECT_ALREADY_SET();
+    }
+    info.insert(std::make_pair(key, value));
+}
+
 
 void Location::addToInLoc(Location* loc) {
     inLoc.push_back(loc);
@@ -53,13 +172,18 @@ void Location::setNewLoc() {
         ss << p.getLineNum();
         throw std::runtime_error("Error: Missing uri at line " + ss.str());
     }
+    if (uri[0] != '/') {
+        stringstream ss;
+        ss << p.getLineNum();
+        throw std::runtime_error("Error: Invalid uri at line " + ss.str());
+    }
     allLoc.push_back(Location(c, serv, p, uri));
     Location& loc = allLoc.back();
     loc.set();
     addToInLoc(&loc);
 }
 
-void Location::set() {
+void Location:: set() {
     vector<configScope>& scope = p.getScopes();
     scope.push_back(LOCATION);
     if (p.getToken() != "{") {
@@ -83,7 +207,6 @@ void Location::set() {
         throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
     }
     scope.pop_back();
-    checkLocationInfo();
 }
 
 string& Location::getUri() const {
@@ -94,13 +217,6 @@ void Location::setLocationInfo(string& token) {
     if (token == "location") {
         setNewLoc();
         return ;
-    }
-    map<string, int>::iterator it = directive.find(token);
-    if (it == directive.end()) {
-        throw locExp::DIRECT_NOT_VALID();
-    }
-    if (info.find(token) != info.end()) {
-        throw locExp::DIRECT_ALREADY_SET();
     }
     int count = 0;
     string value = "";
@@ -116,16 +232,9 @@ void Location::setLocationInfo(string& token) {
         value += newToken;
         count++;
     }
-    if (it->second && it->second != count) {
-        throw locExp::TOO_MANY_ARGS();
-    }
-    info[token] = value;
+    insertDirective(token, value);
     token = newToken;
 }
-
-void Location::checkLocationInfo() {
-}
-
 
 string Location::getInfo(const string& key) {
     map<string, string>::iterator it = info.find(key);
@@ -145,8 +254,12 @@ void Location::print(int space) {
 void Location::propagate() {
     for (size_t i = 0; i < inLoc.size(); i++) {
         for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
-            if (inLoc[i]->info.find(it->first) == inLoc[i]->info.end())
+            KeyVal::iterator infoIt = inLoc[i]->info.find(it->first);
+            if (infoIt == inLoc[i]->info.end())
                 inLoc[i]->info.insert(std::make_pair(it->first, it->second));
+            else if (it->first == "error_page") {
+                infoIt->second += " ; " + it->second;
+            }
         }
         inLoc[i]->propagate();
     }
@@ -178,12 +291,27 @@ void Location::printThis(int space) {
     cout << sp << "   *autoindex\t\t\tis " << getInfo("autoindex") << endl;
     cout << sp << "   *client_max_body_size\tis " << getInfo("client_max_body_size") << endl;
     cout << sp << "   *cgi\t\t\t\tis " << getInfo("cgi") << endl;
-    cout << sp << "   *upload_store\t\tis " << getInfo("upload_store") << endl;
-    cout << sp << "   *upload_pass\t\t\tis " << getInfo("upload_pass") << endl;
-    cout << sp << "   *upload_pass_args\t\tis " << getInfo("upload_pass_args") << endl;
     cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
     cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
-    cout << sp << "   *auth_basic\t\t\tis " << getInfo("auth_basic") << endl;
-    cout << sp << "   *auth_basic_user_file\tis " << getInfo("auth_basic_user_file") << endl;
-    cout << sp << "   *access_log\t\t\tis " << getInfo("access_log") << endl;
+    cout << sp << "   *error page\t\t\tis " << getInfo("error_page") << endl;
+}
+
+string Location::getErrorPage(const string& code) {
+    string errorPageStr = getInfo("error_page");
+    size_t pos = errorPageStr.find(code);
+    if (pos == string::npos) {
+        return ("");
+    }
+    size_t start = errorPageStr.find("/", pos);
+    size_t end = errorPageStr.find(" ", start);
+    return (errorPageStr.substr(start, end - start));
+}
+
+bool Location::isAllowedMethod(const string& method) {
+    string methods = getInfo("methods");
+    if (methods.empty())
+        methods = c.getDefault().find("methods")->second;
+    if (methods.find(method) == string::npos)
+        return (false);
+    return (true);
 }

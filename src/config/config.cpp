@@ -6,14 +6,21 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 08:35:45 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/21 18:08:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/config.hpp"
 
 Config::Config(const std::string& filePath) : p(filePath) {
+    Location::initValidationMap();
     setAlloedDirective();
+    defaultConfig.insert(std::make_pair("root", "www"));
+    defaultConfig.insert(std::make_pair("index", "index.html"));
+    defaultConfig.insert(std::make_pair("autoindex", "on"));
+    defaultConfig.insert(std::make_pair("client_max_body_size", "1m"));
+    defaultConfig.insert(std::make_pair("cgi", "off"));
+    defaultConfig.insert(std::make_pair("methods", "GET"));
 }
 
 Config::~Config() {
@@ -104,7 +111,7 @@ deque<Location>& Config::getLocations() {
 
 Location& Config::getLocation(const string& uri) {
     string server_name = uri.substr(0, uri.find("/"));
-    string location = uri.substr(uri.find("/") + 1);
+    string location = uri.substr(uri.find("/"));
     Server* serv = NULL;
     for (deque<Server>::iterator it = servers.begin(); it != servers.end(); it++) {
         for (size_t i = 0; i < it->server_name.size(); i++) {
@@ -126,6 +133,10 @@ Location& Config::getLocation(const string& uri) {
 
 deque<Server>& Config::getServers() {
     return (servers);
+}
+
+const KeyVal& Config::getDefault() const {
+    return (defaultConfig);
 }
 
 void Config::print () {
