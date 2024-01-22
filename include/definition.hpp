@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:44:54 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/22 22:20:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/22 22:30:05 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::ostream;
+using std::fstream;
 using std::stringstream;
 using std::string;
 using std::map;

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 20:19:57 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/22 22:17:42 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/22 23:04:06 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ public:
     bool operator!=(const UUID& other) const;
     bool operator!=(const string& other) const;
     bool operator!=(const int* other) const;
+    void regen();
 
     static void generate(int* uuid);
     static string strGen(char* uuid);

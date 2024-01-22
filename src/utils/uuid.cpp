@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 22:18:34 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/22 22:21:42 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/22 23:05:38 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,14 +68,14 @@ void bitManip<T>::reverseBits(T* T_uuid, int T_nbr) {
 
 
 UUID::UUID() {
-    generate(val);
     std::memset(val, 0, sizeof(val));
+    generate(val);
     str = strGen((char*)val);
 }
 
 UUID::UUID(const string& uuid_str) {
-    str = uuid_str;
     std::memset(val, 0, sizeof(val));
+    str = uuid_str;
     strToVal(str, (char*)val);
 }
 
@@ -86,6 +86,11 @@ UUID::UUID(const int* uuid_val) {
 }
 
 UUID::~UUID() {
+}
+
+void UUID::regen() {
+    generate(val);
+    str = strGen((char*)val);
 }
 
 long UUID::secret = 113;

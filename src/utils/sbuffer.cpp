@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 23:35:35 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/22 23:51:34 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,6 +102,6 @@ void SBuffer::clear() {
 
 std::ostream& operator<<(std::ostream& os, SBuffer& buffer) {
     os.write(&buffer, buffer.size());
-    os << "|" << buffer.size() << "|" << endl;// for debuging
+    // os << "|" << buffer.size() << "|" << endl;// for debuging
     return (os);
 }

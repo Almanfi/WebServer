@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 05:19:45 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/22 22:33:33 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 # define SOCKET_HPP
 
 # include "definition.hpp"
+# include "uuid.hpp"
 # include "config.hpp"
 # include "sbuffer.hpp"
 # include "header.hpp"

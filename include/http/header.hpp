@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/21 14:35:05 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 00:10:09 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,7 @@ public:
     void check();
     void insertHeader(const string& key, const string& value);
     KeyVal& getKeyVal();
+    string getHeader(const string& key);
     // void parseHeaders(const string& value);
     // void parseHeader(std::string header);
     static void initHeadersRules();

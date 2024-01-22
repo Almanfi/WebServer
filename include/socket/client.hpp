@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 04:34:43 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 00:07:09 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,13 +38,18 @@ public:
     void    readBuffer();
     cnx_state&  getState();
     Server&     getServer();
+    void        createFile();
+    void        openFile();
 private:
     sock_fd     fd;
     cnx_state   state;
     SBuffer     buffer;
     Request     request;
     string      data;
+    size_t      contentLength;
     ServerSocket& servSock;
+    UUID        uuid;
+    fstream     file;
 };
 
 #endif // CLIENT_HPP

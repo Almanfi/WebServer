@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/20 08:34:21 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 00:10:03 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,16 @@ void Header::check() {
 void Header::insertHeader(const string& key, const string& value) {
     validateHeader(key, value);
     keyVal.insert(std::make_pair(key, value));
+}
+
+KeyVal& Header::getKeyVal() {
+    return (keyVal);
+}
+
+string Header::getHeader(const string& key) {
+    if (keyVal.find(key) == keyVal.end())
+        return ("");
+    return (keyVal[key]);
 }
 
 void Header::validateHeader(const string& key, const string& value) {
