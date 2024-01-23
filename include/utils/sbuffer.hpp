@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:18:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/19 23:31:46 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:03:58 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 # include "socket.hpp"
 
-#define SBUFFER_SIZE 4096
+#define SBUFFER_SIZE 65536
 
 class SBuffer {
 public:
@@ -27,7 +27,7 @@ public:
     ssize_t recv(sock_fd fd, int flags);
     ssize_t begin();
     ssize_t end();
-    
+
     ssize_t size();
     void clear();
     bool empty();

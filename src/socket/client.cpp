@@ -6,13 +6,17 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 04:34:39 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:09:19 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Client::Client(sock_fd fd, ServerSocket& servSock) : fd(fd), state(NONE), servSock(servSock) {
+Client::Client(sock_fd fd, ServerSocket& servSock) : fd(fd), state(NONE), servSock(servSock), uuid() {
+    while (access((string("/tmp/") + uuid.getStr()).c_str(), F_OK) == 0) {
+        uuid.regen();
+    }
+    createFile();
     buffer.clear();
     data.clear();
 }
@@ -22,7 +26,8 @@ Client::Client(const Client& other) :
                                     state(other.state),
                                     buffer(other.buffer),
                                     data(other.data),
-                                    servSock(other.servSock){
+                                    servSock(other.servSock),
+                                    uuid(other.uuid){
 }
 
 Client& Client::operator=(const Client& other) {
@@ -36,6 +41,9 @@ Client& Client::operator=(const Client& other) {
 }
 
 Client::~Client() {
+    if (file.is_open())
+        file.close();
+    remove((string("./tmp/") + uuid.getStr()).c_str());
     close(fd);
 }
 
@@ -58,9 +66,15 @@ ssize_t Client::send() {
 
 ssize_t Client::recieve() {
     cout << "++++++++++++ recieve ++++++++++++" << endl;
-    ssize_t bytes_received = request.parseRequest(buffer, fd);
-    if (buffer.empty() && request.headerComplete) // TODO check later
+    openFile();
+    ssize_t bytes_received = request.parseRequest(buffer, fd, file, state);
+    file.close();
+    if (bytes_received == -1) {
+        cout << "request complete" << endl;
         state = WRITE;
+    }
+    // if (buffer.empty() && request.headerComplete) // TODO check later
+    //     state = WRITE;
     return (bytes_received);
 }
 
@@ -75,4 +89,21 @@ cnx_state& Client::getState() {
 
 Server& Client::getServer() {
     return (*servSock.getServers()[0]);
+}
+
+void Client::createFile() {
+    file.open((string("./tmp/") + uuid.getStr()).c_str(), std::ios::in | std::ios::out | std::ios::trunc);
+    if (!file.is_open()) {
+        perror("open");
+        throw std::exception();
+    }
+    file.close();
+}
+
+void Client::openFile() {
+    file.open((string("./tmp/") + uuid.getStr()).c_str(), std::ios::in | std::ios::out | std::ios::app);
+    if (!file.is_open()) {
+        perror("open");
+        throw std::exception();
+    }
 }

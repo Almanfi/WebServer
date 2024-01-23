@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:44:54 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 03:52:21 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:11:34 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 # include <string>
 # include <cstring>
 # include <cstdlib>
+# include <ctime>
 # include <algorithm>
 # include <vector>
 # include <deque>
@@ -36,6 +37,8 @@ using std::cin;
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::ostream;
+using std::fstream;
 using std::stringstream;
 using std::string;
 using std::map;
@@ -47,6 +50,14 @@ typedef enum e_configScope {
     SERVER,
     LOCATION
 } configScope;
+
+typedef enum {
+    NONE,
+    READ,
+    WRITE,
+    ERROR,
+    CLOSE
+}   cnx_state;
 
 class Parser;
 class Server;

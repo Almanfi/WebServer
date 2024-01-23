@@ -6,26 +6,31 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 08:18:25 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:13:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request() : headerComplete(false) {
+Request::Request() : headerComplete(false) , bodySize(0), contentLength(0) {
 }
 
 Request::~Request() {
 }
 
-Request::Request(const Request& other) {
-    *this = other;
+Request::Request(const Request& other) : 
+        headers(other.headers),
+        body(other.body),
+        headerComplete(other.headerComplete),
+        bodySize(other.bodySize){
 }
 
 Request& Request::operator=(const Request& other) {
     if (this != &other) {
         headers = other.headers;
         body = other.body;
+        headerComplete = other.headerComplete;
+        bodySize = other.bodySize;
     }
     return (*this);
 }
@@ -50,6 +55,9 @@ void Request::parseHeaders(SBuffer& buffer) {
             buffer.skip(buff - &buffer + 2);
             // buffer.save(buff - &buffer + 2);
             headerComplete = true;
+            headers.check();
+            stringstream ss(headers.getHeader(CONTENT_LENGTH));
+            ss >> contentLength;
             body.empty();
             cout << "end of headers" << endl;
             return ;
@@ -76,18 +84,21 @@ void Request::parseHeaders(SBuffer& buffer) {
         throw std::runtime_error("bad request headers too long");
 }
 
-ssize_t    Request::parseRequest(SBuffer& buffer ,int fd) {
+ssize_t    Request::parseRequest(SBuffer& buffer ,int fd, fstream& file, cnx_state& state) {
     ssize_t byte_recieved = buffer.recv(fd, 0); // check flags later
     if (!headerComplete)
         parseHeaders(buffer);
    if (headerComplete) {
-        headers.check();
-        cout << "body size : " << body.size() << endl; // debuging
         if (!buffer.empty())
-            body.append(&buffer, buffer.size());
-        cout << "body size : " << body.size() << endl;
+            file << buffer;
+        bodySize += buffer.size();
         buffer.clear();
-        // buffer.save(0); // debuging
+        if (bodySize >= contentLength)
+            state = WRITE;
     }
     return (byte_recieved);
 };
+
+string Request::getHeader(const string& key) {
+    return (headers.getHeader(key));
+}
