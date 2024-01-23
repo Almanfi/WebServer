@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 00:22:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:09:19 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,14 +67,8 @@ ssize_t Client::send() {
 ssize_t Client::recieve() {
     cout << "++++++++++++ recieve ++++++++++++" << endl;
     openFile();
-    ssize_t bytes_received = request.parseRequest(buffer, fd, file, contentLength);
+    ssize_t bytes_received = request.parseRequest(buffer, fd, file, state);
     file.close();
-    if (request.headers.getHeader(CONTENT_LENGTH) != "") {
-        stringstream ss;
-        ss << request.headers.getHeader(CONTENT_LENGTH);
-        ss >> contentLength;
-        cout << "content length = " << contentLength << endl;
-    }
     if (bytes_received == -1) {
         cout << "request complete" << endl;
         state = WRITE;

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 00:07:09 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:11:19 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,6 @@
 # define CLIENT_HPP
 
 # include "socket.hpp"
-
-typedef enum {
-    NONE,
-    READ,
-    WRITE,
-    ERROR,
-    CLOSE
-}   cnx_state;
 
 class ServerSocket;
 
@@ -46,7 +38,6 @@ private:
     SBuffer     buffer;
     Request     request;
     string      data;
-    size_t      contentLength;
     ServerSocket& servSock;
     UUID        uuid;
     fstream     file;

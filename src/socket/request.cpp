@@ -6,13 +6,13 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 00:19:06 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 16:13:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request() : headerComplete(false) , bodySize(0){
+Request::Request() : headerComplete(false) , bodySize(0), contentLength(0) {
 }
 
 Request::~Request() {
@@ -55,6 +55,9 @@ void Request::parseHeaders(SBuffer& buffer) {
             buffer.skip(buff - &buffer + 2);
             // buffer.save(buff - &buffer + 2);
             headerComplete = true;
+            headers.check();
+            stringstream ss(headers.getHeader(CONTENT_LENGTH));
+            ss >> contentLength;
             body.empty();
             cout << "end of headers" << endl;
             return ;
@@ -81,26 +84,21 @@ void Request::parseHeaders(SBuffer& buffer) {
         throw std::runtime_error("bad request headers too long");
 }
 
-ssize_t    Request::parseRequest(SBuffer& buffer ,int fd, fstream& file, size_t contentLength) {
+ssize_t    Request::parseRequest(SBuffer& buffer ,int fd, fstream& file, cnx_state& state) {
     ssize_t byte_recieved = buffer.recv(fd, 0); // check flags later
     if (!headerComplete)
         parseHeaders(buffer);
    if (headerComplete) {
-        headers.check();
-        // cout << "body size : " << body.size() << endl; // debuging
         if (!buffer.empty())
             file << buffer;
         bodySize += buffer.size();
-            // body.append(&buffer, buffer.size());
-        // cout << "body size : " << body.size() << endl;
         buffer.clear();
-        if (contentLength && bodySize >= contentLength) {
-            cout << "body size : " << bodySize << endl;
-            cout << "content length : " << contentLength << endl;
-            cout << "end of body" << endl;
-            return (-1);
-        }
-        // buffer.save(0); // debuging
+        if (bodySize >= contentLength)
+            state = WRITE;
     }
     return (byte_recieved);
 };
+
+string Request::getHeader(const string& key) {
+    return (headers.getHeader(key));
+}
