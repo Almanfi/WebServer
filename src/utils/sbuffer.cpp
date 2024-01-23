@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/22 23:51:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/23 23:55:26 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 
 #include "socket.hpp"
-
 
 SBuffer::SBuffer() : start(0), count(0) {
 }
@@ -67,6 +66,14 @@ ssize_t SBuffer::end() {
     return (start + count);
 }
 
+ssize_t SBuffer::capacity() {
+    return (SBUFFER_SIZE);
+}
+
+ssize_t SBuffer::freeSpace() {
+    return (SBUFFER_SIZE - end());
+}
+
 bool SBuffer::empty() {
     return (count == 0);
 }
@@ -74,15 +81,31 @@ bool SBuffer::empty() {
 void SBuffer::bzero() {
     std::memset(buffer, 0, SBUFFER_SIZE);
 }
+void SBuffer::moveDataToStart() {
+    std::memmove(buffer, buffer + start, count);
+    start = 0;
+}
+
+size_t SBuffer::find(const string& str, size_t pos) {
+    for (ssize_t i = pos; i < count; i++) {
+        if (std::memcmp(buffer + start + i, str.c_str(), str.size()) == 0)
+            return (i);
+    }
+    return (string::npos);
+}
 
 ssize_t SBuffer::recv(sock_fd fd, int flags) {
     // if (end() == SBUFFER_SIZE) // TODO is this necesary? might delete data
     //     clear(); //
-    ssize_t recvSize = ::recv(fd, buffer + end(), SBUFFER_SIZE - end(), flags);
+    if (freeSpace() < 2)
+        moveDataToStart();
+    ssize_t recvSize = ::recv(fd, buffer + end(), freeSpace(), flags);
     if (recvSize == -1) {
         perror("recv1");
         throw std::exception();
     }
+    // cout << "recvSize = " << recvSize << endl;
+    // cout << "buffer free space = " << begin() << endl;
     count += recvSize;
     return (recvSize);
 }
@@ -90,6 +113,10 @@ ssize_t SBuffer::recv(sock_fd fd, int flags) {
 bool SBuffer::skip(ssize_t offset) {
     if (offset > count)
         return (false);
+    else if (offset == count) {
+        clear();
+        return (true);
+    }
     count -= offset;
     start += offset;
     return (true);
