@@ -6,13 +6,13 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 00:48:06 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:51:17 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request() : headerComplete(false) , bodySize(0), contentLength(0), finishedChunck(true), recieve(true) {
+Request::Request() : headerComplete(false) , bodySize(0), contentLength(0), haveChunckSize(false) {
 }
 
 Request::~Request() {
@@ -24,8 +24,7 @@ Request::Request(const Request& other) :
         headerComplete(other.headerComplete),
         bodySize(other.bodySize),
         contentLength(other.contentLength),
-        finishedChunck(other.finishedChunck),
-        recieve(other.recieve){
+        haveChunckSize(other.haveChunckSize){
 }
 
 Request& Request::operator=(const Request& other) {
@@ -35,8 +34,7 @@ Request& Request::operator=(const Request& other) {
         headerComplete = other.headerComplete;
         bodySize = other.bodySize;
         contentLength = other.contentLength;
-        finishedChunck = other.finishedChunck;
-        recieve = other.recieve;
+        haveChunckSize = other.haveChunckSize;
     }
     return (*this);
 }
@@ -44,8 +42,6 @@ Request& Request::operator=(const Request& other) {
 void Request::parseHeaders(SBuffer& buffer) {
     cout << "parsing headers" << endl;
     char *buff = &buffer;
-    // cout << "reding buffer : " << buffer.size()<< endl;
-    // cout << "buffer : " << buffer << endl;
     ssize_t size = buffer.size();
     ssize_t i = 0;
     
@@ -55,11 +51,8 @@ void Request::parseHeaders(SBuffer& buffer) {
             i++;
             continue ;
         }
-        // cout << "line is  = " << string(buff, i) << endl;
         if (i == 0) {
-            // cout << "got here" << endl;
             buffer.skip(buff - &buffer + 2);
-            // buffer.save(buff - &buffer + 2);
             headerComplete = true;
             headers.check();
             stringstream ss(headers.getHeader(CONTENT_LENGTH));
@@ -74,13 +67,11 @@ void Request::parseHeaders(SBuffer& buffer) {
             string  key(line, 0, pos);
             string  value(line, pos + 2);
             headers.insertHeader(key, value);
-            // headers.insert(std::make_pair(key, value));
         }
         else {
             string  key(line, 0, line.find(" "));
             string  value(line, line.find(" ") + 1);
             headers.insertHeader(key, value);
-            // headers.insert(std::make_pair(key, value));
         }
         buff += i + 2;
         size -= i + 2;
@@ -116,17 +107,16 @@ bool findChunckSize(SBuffer& buffer, size_t& chunkSize) {
 }
 
 void Request::recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& state) {
-    if (finishedChunck) {
+    if (haveChunckSize == false) {
         contentLength = 0;
         if (findChunckSize(buffer, contentLength) == false)
             return;
-        finishedChunck = false;
+        haveChunckSize = true;
     }
     if (contentLength == 0) { // TODO check if this is correct if content length is 0 and we still have a body
         if (hasCRLF(buffer, 0) == false)
             return;
         buffer.clear();
-        finishedChunck = true;
         state = WRITE;
     }
     if (static_cast<size_t>(buffer.size()) <= contentLength) {
@@ -142,19 +132,19 @@ void Request::recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& stat
     bodySize += contentLength;
     buffer.skip(contentLength + 2);
     contentLength -= contentLength;
-    finishedChunck = true;
+    haveChunckSize = false;
     recieveChunkedBody(buffer, file, state);
 }
 
 void Request::recieveNormalBody(SBuffer& buffer, fstream& file, cnx_state& state) {
+    size_t size = std::min(static_cast<size_t>(buffer.size()), contentLength);
     if (!buffer.empty())
-        file << buffer;
-    bodySize += buffer.size();
+        file.write(&buffer, size);
+    bodySize += size;
+    contentLength -= size;
     buffer.clear();
-    if (bodySize == contentLength)
+    if (contentLength == 0) // TODO check if this is correct if content length is 0 and we still have a body
         state = WRITE;
-    else if (bodySize > contentLength)
-        throw std::runtime_error("bad request content length");
 }
 
 ssize_t    Request::parseRequest(SBuffer& buffer ,int fd, fstream& file, cnx_state& state) {
@@ -163,6 +153,7 @@ ssize_t    Request::parseRequest(SBuffer& buffer ,int fd, fstream& file, cnx_sta
     if (!headerComplete)
         parseHeaders(buffer);
    if (headerComplete) {
+    // TODO check content lenght and empty socket after ?
         if (getHeader(TRANSFER_ENCODING).empty() == false)
             recieveChunkedBody(buffer, file, state);
         else

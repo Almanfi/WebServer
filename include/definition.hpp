@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:44:54 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 16:11:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:25:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,8 +64,9 @@ class Server;
 class Location;
 class Config;
 
-#define MAX_LISTEN 10 // max number of clients in the queue
+#define MAX_LISTEN 2048 // max number of clients in the queue
 #define RECIEVE_MAX_SIZE 4096
+#define MAX_EVENTS 1024
 
 #define S_HOST "host"
 #define S_PORT "port"

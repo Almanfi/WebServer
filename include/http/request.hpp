@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 00:45:08 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 17:12:43 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,8 +45,7 @@ public:
     bool headerComplete;
     size_t  bodySize;
     size_t  contentLength;
-    bool finishedChunck;
-    bool recieve;
+    bool    haveChunckSize;
 
 private:
     bool hasCRLF(SBuffer& buffer, size_t pos);

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/23 00:10:09 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 17:31:16 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,8 @@
 #define SET_COOKIE(x)               (x |= F_COOKIE)
 #define SET_DATE(x)                 (x |= F_DATE)
 #define SET_SERVER(x)               (x |= F_SERVER)
+
+#define UNSET_CONTENT_LENGTH(x)         (x &= ~F_CONTENT_LENGTH)
 
 typedef enum {
     INVALID,

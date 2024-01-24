@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 00:49:37 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:41:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,4 +100,8 @@ void Client::openFile() {
         perror("open");
         throw std::exception();
     }
+}
+
+const UUID& Client::getUUID() {
+    return (uuid);
 }

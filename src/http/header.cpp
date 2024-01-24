@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/23 22:22:53 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:36:15 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,10 @@ vector<string> Header::httpAllowedMethods;
 vector<string> Header::httpOtherMethods;
 
 void Header::checkHeadersConflicts () {
-    if (HAS_CONTENT_LENGTH(flags) && HAS_TRANSFER_ENCODING(flags))
-        throw std::runtime_error("Invalid Headers(transfer encoding with content length)");
+    if (HAS_CONTENT_LENGTH(flags) && HAS_TRANSFER_ENCODING(flags)) {
+        keyVal.erase(CONTENT_LENGTH);
+        UNSET_CONTENT_LENGTH(flags);
+    }
 }
 
 void Header::checkRequiredHeaders() {
@@ -151,7 +153,7 @@ void Header::validateContentType(const string& value) {
 
 void Header::validateTransferEncoding(const string& value) {
     if (value != "chunked")
-        throw std::runtime_error("Invalid Transfer-Encoding");
+        throw std::runtime_error("501 Not Implemented");
     if (HAS_TRANSFER_ENCODING(flags))
         throw std::runtime_error("duplicate Transfer-Encoding");
     SET_TRANSFER_ENCODING(flags);

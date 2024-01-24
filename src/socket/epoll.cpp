@@ -6,13 +6,15 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 08:15:27 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:46:34 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
 Epoll::Epoll(Config& config) {
+    if (MAX_EVENTS < 1) // TODO check on macros at compile time
+        throw std::runtime_error("Epoll::Epoll: MAX_EVENTS must be greater than 0");
     Header::initHeadersRules();
     std::memset(&event, 0, sizeof(event));
     deque<Server>& servers =  config.getServers();
@@ -33,14 +35,14 @@ Epoll::Epoll(Config& config) {
                     << servers[i].getInfo(S_PORT) << " added to server "
                     << it->second->getServers()[0]->getInfo(S_HOST) << ":"
                     << it->second->getServers()[0]->getInfo(S_PORT) << endl;
-                break ;
+                break;
             }
         }
         if (!tmp)
             continue ;
         tmp->init();
         servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
-        addEvent(tmp->getSockid(), EPOLLIN);
+        addEvent(tmp->getSockid(), EPOLLIN); // TODO no need to add EPOLLOUT right?
     }
     cout << "number of servers listening: " << servSockets.size() << endl;
 }
@@ -73,6 +75,7 @@ void Epoll::addClient(sock_fd fd, uint32_t events) {
             << servSock->getServers()[0]->getInfo(S_HOST) << ":"
             << servSock->getServers()[0]->getInfo(S_PORT) << endl;
     clients.insert(std::make_pair(fd, new Client(fd, *servSock)));
+    cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
     addEvent(fd, events);
 }
 
@@ -80,6 +83,7 @@ void Epoll::delClient(sock_fd fd) {
     cout    << "deleting client on server "
             << client->getServer().getInfo(S_HOST) << ":"
             << client->getServer().getInfo(S_PORT) << endl;
+    cout    << "client UUID : " << client->getUUID().getStr() << endl;
     itrClient it = clients.find(fd);
     if (it == clients.end())
         return ;
@@ -108,7 +112,7 @@ void Epoll::handleClient(int i) {
     cnx_state& state = client->getState();
     if (state == NONE)
         state = READ;
-    cnx_state prevState = state;
+    // cnx_state prevState = state;
     switch (state) {
         case READ:
             if (client->recieve() == 0)
@@ -124,22 +128,28 @@ void Epoll::handleClient(int i) {
         default:
             throw std::runtime_error("Client::handle: invalid state");
     }
-    if (prevState == READ && state == WRITE) {
-        int fd = events[i].data.fd;
-        event.data.fd = fd;
-        event.events = EPOLLOUT;
-        if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event)) {
-            perror("epoll_ctl to change event to EPOLLOUT");
-            throw std::exception();
-        }
-    }
+    // if (prevState == READ && state == WRITE) {
+    //     int fd = events[i].data.fd;
+    //     event.data.fd = fd;
+    //     event.events = EPOLLOUT;
+    //     if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event)) {
+    //         perror("epoll_ctl to change event to EPOLLOUT");
+    //         throw std::exception();
+    //     }
+    // }
 }
 
 void Epoll::checkEvents(int n) {
     for (int i = 0; i < n; i++) {
         if (eventOnServer(events[i].data.fd)) {
+            // if (events[i].events & EPOLLIN == false)
+            //     continue ;// TODO serverr asdded as EPOLLIN only now
+            if (clients.size() >= MAX_EVENTS) {
+                std::cout << "Max number of clients reached" << std::endl;
+                continue ;
+            }
             sock_fd client_fd = servSock->sockAccept();
-            addClient(client_fd, EPOLLIN);
+            addClient(client_fd, EPOLLIN | EPOLLOUT);
             std::cout << "New client connected" << std::endl;
         } else
             handleClient(i);
@@ -148,7 +158,7 @@ void Epoll::checkEvents(int n) {
 
 void Epoll::loop() {
     while (true) {
-        int n = epoll_wait(epollfd, events, 10, -1);
+        int n = epoll_wait(epollfd, events, MAX_EVENTS, -1);// TODO change timeout
         if (n == -1) {
             perror("epoll_wait");
             throw std::exception();
