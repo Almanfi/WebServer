@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 16:11:19 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:40:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 class ServerSocket;
 
 class Client {
-public:
+    public:
     Client(sock_fd fd, ServerSocket& servSock);
     Client(const Client& other);
     Client& operator=(const Client& other);
@@ -32,6 +32,7 @@ public:
     Server&     getServer();
     void        createFile();
     void        openFile();
+    const UUID& getUUID();
 private:
     sock_fd     fd;
     cnx_state   state;

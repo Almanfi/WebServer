@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 16:07:49 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 17:12:43 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ typedef map<string, string>  KeyVal;
 # define DATE "Date"
 # define SERVER "Server"
 # define LOCATION "Location"
+# define TRANSFER_ENCODING "Transfer-Encoding"
 
 class SBuffer;
 
@@ -44,6 +45,12 @@ public:
     bool headerComplete;
     size_t  bodySize;
     size_t  contentLength;
+    bool    haveChunckSize;
+
+private:
+    bool hasCRLF(SBuffer& buffer, size_t pos);
+    void recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& state);
+    void recieveNormalBody(SBuffer& buffer, fstream& file, cnx_state& state);
 };
 
 #endif // REQUEST_HPP

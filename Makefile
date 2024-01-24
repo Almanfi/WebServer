@@ -23,6 +23,7 @@ clean :
 
 fclean : clean
 	$(RM) $(TARGET)
+	$(RM) -r tmp/*
 
 re : fclean all
 

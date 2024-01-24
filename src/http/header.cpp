@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/23 15:47:14 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:36:15 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,10 @@ vector<string> Header::httpAllowedMethods;
 vector<string> Header::httpOtherMethods;
 
 void Header::checkHeadersConflicts () {
-    if (HAS_CONTENT_LENGTH(flags) && HAS_TRANSFER_ENCODING(flags))
-        throw std::runtime_error("Invalid Headers(transfer encoding with content length)");
+    if (HAS_CONTENT_LENGTH(flags) && HAS_TRANSFER_ENCODING(flags)) {
+        keyVal.erase(CONTENT_LENGTH);
+        UNSET_CONTENT_LENGTH(flags);
+    }
 }
 
 void Header::checkRequiredHeaders() {
@@ -43,8 +45,8 @@ void Header::checkRequiredHeaders() {
     if (method == POST) {
         if (!HAS_CONTENT_LENGTH(flags) && !HAS_TRANSFER_ENCODING(flags))
             throw std::runtime_error("Missing Content-Length");
-        if (!HAS_CONTENT_TYPE(flags)) // TODO check if content type is really mandatory
-            throw std::runtime_error("Missing Content-Type");
+        // if (!HAS_CONTENT_TYPE(flags)) // TODO check if content type is really mandatory
+        //     throw std::runtime_error("Missing Content-Type");
     }
 }
 
@@ -109,11 +111,9 @@ void Header::validateRequestLine(const string& value) {
     string version = value.substr(pos + 1);
     if (version != HTTP_VERSION)
         throw std::runtime_error("Invalid HTTP-Version");
-    cout << "flags1 : " << flags << endl;
     if (HAS_REQUEST_LINE(flags))
         throw std::runtime_error("duplicate Request-Line");
     SET_REQUEST_LINE(flags);
-    cout << "flags2 : " << flags << endl;
 }
 
 void Header::validateHost(const string& value) {
@@ -152,8 +152,8 @@ void Header::validateContentType(const string& value) {
 }
 
 void Header::validateTransferEncoding(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Transfer-Encoding");
+    if (value != "chunked")
+        throw std::runtime_error("501 Not Implemented");
     if (HAS_TRANSFER_ENCODING(flags))
         throw std::runtime_error("duplicate Transfer-Encoding");
     SET_TRANSFER_ENCODING(flags);

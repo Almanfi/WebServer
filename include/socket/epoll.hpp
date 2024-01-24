@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:43:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 04:30:23 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:24:51 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ private:
     map<sock_fd, Client*> clients;
     ServerSocket*   servSock;
     Client*         client;
-    epoll_event     events[10];
+    epoll_event     events[MAX_EVENTS];
     epoll_event     event;
     int             epollfd;
 };

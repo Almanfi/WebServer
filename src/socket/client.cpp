@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 16:09:19 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/24 20:41:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ Client& Client::operator=(const Client& other) {
 Client::~Client() {
     if (file.is_open())
         file.close();
-    remove((string("./tmp/") + uuid.getStr()).c_str());
+    // remove((string("./tmp/") + uuid.getStr()).c_str()); // TODO uncomment
     close(fd);
 }
 
@@ -69,12 +69,6 @@ ssize_t Client::recieve() {
     openFile();
     ssize_t bytes_received = request.parseRequest(buffer, fd, file, state);
     file.close();
-    if (bytes_received == -1) {
-        cout << "request complete" << endl;
-        state = WRITE;
-    }
-    // if (buffer.empty() && request.headerComplete) // TODO check later
-    //     state = WRITE;
     return (bytes_received);
 }
 
@@ -106,4 +100,8 @@ void Client::openFile() {
         perror("open");
         throw std::exception();
     }
+}
+
+const UUID& Client::getUUID() {
+    return (uuid);
 }
