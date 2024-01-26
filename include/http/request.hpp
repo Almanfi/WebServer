@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 17:12:43 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/26 18:10:25 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,20 +37,19 @@ public:
     Request(const Request& other);
     Request& operator=(const Request& other);
     void    parseHeaders(SBuffer& buffer);
-    ssize_t parseRequest(SBuffer& buffer, int fd, fstream& file, cnx_state& state);
-    string getHeader(const string& key);
-    Header  headers;
-    string  body;
-    // KeyVal headers;
-    bool headerComplete;
-    size_t  bodySize;
-    size_t  contentLength;
-    bool    haveChunckSize;
+    bool    parseRequest(SBuffer& buffer, fstream& file);
+    string  getHeader(const string& key);
 
 private:
     bool hasCRLF(SBuffer& buffer, size_t pos);
-    void recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& state);
-    void recieveNormalBody(SBuffer& buffer, fstream& file, cnx_state& state);
+    void recieveChunkedBody(SBuffer& buffer, fstream& file);
+    void recieveNormalBody(SBuffer& buffer, fstream& file);
+    Header  headers;
+    string  body;
+    bool    headerComplete;
+    size_t  bodySize;
+    size_t  contentLength;
+    bool    haveChunckSize;
 };
 
 #endif // REQUEST_HPP

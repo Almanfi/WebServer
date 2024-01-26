@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   epoll.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 20:46:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/26 18:15:51 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,34 +109,10 @@ bool Epoll::eventOnServer(sock_fd fd) {
 }
 
 void Epoll::handleClient(int i) {
-    cnx_state& state = client->getState();
-    if (state == NONE)
-        state = READ;
-    // cnx_state prevState = state;
-    switch (state) {
-        case READ:
-            if (client->recieve() == 0)
-                state = CLOSE;
-            break ;
-        case WRITE:
-            client->send();
-            break ;
-        case CLOSE:
-            cout << "++++++++++++ closing ++++++++++++" << endl;
-            delClient(events[i].data.fd);
-            break ;
-        default:
-            throw std::runtime_error("Client::handle: invalid state");
+    if (client->handleState() == CLOSE) {
+        cout << "++++++++++++ closing ++++++++++++" << endl;
+        delClient(events[i].data.fd);
     }
-    // if (prevState == READ && state == WRITE) {
-    //     int fd = events[i].data.fd;
-    //     event.data.fd = fd;
-    //     event.events = EPOLLOUT;
-    //     if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event)) {
-    //         perror("epoll_ctl to change event to EPOLLOUT");
-    //         throw std::exception();
-    //     }
-    // }
 }
 
 void Epoll::checkEvents(int n) {

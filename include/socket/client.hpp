@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 20:40:47 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/26 18:05:44 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,24 +24,23 @@ class Client {
     Client& operator=(const Client& other);
     ~Client();
     
-    sock_fd getFd();
-    ssize_t send();
-    ssize_t recieve();
-    void    readBuffer();
-    cnx_state&  getState();
+    const cnx_state&    handleState();
+    ssize_t     send();
+    ssize_t     recieve();
+    void        readBuffer();
+    sock_fd     getFd();
     Server&     getServer();
+    const UUID& getUUID();
     void        createFile();
     void        openFile();
-    const UUID& getUUID();
 private:
     sock_fd     fd;
     cnx_state   state;
-    SBuffer     buffer;
-    Request     request;
-    string      data;
-    ServerSocket& servSock;
     UUID        uuid;
     fstream     file;
+    SBuffer     buffer;
+    ServerSocket& servSock;
+    Request     request;
 };
 
 #endif // CLIENT_HPP

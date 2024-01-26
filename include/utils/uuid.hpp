@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   uuid.hpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 20:19:57 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/22 23:04:06 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/26 16:45:33 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 #include <ostream>
 
-#define SET_BIT(n, x, v) (x = x & ~(1 << n) | (v << n))
+#define SET_BIT(n, x, v) (x = (x & ~(1 << n)) | (v << n))
 #define CHECK_BIT(n, x) ((x >> n) & 1)
 
 template <typename T>

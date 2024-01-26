@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 20:51:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/26 17:45:36 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,9 +106,8 @@ bool findChunckSize(SBuffer& buffer, size_t& chunkSize) {
     return (true);
 }
 
-void Request::recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& state) {
+void Request::recieveChunkedBody(SBuffer& buffer, fstream& file) {
     if (haveChunckSize == false) {
-        contentLength = 0;
         if (findChunckSize(buffer, contentLength) == false)
             return;
         haveChunckSize = true;
@@ -117,7 +116,6 @@ void Request::recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& stat
         if (hasCRLF(buffer, 0) == false)
             return;
         buffer.clear();
-        state = WRITE;
     }
     if (static_cast<size_t>(buffer.size()) <= contentLength) {
         file << buffer;
@@ -133,33 +131,35 @@ void Request::recieveChunkedBody(SBuffer& buffer, fstream& file, cnx_state& stat
     buffer.skip(contentLength + 2);
     contentLength -= contentLength;
     haveChunckSize = false;
-    recieveChunkedBody(buffer, file, state);
+    recieveChunkedBody(buffer, file);
 }
 
-void Request::recieveNormalBody(SBuffer& buffer, fstream& file, cnx_state& state) {
+void Request::recieveNormalBody(SBuffer& buffer, fstream& file) {
     size_t size = std::min(static_cast<size_t>(buffer.size()), contentLength);
     if (!buffer.empty())
         file.write(&buffer, size);
     bodySize += size;
     contentLength -= size;
     buffer.clear();
-    if (contentLength == 0) // TODO check if this is correct if content length is 0 and we still have a body
-        state = WRITE;
+    // if (contentLength == 0) // TODO check if this is correct if content length is 0 and we still have a body
+    //     state = WRITE;
 }
 
-ssize_t    Request::parseRequest(SBuffer& buffer ,int fd, fstream& file, cnx_state& state) {
-    ssize_t byte_recieved = 0;
-    byte_recieved = buffer.recv(fd, 0); // TODO check flags later
+bool    Request::parseRequest(SBuffer& buffer, fstream& file) {
+    // ssize_t byte_recieved = 0;
+    // byte_recieved = buffer.recv(fd, 0); // TODO check flags later
     if (!headerComplete)
         parseHeaders(buffer);
    if (headerComplete) {
     // TODO check content lenght and empty socket after ?
         if (getHeader(TRANSFER_ENCODING).empty() == false)
-            recieveChunkedBody(buffer, file, state);
+            recieveChunkedBody(buffer, file);
         else
-            recieveNormalBody(buffer, file, state);
+            recieveNormalBody(buffer, file);
+        if (contentLength == 0)
+            return (true);
     }
-    return (byte_recieved);
+    return (false);
 };
 
 string Request::getHeader(const string& key) {
