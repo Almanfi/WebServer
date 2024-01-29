@@ -3,20 +3,26 @@
 /*                                                        :::      ::::::::   */
 /*   parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:24 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 03:46:24 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/28 13:34:56 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/parser.hpp"
+
+Parser* Parser::instance = NULL;
 
 Parser::Parser(const std::string& filePath) : lineNumber(0), linePos(0) {
     configFile.open(filePath.c_str(), std::ios::in);
     if (!configFile.is_open()) {
         throw std::runtime_error("Failed to open config file " + filePath);
     }
+    if (instance != NULL) {
+        throw std::runtime_error("Parser already instanciated");
+    }
+    instance = this;
 }
 
 Parser::~Parser() {
@@ -71,4 +77,8 @@ int Parser::getLineNum() {
 
 std::vector<configScope>& Parser::getScopes() {
     return scopes;
+}
+
+Parser& Parser::getInstance() {
+    return *instance;
 }

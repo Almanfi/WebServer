@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 18:08:31 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/28 13:46:07 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,6 @@ void Config::setAlloedDirective() {
         return ;
     }
     directive.insert(std::make_pair("server", 0));
-
 }
 
 void Config::read() {
@@ -53,28 +52,21 @@ void Config::readMainContext() {
         token = p.getToken();
         if (token.empty())
             break;
-        if (token == ";") 
+        if (token == ";")
             continue;
         set(token);
     }
-    if (scopes.back() != MAIN) {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
-    }
+    if (scopes.back() != MAIN)
+        throw ConfigException::MISSING_BRACKET("}");
     scopes.pop_back();
 }
-
 
 void Config::setServer() {
         vector<configScope>& scopes = p.getScopes();
         scopes.push_back(SERVER);
         string newToken = p.getToken();
-        if (newToken != "{") {
-            stringstream ss;
-            ss << p.getLineNum();
-            throw std::runtime_error("Error: Missing opening bracket '{' at line " + ss.str());
-        }
+        if (newToken != "{")
+            throw ConfigException::MISSING_BRACKET("{");
         servers.push_back(Server(*this, p));
         Server& serv = servers.back();
         while (true) {
@@ -86,18 +78,15 @@ void Config::setServer() {
             serv.setServerInfo(newToken);
         }
         serv.finalize();
-        if (scopes.back() != SERVER || newToken != "}") {
-            stringstream ss;
-            ss << p.getLineNum();
-            throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
-        }
+        if (scopes.back() != SERVER || newToken != "}")
+            throw ConfigException::MISSING_BRACKET("}");
         scopes.pop_back();
 }   
 
 void Config::set(const string& token) {
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw ConfigException::DIRECT_NOT_VALID(token);
     }
     if (token == "server") {
         setServer();

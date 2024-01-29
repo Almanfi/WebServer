@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 18:02:23 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/28 14:46:04 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,29 +60,31 @@ void Location::initValidationMap() {
 void Location::validateDirective(const string& key, const string& value) {
     map<string, void (Location::*) (const string&)>::iterator it = validationMap.find(key);
     if (it == validationMap.end()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw ConfigException::DIRECT_NOT_VALID(key);
     }
     (this->*(it->second))(value);
 }
 
 void Location::validateRoot(const string& value) {
     if (value.empty() || value[0] != '/') {
-        throw std::runtime_error("Error: Invalid path");
+        throw LocationException::INVALID_ROOT(value);
     }
     if (value.find(" ") != string::npos) {
-        throw std::runtime_error("Error: path has too many args");
+        throw LocationException::INVALID_ROOT(value
+                            + " (too many arguments)");
     }
 }
 
 void Location::validateIndex(const string& value) {
     if (value.empty()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE("index", value);
     }
 }
 
 void Location::validateAutoindex(const string& value) {
     if (value != "on" && value != "off") {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE(
+                            "autoindex", value);
     }
 }
 
@@ -91,34 +93,33 @@ void Location::validateClientMaxBodySize(const string& value) {
     ssize_t val;
     ss >> val;
     if (value.empty() || ss.fail() || val < 0) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE(
+                            "client_max_body_size", value);
     }
 }
 
 void Location::validateCgi(const string& value) {
-    if (value.empty() || (value != "on" && value != "off")) {
-        throw locExp::DIRECT_NOT_VALID();
-    }
+    if (value.empty() || (value != "on" && value != "off"))
+        throw LocationException::INVALID_VALUE("cgi", value);
 }
 //TODO come back add allowed methods
 void Location::validateMethods(const string& value) {
-    if (value.empty()) {
-        throw locExp::DIRECT_NOT_VALID();
-    }
+    if (value.empty())
+        throw LocationException::INVALID_METHOD("(empty)");
     stringstream ss(value);
     vector<string>& allowed = httpAllowedMethods;
     string method;
     while (ss >> method) {
         if (method.empty()
             || std::find(allowed.begin(), allowed.end(), method) == allowed.end()) {
-            throw std::runtime_error("Error: Invalid method");
+            throw LocationException::INVALID_METHOD(method);
         }
     }
 }
 
 void Location::validateReturn(const string& value) {
     if (value.empty()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE("return", value);
     }
 }
 
@@ -129,20 +130,21 @@ void Location::validateErrorPage(const string& value) {
     while (ss >> val) {
         count++;
         if (val < 300 || val > 599)
-            throw std::runtime_error("Error: Invalid status code");
+            throw LocationException::INVALID_VALUE("error_page", value);
     }
     if (count == 0)
-        throw std::runtime_error("no status code");
+        throw LocationException::INVALID_VALUE("error_page", ("(no code)"));
     ss.clear();
     string path;
     ss >> path;
     if (ss.fail() || path.empty() || path[0] != '/') {
-        throw std::runtime_error("Error: Invalid path");
+        throw LocationException::INVALID_VALUE("error_page", path);
     }
     string extra;
     ss >> extra;
     if (!extra.empty() || !ss.eof()) {
-        throw std::runtime_error("Error: extra arguments for error_page");
+        throw LocationException::INVALID_VALUE(
+                            "error_page", value + " (too many arguments)");
     }
 }
 
@@ -154,7 +156,7 @@ void Location::insertDirective(const string& key, const string& value) {
             it->second += " ; " + value;
             return ;
         }
-        throw locExp::DIRECT_ALREADY_SET();
+        throw LocationException::DIRECT_ALREADY_SET(key);
     }
     info.insert(std::make_pair(key, value));
 }
@@ -167,16 +169,10 @@ void Location::addToInLoc(Location* loc) {
 void Location::setNewLoc() {
     deque<Location>& allLoc = c.getLocations();
     string uri = p.getToken(); // validate URI!
-    if (uri.empty() || uri == "{") {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing uri at line " + ss.str());
-    }
-    if (uri[0] != '/') {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Invalid uri at line " + ss.str());
-    }
+    if (uri.empty() || uri == "{")
+        throw LocationException::MISSING_LOCATION_URI();
+    if (uri[0] != '/')
+        throw LocationException::INVALID_LOCATION_URI(uri);
     allLoc.push_back(Location(c, serv, p, uri));
     Location& loc = allLoc.back();
     loc.set();
@@ -186,11 +182,8 @@ void Location::setNewLoc() {
 void Location:: set() {
     vector<configScope>& scope = p.getScopes();
     scope.push_back(LOCATION);
-    if (p.getToken() != "{") {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing opening bracket '{' at line " + ss.str());
-    }
+    if (p.getToken() != "{")
+        throw ConfigException::MISSING_BRACKET("{");
     std::string token;
     while (true) {
         token = p.getToken();
@@ -201,11 +194,8 @@ void Location:: set() {
             continue;
         setLocationInfo(token);
     }
-    if (scope.back() != LOCATION || token.empty()) {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
-    }
+    if (scope.back() != LOCATION || token.empty())
+        throw ConfigException::MISSING_BRACKET("}");
     scope.pop_back();
 }
 

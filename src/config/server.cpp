@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 18:12:58 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/28 14:13:47 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,16 +45,10 @@ void Server::setMainLocation(string& token) {
 void Server::setNewLocation() {
     deque<Location>& allLoc = c.getLocations();
     string uri = p.getToken(); // validate URI!
-    if (uri.empty() || uri == "{") {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing uri at line " + ss.str());
-    }
-    if (uri[0] != '/') {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Invalid uri at line " + ss.str());
-    }
+    if (uri.empty() || uri == "{")
+        throw ServerException::MISSING_LOCATION_URI();
+    if (uri[0] != '/') 
+        throw ServerException::INVALID_LOCATION_URI(uri);
     allLoc.push_back(Location(c, *this, p, uri));
     Location& loc = allLoc.back();
     loc.set();
@@ -71,13 +65,8 @@ void Server::setServerInfo(string& token) {
         setMainLocation(token);
         return ;
     }
-    // if (token == "location") {
-    //     // location loc(p, *this, p.getToken());
-    //     return ;
-    // }
-    if (info.find(token) != info.end()) {
-        throw locExp::DIRECT_ALREADY_SET();
-    }
+    if (info.find(token) != info.end())
+        throw ConfigException::DIRECT_ALREADY_SET(token);
     int count = 0;
     string value = "";
     string newToken = "";
@@ -91,13 +80,9 @@ void Server::setServerInfo(string& token) {
         }
         value += newToken;
         count++;
-        if (it->second && it->second < count) {
-            throw locExp::TOO_MANY_ARGS();
-        }
+        if (it->second && it->second < count)
+            throw ConfigException::TOO_MANY_ARGS(token);
     }
-    // if (newToken != ";") { // unnecessary!
-    //     throw locExp::DIRECT_NOT_VALID();
-    // }
     info[token] = value;
     token = newToken;
 }
@@ -124,12 +109,12 @@ const string& Server::validateIp(const string& ip) {
 int Server::validatePort(const string& portStr) {
     if (portStr[0] == '+' || portStr[0] == '-'
         || (portStr[0] == '0' && portStr.size() > 1))
-        throw locExp::NOT_VALID_PORT();
+        throw ServerException::NOT_VALID_PORT(portStr);
     std::stringstream ss(portStr);
     int port;
     ss >> port;
     if (ss.fail() || !ss.eof() || port < 0 || port > 65535)
-        throw locExp::NOT_VALID_PORT();
+        throw ServerException::NOT_VALID_PORT(portStr);
     return (port);
 }
 
@@ -184,7 +169,7 @@ void Server::parseErrorPage() {
 
 void Server::checkServerInfo() {
     if (info.find("listen") == info.end()) {
-        throw locExp::LISTEN_NOT_FOUND();
+        throw ServerException::LISTEN_NOT_FOUND();
     }
     parseListen();
     parseServerName();

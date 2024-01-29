@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parser.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:43 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/20 04:37:30 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/01/28 13:27:00 by elasce           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,10 @@ public:
     std::string getToken();
     int getLineNum();
     std::vector<configScope>& getScopes();
+    static Parser& getInstance();
 
 private:
+    static Parser* instance;
     std::ifstream configFile;
     int lineNumber;
     std::string line;
