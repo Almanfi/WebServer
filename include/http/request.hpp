@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/26 18:10:25 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/04 17:29:43 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,12 @@ public:
     void    parseHeaders(SBuffer& buffer);
     bool    parseRequest(SBuffer& buffer, fstream& file);
     string  getHeader(const string& key);
+    Header  headers;
 
 private:
     bool hasCRLF(SBuffer& buffer, size_t pos);
     void recieveChunkedBody(SBuffer& buffer, fstream& file);
     void recieveNormalBody(SBuffer& buffer, fstream& file);
-    Header  headers;
     string  body;
     bool    headerComplete;
     size_t  bodySize;
