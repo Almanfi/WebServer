@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/26 18:14:15 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/04 17:19:30 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,15 +56,13 @@ sock_fd Client::getFd() {
 }
 
 ssize_t Client::send() {
-    cout << "++++++++++++ send ++++++++++++" << endl;
-    std::string response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
-    // std::string response = "HTTP/1.1 300\r\nLocation: https://www.google.com/\r\n\r\n";
-    ssize_t bytes_sent = ::send(fd, response.c_str(), response.size(), 0);
-    if (bytes_sent == -1) {
-        perror("send");
-        throw std::exception();
-    }
-    state = CLOSE;
+    ssize_t bytes_sent = 0;
+    if(!response.isStarted())
+        response.initResponse(this);
+    response.sendResponse();
+    // sendFile(fd, "./tmp/en.subject.pdf");
+    if(response.isEnded())
+        state = CLOSE;
     return (bytes_sent);
 }
 

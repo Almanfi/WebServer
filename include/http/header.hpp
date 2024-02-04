@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/24 17:31:16 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/04 17:04:12 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,6 +92,10 @@ public:
     // void parseHeaders(const string& value);
     // void parseHeader(std::string header);
     static void initHeadersRules();
+    KeyVal      keyVal;
+    long        flags;
+    t_method    method;
+    string      uri;
 private:
     void validateRequestLine(const string& value);
     void validateHost(const string& value);
@@ -113,10 +117,6 @@ private:
     void checkHeadersConflicts();
     void checkRequiredHeaders();
     
-    KeyVal      keyVal;
-    long        flags;
-    t_method    method;
-    string      uri;
     typedef map<string, void (Header::*)(const string&)> HEADER_VALIDATORS;
     static HEADER_VALIDATORS validationMap;
     static vector<string> httpAllowedMethods;
