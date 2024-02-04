@@ -197,7 +197,7 @@ bool Response::isStarted()
 }
 void Response::sendDirectory(const std::string &path)
 {
-    DIR *dir;
+    DIR *dir= NULL;
     std::string listingPageHTML;
     
     if(!started)
