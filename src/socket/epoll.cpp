@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   epoll.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/26 18:15:51 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/07 00:12:46 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,10 @@ Epoll::Epoll(Config& config) {
         addEvent(tmp->getSockid(), EPOLLIN); // TODO no need to add EPOLLOUT right?
     }
     cout << "number of servers listening: " << servSockets.size() << endl;
+    for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
+        cout << "server " << it->second->getServers()[0]->getInfo(S_HOST) << ":"
+            << it->second->getServers()[0]->getInfo(S_PORT) << endl;
+    }
 }
 
 Epoll::~Epoll() {
@@ -74,7 +78,15 @@ void Epoll::addClient(sock_fd fd, uint32_t events) {
     cout    << "new client added on server " 
             << servSock->getServers()[0]->getInfo(S_HOST) << ":"
             << servSock->getServers()[0]->getInfo(S_PORT) << endl;
-    clients.insert(std::make_pair(fd, new Client(fd, *servSock)));
+    IClientResourceManager* clientRM = new ClientResourceManager(fd, *servSock);
+    clientRM->file("tmp");
+    ISocketManager& socketManager = clientRM->socketManager();
+    IFileManager& fileManager = clientRM->fileManager();
+    IRequestManager& requestManager = clientRM->requestManager();
+    IResponseManager& responseManager = clientRM->responseManager();
+    Client* client = new Client(clientRM, socketManager, fileManager,
+                                requestManager, responseManager);
+    clients.insert(std::make_pair(fd, client));
     cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
     addEvent(fd, events);
 }
