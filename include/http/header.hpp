@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/04 17:04:12 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/08 21:45:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,28 +75,36 @@ typedef enum {
     DELETE,
 }   t_method;
 
-class Header {
+class IHeader {
 public:
-    Header();
-    Header(const Header &src);
-    Header &operator=(const Header &rhs);
-    ~Header();
-   
-    void validateHeader(const string& key, const string& value);
-    void validateHeader(KeyVal::const_iterator& header);
-    
-    void check();
-    void insertHeader(const string& key, const string& value);
-    KeyVal& getKeyVal();
-    string getHeader(const string& key);
-    // void parseHeaders(const string& value);
-    // void parseHeader(std::string header);
-    static void initHeadersRules();
+    virtual ~IHeader() {};
+    virtual void check() = 0;
+    virtual void insertHeader(const string& key, const string& value) = 0;
+    virtual string getHeader(const string& key) = 0;
+    virtual KeyVal& getKeyVal() = 0;
+};
+
+class Header : public IHeader {
     KeyVal      keyVal;
     long        flags;
     t_method    method;
     string      uri;
+public:
+    Header();
+    Header(const Header &src);
+    ~Header();
+
+    void validateHeader(const string& key, const string& value);
+    void validateHeader(KeyVal::const_iterator& header);
+
+    void check();
+    void insertHeader(const string& key, const string& value);
+    KeyVal& getKeyVal();
+    string getHeader(const string& key);
+
+    static void initHeadersRules();
 private:
+    Header &operator=(const Header &rhs);
     void validateRequestLine(const string& value);
     void validateHost(const string& value);
     void validateContentLength(const string& value);
@@ -116,7 +124,7 @@ private:
 
     void checkHeadersConflicts();
     void checkRequiredHeaders();
-    
+
     typedef map<string, void (Header::*)(const string&)> HEADER_VALIDATORS;
     static HEADER_VALIDATORS validationMap;
     static vector<string> httpAllowedMethods;

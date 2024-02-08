@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 21:20:48 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 21:48:26 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ public:
 
 class Request : public IRequest {
 public:
-    Request(ISBuffer& buffer, IuniqFile& file);
+    Request(ISBuffer& buffer, IuniqFile& file, IHeader& headers);
     ~Request();
     bool    parse();
     string  getHeader(const string& key);
@@ -90,7 +90,7 @@ private:
     void recieveNormalBody(ISBuffer& buffer, IuniqFile& file);
     ISBuffer& buffer;
     IuniqFile& file;
-    Header  headers;
+    IHeader&  headers;
     bool    headerComplete;
     ITransferStrategy* strategy; 
 };

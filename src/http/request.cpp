@@ -6,14 +6,14 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 21:13:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 21:48:13 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request(ISBuffer& buffer, IuniqFile& file) :
-        buffer(buffer), file(file),
+Request::Request(ISBuffer& buffer, IuniqFile& file, IHeader& headers) :
+        buffer(buffer), file(file), headers(headers),
         headerComplete(false), strategy(NULL) {
 }
 

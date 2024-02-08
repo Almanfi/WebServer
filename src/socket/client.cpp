@@ -6,47 +6,17 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 17:32:19 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 22:16:20 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
-
-// Client::Client(sock_fd fd, ServerSocket& servSock) :
-//                                                     fd(fd),
-//                                                     state(NONE),
-//                                                     uuid(),
-//                                                     servSock(servSock) {
-//     while (access((string("/tmp/") + uuid.getStr()).c_str(), F_OK) == 0) {
-//         uuid.regen();
-//     }
-//     createFile();
-//     buffer.clear();
-// }
-
-// Client::Client(IClientResourceManager* resourceManage) : RM(resourceManage) {
-// }
-
-Client::Client(IClientResourceManager* resourceManager,
-			ISocketManager& socketManager,
-			IFileManager& fileManager,
-			IRequestManager& requestManager,
-			IResponseManager& responseManager) :
-                RM(resourceManager),
-                RMF(NULL),
-                socketManager(socketManager),
-                fileManager(fileManager),
-                requestManager(requestManager),
-                responseManager(responseManager),
-                state(NONE) {
-}
 
 Client::Client(IClientResourceManagerFacade* RMF,
 			ISocketManager& socketManager,
 			IFileManager& fileManager,
 			IRequestManager& requestManager,
 			IResponseManager& responseManager) :
-                RM(NULL),
                 RMF(RMF),
                 socketManager(socketManager),
                 fileManager(fileManager),
@@ -56,7 +26,7 @@ Client::Client(IClientResourceManagerFacade* RMF,
     RMF->destroyFactory();
 }
 
-Client::Client(const Client& other) : RM(other.RM) , 
+Client::Client(const Client& other) : RMF(other.RMF) ,
                                       socketManager(other.socketManager),
                                       fileManager(other.fileManager),
                                       requestManager(other.requestManager),
@@ -65,37 +35,13 @@ Client::Client(const Client& other) : RM(other.RM) ,
     throw std::runtime_error("Client::copy constructor: forbidden");
 }
 
-// Client::Client(const Client& other) :
-//                                     fd(other.fd),
-//                                     state(other.state),
-//                                     uuid(other.uuid),
-//                                     buffer(other.buffer),
-//                                     servSock(other.servSock),
-//                                     request(other.request) {           
-// }
-
 Client& Client::operator=(const Client& other) {
     (void) other;
     throw std::runtime_error("Client::operator=: forbidden");
 }
-// Client& Client::operator=(const Client& other) {
-//     if (this != &other) {
-//         fd = other.fd;
-//         state = other.state;
-//         uuid = other.uuid;
-//         buffer = other.buffer;
-//         request = other.request;
-//     }
-//     return (*this);
-// }
 
 Client::~Client() {
-    delete RM;
     delete RMF;
-    // if (file.is_open())
-    //     file.close();
-    // // remove((string("./tmp/") + uuid.getStr()).c_str()); // TODO uncomment
-    // close(fd);
 }
 
 // sock_fd Client::getFd() {
@@ -112,32 +58,15 @@ ssize_t Client::send() {
     }
     state = CLOSE;
     return (bytes_sent);
-    // ssize_t bytes_sent = 0;
-    // if(!response.isStarted())
-    //     response.initResponse(this);
-    // response.sendResponse();
-    // // sendFile(fd, "./tmp/en.subject.pdf");
-    // cnx_state state = RM->state();
-    // if(response.isEnded())
-    //     state = CLOSE;
-    // return (bytes_sent);
 }
 
 ssize_t Client::recieve() {
     cout << "++++++++++++ recieve ++++++++++++" << endl;
     ssize_t bytes_received = socketManager.recv();
     fileManager.openFile();
-    // RM->file().openFile();
-    // ISBuffer& buffer = RM->buffer();
-    // IuniqFile& file = RM->file();
-    // Request& request = RM->request();
-    // ssize_t bytes_received = RM->buffer().recv(RM->fd(), 0); // TODO check flags later
     if (requestManager.parse() == true)
         state = WRITE;
-    // if (request.parseRequest(buffer, file) == true)
-    //     state = WRITE;
     fileManager.closeFile();
-    // file.close();
     cout << "++++++++++++ recieve end ++++++++++++" << endl;
     return (bytes_received);
 }
@@ -173,35 +102,15 @@ const cnx_state& Client::handleState() {
 
 Server& Client::getServer() {
     ServerSocket& servSock = RMF->servSock();
-    // ServerSocket& servSock = RM->servSock();
     return (*servSock.getServers()[0]);
 }
 
-// void Client::createFile() {
-//     file.open((string("./tmp/") + uuid.getStr()).c_str(), std::ios::in | std::ios::out | std::ios::trunc);
-//     if (!file.is_open()) {
-//         perror("open");
-//         throw std::exception();
-//     }
-//     file.close();
-// }
-
-// void Client::openFile() {
-//     file.open((string("./tmp/") + uuid.getStr()).c_str(), std::ios::in | std::ios::out | std::ios::app);
-//     if (!file.is_open()) {
-//         perror("open");
-//         throw std::exception();
-//     }
-// }
-
 const Iuuid& Client::getUUID() {
     return (RMF->uuid());
-    // return (RM->uuid());
 }
 
 
 // socketManager
-
 
 // ClientResourceManager
 
@@ -217,7 +126,7 @@ ClientResourceManager::ClientResourceManager(sock_fd fd, ServerSocket& servSock)
             _socketManager(NULL),
             _fileManager(NULL),
             _requestManager(NULL),
-            _responseManager(NULL){
+            _responseManager(NULL) {
 }
 
 ClientResourceManager::ClientResourceManager(const ClientResourceManager& other) : 
@@ -251,6 +160,8 @@ ClientResourceManager::~ClientResourceManager() {
         delete _requestManager;
     if (_responseManager)
         delete _responseManager;
+    if (_requestHeaders)
+        delete _requestHeaders;
 }
 
 Iuuid& ClientResourceManager::uuid() {
@@ -284,8 +195,10 @@ Response& ClientResourceManager::response() {
 }
 
 IRequest& ClientResourceManager::request() {
+    if (!_requestHeaders)
+        _requestHeaders = new Header();
     if (!_request)
-        _request = new Request(buffer(), file());
+        _request = new Request(buffer(), file(), *_requestHeaders);
     return *_request;
 }
 
@@ -426,6 +339,10 @@ Iuuid* ClientResourceManagerFactory::createUUID() {
 	return new UUID();
 }
 
+IHeader* ClientResourceManagerFactory::createRequestHeader() {
+    return new Header();
+}
+
 IuniqFile* ClientResourceManagerFactory::createUniqFile(string rootPath, Iuuid& uuid) {
 	return new UniqFile(rootPath, uuid);
 }
@@ -446,8 +363,8 @@ IResponseManager* ClientResourceManagerFactory::createResponseManager(Response& 
 	return new ResponseManager(response);
 }
 
-IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IuniqFile& file) {
-	return new Request(buffer, file);
+IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IuniqFile& file, IHeader& headers) {
+	return new Request(buffer, file, headers);
 }
 
 Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IuniqFile& file) {
@@ -467,6 +384,7 @@ ClientResourceManagerFacade::ClientResourceManagerFacade (
 							_uuid(NULL),
 							_file(NULL),
 							_buffer(NULL),
+                            _requestHeaders(NULL),
 							_request(NULL),
 							_response(NULL),
 							_socketManager(NULL),
@@ -477,15 +395,16 @@ ClientResourceManagerFacade::ClientResourceManagerFacade (
 }
 
 ClientResourceManagerFacade::~ClientResourceManagerFacade() {
+    delete _uuid;
+    delete _file;
+    delete _buffer;
+    delete _requestHeaders;
+    delete _request;
+    delete _response;
     delete _socketManager;
     delete _fileManager;
     delete _requestManager;
     delete _responseManager;
-    delete _buffer;
-    delete _uuid;
-    delete _file;
-    delete _request;
-    delete _response;
     delete factory;
 }
 
@@ -530,8 +449,10 @@ IRequestManager& ClientResourceManagerFacade::requestManager() {
 			_buffer = factory->createBuffer();
 		if (!_file)
 			createUniqFile();
+        if (!_requestHeaders)
+            _requestHeaders = factory->createRequestHeader();
 		if (!_request)
-			_request = factory->createRequest(*_buffer, *_file);
+			_request = factory->createRequest(*_buffer, *_file, *_requestHeaders);
 		_requestManager = factory->createRequestManager(*_request);
 	}
 	return *_requestManager;
