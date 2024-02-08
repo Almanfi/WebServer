@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/06 23:07:42 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 18:06:37 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,8 @@ typedef map<string, string>  KeyVal;
 # define TRANSFER_ENCODING "Transfer-Encoding"
 
 class SBuffer;
+
+class transfer
 
 class IRequest {
 public:
@@ -55,6 +57,7 @@ private:
     void recieveNormalBody(ISBuffer& buffer, IuniqFile& file);
     ISBuffer& buffer;
     IuniqFile& file;
+    
     Header  headers;
     // string  body;
     bool    headerComplete;

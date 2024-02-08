@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 01:36:24 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 17:32:19 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,12 +33,28 @@ Client::Client(IClientResourceManager* resourceManager,
 			IRequestManager& requestManager,
 			IResponseManager& responseManager) :
                 RM(resourceManager),
+                RMF(NULL),
                 socketManager(socketManager),
                 fileManager(fileManager),
                 requestManager(requestManager),
                 responseManager(responseManager),
                 state(NONE) {
-}        
+}
+
+Client::Client(IClientResourceManagerFacade* RMF,
+			ISocketManager& socketManager,
+			IFileManager& fileManager,
+			IRequestManager& requestManager,
+			IResponseManager& responseManager) :
+                RM(NULL),
+                RMF(RMF),
+                socketManager(socketManager),
+                fileManager(fileManager),
+                requestManager(requestManager),
+                responseManager(responseManager),
+                state(NONE) {
+    RMF->destroyFactory();
+}
 
 Client::Client(const Client& other) : RM(other.RM) , 
                                       socketManager(other.socketManager),
@@ -75,6 +91,7 @@ Client& Client::operator=(const Client& other) {
 
 Client::~Client() {
     delete RM;
+    delete RMF;
     // if (file.is_open())
     //     file.close();
     // // remove((string("./tmp/") + uuid.getStr()).c_str()); // TODO uncomment
@@ -155,7 +172,8 @@ const cnx_state& Client::handleState() {
 // }
 
 Server& Client::getServer() {
-    ServerSocket& servSock = RM->servSock();
+    ServerSocket& servSock = RMF->servSock();
+    // ServerSocket& servSock = RM->servSock();
     return (*servSock.getServers()[0]);
 }
 
@@ -177,7 +195,8 @@ Server& Client::getServer() {
 // }
 
 const Iuuid& Client::getUUID() {
-    return (RM->uuid());
+    return (RMF->uuid());
+    // return (RM->uuid());
 }
 
 
@@ -376,4 +395,186 @@ ResponseManager::ResponseManager(Response& response) :
 
 void ResponseManager::sendResponse() {
 	response.sendResponse();
+}
+
+
+// ResourceManagerFactory
+
+ClientResourceManagerFactory::ClientResourceManagerFactory() {}
+
+ClientResourceManagerFactory::~ClientResourceManagerFactory() {}
+
+ClientResourceManagerFactory::ClientResourceManagerFactory(const ClientResourceManagerFactory& other) {
+	(void)other;
+	throw std::runtime_error("ClientResourceManagerFactory is not copyable");
+}
+
+ClientResourceManagerFactory& ClientResourceManagerFactory::operator=(const ClientResourceManagerFactory& other) {
+	(void)other;
+	throw std::runtime_error("ClientResourceManagerFactory is not copyable");
+}
+
+IClientResourceManagerFacade* ClientResourceManagerFactory::createFacade(sock_fd fd, ServerSocket& servSock) {
+	return new ClientResourceManagerFacade(fd, servSock, this);
+}
+
+ISBuffer* ClientResourceManagerFactory::createBuffer() {
+	return new SBuffer();
+}
+
+Iuuid* ClientResourceManagerFactory::createUUID() {
+	return new UUID();
+}
+
+IuniqFile* ClientResourceManagerFactory::createUniqFile(string rootPath, Iuuid& uuid) {
+	return new UniqFile(rootPath, uuid);
+}
+
+ISocketManager* ClientResourceManagerFactory::createSocketManager(sock_fd& fd, ISBuffer& buffer) {
+	return new SocketManager(fd, buffer);
+}
+
+IFileManager* ClientResourceManagerFactory::createFileManager(IuniqFile& file) {
+	return new FileManager(file);
+}
+
+IRequestManager* ClientResourceManagerFactory::createRequestManager(IRequest& request) {
+	return new RequestManager(request);
+}
+
+IResponseManager* ClientResourceManagerFactory::createResponseManager(Response& response) {
+	return new ResponseManager(response);
+}
+
+IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IuniqFile& file) {
+	return new Request(buffer, file);
+}
+
+Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IuniqFile& file) {
+	return new Response(buffer, file);
+}
+
+
+// ResourceManagerFacade
+
+
+ClientResourceManagerFacade::ClientResourceManagerFacade (
+							sock_fd fd,
+							ServerSocket& servSock,
+							IClientResourceManagerFactory* factory) :
+							_fd(fd),
+							_servSock(servSock),
+							_uuid(NULL),
+							_file(NULL),
+							_buffer(NULL),
+							_request(NULL),
+							_response(NULL),
+							_socketManager(NULL),
+							_fileManager(NULL),
+							_requestManager(NULL),
+							_responseManager(NULL),
+							factory(factory) {
+}
+
+ClientResourceManagerFacade::~ClientResourceManagerFacade() {
+    delete _socketManager;
+    delete _fileManager;
+    delete _requestManager;
+    delete _responseManager;
+    delete _buffer;
+    delete _uuid;
+    delete _file;
+    delete _request;
+    delete _response;
+    delete factory;
+}
+
+ClientResourceManagerFacade::ClientResourceManagerFacade(const ClientResourceManagerFacade& other) :
+							_servSock(other._servSock) {
+	(void)other;
+	throw std::runtime_error("ClientResourceManagerFacade is not copyable");
+}
+
+ClientResourceManagerFacade& ClientResourceManagerFacade::operator=(const ClientResourceManagerFacade& other) {
+	(void)other;
+	throw std::runtime_error("ClientResourceManagerFacade is not copyable");
+}
+
+ISocketManager& ClientResourceManagerFacade::socketManager() {
+	if (!_socketManager) {
+		if (!factory)
+			throw std::runtime_error("factory is not set");
+		if (!_buffer)
+			_buffer = factory->createBuffer();
+		_socketManager = factory->createSocketManager(_fd, *_buffer);
+	}
+	return *_socketManager;
+}
+
+IFileManager& ClientResourceManagerFacade::fileManager() {
+	if (!_fileManager) {
+		if (!factory)
+			throw std::runtime_error("factory is not set");
+		if (!_file)
+			createUniqFile();
+		_fileManager = factory->createFileManager(*_file);
+	}
+	return *_fileManager;
+}
+
+IRequestManager& ClientResourceManagerFacade::requestManager() {
+	if (!_requestManager)  {
+		if (!factory)
+			throw std::runtime_error("factory is not set");
+		if (!_buffer)
+			_buffer = factory->createBuffer();
+		if (!_file)
+			createUniqFile();
+		if (!_request)
+			_request = factory->createRequest(*_buffer, *_file);
+		_requestManager = factory->createRequestManager(*_request);
+	}
+	return *_requestManager;
+}
+
+IResponseManager& ClientResourceManagerFacade::responseManager() {
+	if (!_responseManager) {
+		if (!factory)
+			throw std::runtime_error("factory is not set");
+		if (!_buffer)
+			_buffer = factory->createBuffer();
+		if (!_file)
+			createUniqFile();
+		if (!_response)
+			_response = factory->createResponse(*_buffer, *_file);
+		_responseManager = factory->createResponseManager(*_response);
+	}
+	return *_responseManager;
+}
+
+void ClientResourceManagerFacade::destroyFactory() {
+	delete factory;
+	factory = NULL;
+}
+
+void ClientResourceManagerFacade::createUniqFile() {
+	if (!factory)
+		throw std::runtime_error("factory is not set");
+	if (!_uuid)
+		_uuid = factory->createUUID();
+	if (!_file)
+		_file = factory->createUniqFile("tmp", *_uuid);
+}
+
+Iuuid& ClientResourceManagerFacade::uuid() {
+    if (!_uuid) {
+        if (!factory)
+            throw std::runtime_error("factory is not set");
+        _uuid = factory->createUUID();
+    }
+    return *_uuid;
+}
+
+ServerSocket& ClientResourceManagerFacade::servSock() {
+    return _servSock;
 }

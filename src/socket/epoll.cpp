@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 00:12:46 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 17:13:24 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,14 +78,23 @@ void Epoll::addClient(sock_fd fd, uint32_t events) {
     cout    << "new client added on server " 
             << servSock->getServers()[0]->getInfo(S_HOST) << ":"
             << servSock->getServers()[0]->getInfo(S_PORT) << endl;
-    IClientResourceManager* clientRM = new ClientResourceManager(fd, *servSock);
-    clientRM->file("tmp");
-    ISocketManager& socketManager = clientRM->socketManager();
-    IFileManager& fileManager = clientRM->fileManager();
-    IRequestManager& requestManager = clientRM->requestManager();
-    IResponseManager& responseManager = clientRM->responseManager();
-    Client* client = new Client(clientRM, socketManager, fileManager,
+    IClientResourceManagerFactory* clientRMFactory = new ClientResourceManagerFactory();
+    IClientResourceManagerFacade* clientRMF = clientRMFactory->createFacade(fd, *servSock);
+    ISocketManager& socketManager = clientRMF->socketManager();
+    IFileManager& fileManager = clientRMF->fileManager();
+    IRequestManager& requestManager = clientRMF->requestManager();
+    IResponseManager& responseManager = clientRMF->responseManager();
+    Client* client = new Client(clientRMF, socketManager, fileManager,
                                 requestManager, responseManager);
+
+    // IClientResourceManager* clientRM = new ClientResourceManager(fd, *servSock);
+    // clientRM->file("tmp");
+    // ISocketManager& socketManager = clientRM->socketManager();
+    // IFileManager& fileManager = clientRM->fileManager();
+    // IRequestManager& requestManager = clientRM->requestManager();
+    // IResponseManager& responseManager = clientRM->responseManager();
+    // Client* client = new Client(clientRM, socketManager, fileManager,
+    //                             requestManager, responseManager);
     clients.insert(std::make_pair(fd, client));
     cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
     addEvent(fd, events);

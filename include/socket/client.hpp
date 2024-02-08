@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 01:25:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 17:17:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,6 +122,86 @@ private:
 	Response& response;
 };
 
+class IClientResourceManager;
+
+class ClientResourceManager;
+
+class IClientResourceManagerFacade;
+
+class IClientResourceManagerFactory {
+public:
+	virtual ~IClientResourceManagerFactory() {};
+	virtual IClientResourceManagerFacade* createFacade(sock_fd fd, ServerSocket& servSock) = 0;
+	virtual ISBuffer* createBuffer() = 0;
+	virtual Iuuid* createUUID() = 0;
+	virtual IuniqFile* createUniqFile(string rootPath, Iuuid& uuid) = 0;
+	virtual ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer) = 0;
+	virtual IFileManager* createFileManager(IuniqFile& file) = 0;
+	virtual IRequestManager* createRequestManager(IRequest& request) = 0;
+	virtual IResponseManager* createResponseManager(Response& response) = 0;
+	virtual IRequest* createRequest(ISBuffer& buffer, IuniqFile& file) = 0;
+	virtual Response* createResponse(ISBuffer& buffer, IuniqFile& file) = 0;
+};
+
+class ClientResourceManagerFactory : public IClientResourceManagerFactory {
+	ClientResourceManagerFactory(const ClientResourceManagerFactory& other);
+	ClientResourceManagerFactory& operator=(const ClientResourceManagerFactory& other);
+public:
+	IClientResourceManagerFacade* createFacade(sock_fd fd, ServerSocket& servSock);
+	ClientResourceManagerFactory();
+	~ClientResourceManagerFactory();
+	ISBuffer* createBuffer();
+	Iuuid* createUUID();
+	IuniqFile* createUniqFile(string rootPath, Iuuid& uuid);
+	ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer);
+	IFileManager* createFileManager(IuniqFile& file);
+	IRequestManager* createRequestManager(IRequest& request);
+	IResponseManager* createResponseManager(Response& response);
+	IRequest* createRequest(ISBuffer& buffer, IuniqFile& file);
+	Response* createResponse(ISBuffer& buffer, IuniqFile& file);
+};
+
+class IClientResourceManagerFacade {
+public:
+	virtual ~IClientResourceManagerFacade() {};
+	virtual ISocketManager&		socketManager() = 0;
+	virtual IFileManager&		fileManager() = 0;
+	virtual IRequestManager&	requestManager() = 0;
+	virtual IResponseManager&	responseManager() = 0;
+	virtual void				destroyFactory() = 0;
+	virtual Iuuid&				uuid() = 0;
+	virtual ServerSocket&		servSock() = 0;
+};
+
+class ClientResourceManagerFacade : public IClientResourceManagerFacade {
+	sock_fd         _fd;
+	ServerSocket&   _servSock;
+	Iuuid*          _uuid;
+	IuniqFile*      _file;
+	ISBuffer*       _buffer;
+	IRequest*       _request;
+	Response*       _response;
+	ISocketManager*     _socketManager;
+	IFileManager*       _fileManager;
+	IRequestManager*    _requestManager;
+	IResponseManager*	_responseManager;
+	IClientResourceManagerFactory* factory;
+public:
+	ClientResourceManagerFacade(sock_fd fd, ServerSocket& servSock,
+								IClientResourceManagerFactory* factory);
+	~ClientResourceManagerFacade();
+	ISocketManager&		socketManager();
+	IFileManager&		fileManager();
+	IRequestManager&	requestManager();
+	IResponseManager&	responseManager();
+	void				destroyFactory();
+	Iuuid&				uuid();
+	ServerSocket&		servSock();
+private:
+	void createUniqFile();
+	ClientResourceManagerFacade(const ClientResourceManagerFacade& other);
+	ClientResourceManagerFacade& operator=(const ClientResourceManagerFacade& other);
+};
 
 class IClientResourceManager {
 public:
@@ -177,9 +257,12 @@ public:
 
 class Client {
 	public:
-	// Client(sock_fd fd, ServerSocket& servSock);
-	// Client(IClientResourceManager* resourceManager);
 	Client(IClientResourceManager* resourceManager,
+			ISocketManager& socketManager,
+			IFileManager& fileManager,
+			IRequestManager& requestManager,
+			IResponseManager& responseManager);
+	Client(IClientResourceManagerFacade* RM,
 			ISocketManager& socketManager,
 			IFileManager& fileManager,
 			IRequestManager& requestManager,
@@ -189,30 +272,19 @@ class Client {
 	const cnx_state&    handleState();
 	ssize_t     send();
 	ssize_t     recieve();
-	// void        readBuffer();
-	// sock_fd     getFd();
 	Server&     getServer();
 	const Iuuid& getUUID();
-	// void        createFile();
-	// void        openFile();
 	friend class Response;
 private:
 	Client(const Client& other);
 	Client& operator=(const Client& other);
 	IClientResourceManager* RM;
+	IClientResourceManagerFacade* RMF;
 	ISocketManager&  socketManager;
 	IFileManager& 	 fileManager;
 	IRequestManager& requestManager;
 	IResponseManager& responseManager;
 	cnx_state   state;
-	// sock_fd     fd;
-	// UUID        uuid;
-	// fstream     file;
-	// SBuffer     buffer;
-	// ServerSocket& servSock;
-	// Request     request;
-	// Response    response;
-	// string      data;
 };
 
 #endif // CLIENT_HPP
