@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 18:06:37 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 20:16:38 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,42 @@ typedef map<string, string>  KeyVal;
 
 class SBuffer;
 
-class transfer
+enum transferState {
+    INCOMPLETE,
+    COMPLETE,
+};
+
+class ItransferStrategy {
+public:
+    virtual ~ItransferStrategy() {};
+    virtual transferState    transfer(ISBuffer& buffer, IuniqFile& file) = 0;
+};
+
+class NormalTransferStrategy : public ItransferStrategy {
+    size_t  bodySize;
+    size_t  contentLength;
+    NormalTransferStrategy(const NormalTransferStrategy& other);
+    NormalTransferStrategy& operator=(const NormalTransferStrategy& other);
+public:
+    NormalTransferStrategy(size_t contentLength);
+    ~NormalTransferStrategy();
+    transferState    transfer(ISBuffer& buffer, IuniqFile& file);
+};
+
+class ChunkedTransferStrategy : public ItransferStrategy {
+    size_t  bodySize;
+    size_t  contentLength;
+    bool    haveChunckSize;
+    ChunkedTransferStrategy(const ChunkedTransferStrategy& other);
+    ChunkedTransferStrategy& operator=(const ChunkedTransferStrategy& other);
+    bool findChunckSize(ISBuffer& buffer, size_t& chunkSize);
+    bool hasCRLF(ISBuffer& buffer, size_t pos);
+public:
+    ChunkedTransferStrategy();
+    ~ChunkedTransferStrategy();
+    transferState    transfer(ISBuffer& buffer, IuniqFile& file);
+};
+    
 
 class IRequest {
 public:
@@ -50,6 +85,7 @@ public:
     string  getHeader(const string& key);
 
 private:
+    void    setTransferStrategy();
     void    parseHeaders();
     Request& operator=(const Request& other);
     bool hasCRLF(ISBuffer& buffer, size_t pos);
@@ -57,13 +93,13 @@ private:
     void recieveNormalBody(ISBuffer& buffer, IuniqFile& file);
     ISBuffer& buffer;
     IuniqFile& file;
-    
     Header  headers;
-    // string  body;
     bool    headerComplete;
-    size_t  bodySize;
-    size_t  contentLength;
-    bool    haveChunckSize;
+    ItransferStrategy* strategy; 
+    // string  body;
+    // size_t  bodySize;
+    // size_t  contentLength;
+    // bool    haveChunckSize;
 };
 
 #endif // REQUEST_HPP
