@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 20:16:38 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/08 21:20:48 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,13 +34,13 @@ enum transferState {
     COMPLETE,
 };
 
-class ItransferStrategy {
+class ITransferStrategy {
 public:
-    virtual ~ItransferStrategy() {};
+    virtual ~ITransferStrategy() {};
     virtual transferState    transfer(ISBuffer& buffer, IuniqFile& file) = 0;
 };
 
-class NormalTransferStrategy : public ItransferStrategy {
+class NormalTransferStrategy : public ITransferStrategy {
     size_t  bodySize;
     size_t  contentLength;
     NormalTransferStrategy(const NormalTransferStrategy& other);
@@ -51,7 +51,7 @@ public:
     transferState    transfer(ISBuffer& buffer, IuniqFile& file);
 };
 
-class ChunkedTransferStrategy : public ItransferStrategy {
+class ChunkedTransferStrategy : public ITransferStrategy {
     size_t  bodySize;
     size_t  contentLength;
     bool    haveChunckSize;
@@ -75,18 +75,15 @@ public:
 
 class Request : public IRequest {
 public:
-    // Request();
     Request(ISBuffer& buffer, IuniqFile& file);
-    // Request(const Client& client);
     ~Request();
-    Request(const Request& other);
-    // bool    parseRequest(SBuffer& buffer, fstream& file);
     bool    parse();
     string  getHeader(const string& key);
 
 private:
     void    setTransferStrategy();
     void    parseHeaders();
+    Request(const Request& other);
     Request& operator=(const Request& other);
     bool hasCRLF(ISBuffer& buffer, size_t pos);
     void recieveChunkedBody(ISBuffer& buffer, IuniqFile& file);
@@ -95,11 +92,7 @@ private:
     IuniqFile& file;
     Header  headers;
     bool    headerComplete;
-    ItransferStrategy* strategy; 
-    // string  body;
-    // size_t  bodySize;
-    // size_t  contentLength;
-    // bool    haveChunckSize;
+    ITransferStrategy* strategy; 
 };
 
 #endif // REQUEST_HPP
