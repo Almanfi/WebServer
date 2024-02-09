@@ -6,13 +6,13 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 21:48:13 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/09 19:43:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request(ISBuffer& buffer, IuniqFile& file, IHeader& headers) :
+Request::Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers) :
         buffer(buffer), file(file), headers(headers),
         headerComplete(false), strategy(NULL) {
 }
@@ -118,7 +118,7 @@ NormalTransferStrategy& NormalTransferStrategy::operator=(const NormalTransferSt
 NormalTransferStrategy::~NormalTransferStrategy() {
 }
 
-transferState    NormalTransferStrategy::transfer(ISBuffer& buffer, IuniqFile& file) {
+transferState    NormalTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& file) {
     size_t size = std::min(static_cast<size_t>(buffer.size()), contentLength);
     if (!buffer.empty())
         file.write(&buffer, size);
@@ -169,7 +169,7 @@ bool ChunkedTransferStrategy::findChunckSize(ISBuffer& buffer, size_t& chunkSize
     return (true);
 }
 
-transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IuniqFile& file) {
+transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& file) {
     if (haveChunckSize == false) {
         if (findChunckSize(buffer, contentLength) == false)
             return (INCOMPLETE);

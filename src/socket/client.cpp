@@ -6,31 +6,26 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 22:16:20 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/09 21:07:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Client::Client(IClientResourceManagerFacade* RMF,
-			ISocketManager& socketManager,
-			IFileManager& fileManager,
-			IRequestManager& requestManager,
-			IResponseManager& responseManager) :
+Client::Client(IClientResourceManagerFacade* RMF) :
                 RMF(RMF),
-                socketManager(socketManager),
-                fileManager(fileManager),
-                requestManager(requestManager),
-                responseManager(responseManager),
+                socketManager(RMF->socketManager()),
+                file(RMF->file()),
+                request(RMF->request()),
+                response(RMF->response()),
                 state(NONE) {
-    RMF->destroyFactory();
 }
 
 Client::Client(const Client& other) : RMF(other.RMF) ,
                                       socketManager(other.socketManager),
-                                      fileManager(other.fileManager),
-                                      requestManager(other.requestManager),
-                                      responseManager(other.responseManager),
+                                      file(other.file),
+                                      request(other.request),
+                                      response(other.response),
                                       state(other.state) {
     throw std::runtime_error("Client::copy constructor: forbidden");
 }
@@ -50,7 +45,7 @@ Client::~Client() {
 
 ssize_t Client::send() {
     cout << "++++++++++++ send ++++++++++++" << endl;
-    responseManager.sendResponse();
+    response.sendResponse();
     ssize_t bytes_sent = socketManager.send();
     if (bytes_sent == -1) {
         perror("send");
@@ -63,10 +58,10 @@ ssize_t Client::send() {
 ssize_t Client::recieve() {
     cout << "++++++++++++ recieve ++++++++++++" << endl;
     ssize_t bytes_received = socketManager.recv();
-    fileManager.openFile();
-    if (requestManager.parse() == true)
+    file.open();
+    if (request.parse() == true)
         state = WRITE;
-    fileManager.closeFile();
+    file.close();
     cout << "++++++++++++ recieve end ++++++++++++" << endl;
     return (bytes_received);
 }
@@ -91,15 +86,6 @@ const cnx_state& Client::handleState() {
     return (state);
 }
 
-// void Client::readBuffer() {
-//     cout    << "Received request: " << endl
-//             << buffer << std::endl;
-// }
-
-// cnx_state& Client::getState() {
-//     return (state);
-// }
-
 Server& Client::getServer() {
     ServerSocket& servSock = RMF->servSock();
     return (*servSock.getServers()[0]);
@@ -107,135 +93,6 @@ Server& Client::getServer() {
 
 const Iuuid& Client::getUUID() {
     return (RMF->uuid());
-}
-
-
-// socketManager
-
-// ClientResourceManager
-
-ClientResourceManager::ClientResourceManager(sock_fd fd, ServerSocket& servSock) :
-            _fd(fd),
-            _servSock(servSock),
-            _state(NONE),
-            _uuid(NULL),
-            _file(NULL),
-            _buffer(NULL),
-            _request(NULL),
-            _response(NULL),
-            _socketManager(NULL),
-            _fileManager(NULL),
-            _requestManager(NULL),
-            _responseManager(NULL) {
-}
-
-ClientResourceManager::ClientResourceManager(const ClientResourceManager& other) : 
-            _fd(other._fd),
-            _servSock(other._servSock) {
-    throw std::runtime_error("ClientResourceManager::copy constructor: forbidden");
-}
-
-ClientResourceManager& ClientResourceManager::operator=(const ClientResourceManager& other) {
-    (void) other;
-    throw std::runtime_error("ClientResourceManager::operator=: forbidden");
-}
-
-ClientResourceManager::~ClientResourceManager() {
-    cout << "cleaning resource of client " << endl;
-    if (_uuid)
-        delete _uuid;
-    if (_file)
-        delete _file;
-    if (_buffer)
-        delete _buffer;
-    if (_response)
-        delete _response;
-    if (_request)
-        delete _request;
-    if (_socketManager)
-        delete _socketManager;
-    if (_fileManager)
-        delete _fileManager;
-    if (_requestManager)
-        delete _requestManager;
-    if (_responseManager)
-        delete _responseManager;
-    if (_requestHeaders)
-        delete _requestHeaders;
-}
-
-Iuuid& ClientResourceManager::uuid() {
-    if (!_uuid)
-        _uuid = new UUID();
-    return *_uuid;
-}
-
-IuniqFile& ClientResourceManager::file(string rootPath) {
-    if (!_file)
-        _file = new UniqFile(rootPath, uuid());
-    return *_file;
-}
-
-IuniqFile& ClientResourceManager::file() {
-    if (!_file)
-        throw std::runtime_error("ClientResourceManager::file: file not initialized");
-    return *_file;
-}
-
-ISBuffer& ClientResourceManager::buffer() {
-    if (!_buffer)
-        _buffer = new SBuffer();
-    return *_buffer;
-}
-
-Response& ClientResourceManager::response() {
-    if (!_response)
-        _response = new Response(buffer(), file());
-    return *_response;
-}
-
-IRequest& ClientResourceManager::request() {
-    if (!_requestHeaders)
-        _requestHeaders = new Header();
-    if (!_request)
-        _request = new Request(buffer(), file(), *_requestHeaders);
-    return *_request;
-}
-
-ServerSocket& ClientResourceManager::servSock() {
-    return _servSock;
-}
-
-sock_fd& ClientResourceManager::fd() {
-    return _fd;
-}
-
-cnx_state& ClientResourceManager::state() {
-    return _state;
-}
-
-ISocketManager& ClientResourceManager::socketManager() {
-    if (!_socketManager)
-        _socketManager = new SocketManager(fd(), buffer());
-    return *_socketManager;
-}
-
-IFileManager& ClientResourceManager::fileManager() {
-    if (!_fileManager)
-        _fileManager = new FileManager(file());
-    return *_fileManager;
-}
-
-IRequestManager& ClientResourceManager::requestManager() {
-    if (!_requestManager)
-        _requestManager = new RequestManager(request());
-    return *_requestManager;
-}
-
-IResponseManager& ClientResourceManager::responseManager() {
-    if (!_responseManager)
-        _responseManager = new ResponseManager(response());
-    return *_responseManager;
 }
 
 // SocketManager
@@ -248,7 +105,6 @@ SocketManager::~SocketManager() {
 
 ssize_t SocketManager::send() {
     return _buffer.send(_fd, 0); // TODO check flags later
-	// return ::send(_fd, &_buffer, _buffer.size(), 0);
 }
 
 ssize_t SocketManager::recv() {
@@ -259,37 +115,9 @@ ssize_t SocketManager::recv() {
 	// return ::recv(_fd, &_buffer, _buffer.size(), 0); // TODO check flags later
 }
 
-// FileManager
-
-FileManager::FileManager(IuniqFile& file) : file(file) {}
-
-
-
-void FileManager::openFile() {
-	file.openFile();
-}
-
-void FileManager::closeFile() {
-	file.closeFile();
-}
-
-// RequestManager
-
-RequestManager::RequestManager(IRequest& request) :
-				request(request) {
-}
-
-bool RequestManager::parse() {
-	return (request.parse());
-}
-
-string RequestManager::getHeader(const string& key) {
-	return (request.getHeader(key));
-}
-
 // Response
 
-Response::Response(ISBuffer& buffer, IuniqFile& file) :
+Response::Response(ISBuffer& buffer, IUniqFile& file) :
 				buffer(buffer), file(file) {}
 
 void Response::sendResponse() {
@@ -300,16 +128,6 @@ void Response::sendResponse() {
     buffer.write(response);// TODO check size
 	// std::memcpy(&buffer, response.c_str(), response.size());
 }
-
-// ResponseManager
-
-ResponseManager::ResponseManager(Response& response) :
-				response(response) {}
-
-void ResponseManager::sendResponse() {
-	response.sendResponse();
-}
-
 
 // ResourceManagerFactory
 
@@ -343,7 +161,7 @@ IHeader* ClientResourceManagerFactory::createRequestHeader() {
     return new Header();
 }
 
-IuniqFile* ClientResourceManagerFactory::createUniqFile(string rootPath, Iuuid& uuid) {
+IUniqFile* ClientResourceManagerFactory::createUniqFile(string rootPath, Iuuid& uuid) {
 	return new UniqFile(rootPath, uuid);
 }
 
@@ -351,61 +169,58 @@ ISocketManager* ClientResourceManagerFactory::createSocketManager(sock_fd& fd, I
 	return new SocketManager(fd, buffer);
 }
 
-IFileManager* ClientResourceManagerFactory::createFileManager(IuniqFile& file) {
-	return new FileManager(file);
-}
-
-IRequestManager* ClientResourceManagerFactory::createRequestManager(IRequest& request) {
-	return new RequestManager(request);
-}
-
-IResponseManager* ClientResourceManagerFactory::createResponseManager(Response& response) {
-	return new ResponseManager(response);
-}
-
-IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IuniqFile& file, IHeader& headers) {
+IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers) {
 	return new Request(buffer, file, headers);
 }
 
-Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IuniqFile& file) {
+Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IUniqFile& file) {
 	return new Response(buffer, file);
 }
 
-
 // ResourceManagerFacade
 
+ClientResourceManagerFacade::ResourceException::ResourceException() {}
+
+const char* ClientResourceManagerFacade::ResourceException::what() const throw() {
+    return ("ResourceException");
+}
 
 ClientResourceManagerFacade::ClientResourceManagerFacade (
 							sock_fd fd,
 							ServerSocket& servSock,
 							IClientResourceManagerFactory* factory) :
-							_fd(fd),
-							_servSock(servSock),
-							_uuid(NULL),
-							_file(NULL),
-							_buffer(NULL),
-                            _requestHeaders(NULL),
-							_request(NULL),
-							_response(NULL),
-							_socketManager(NULL),
-							_fileManager(NULL),
-							_requestManager(NULL),
-							_responseManager(NULL),
-							factory(factory) {
+                                factory(factory), _fd(fd), _servSock(&servSock),
+                                _uuid(NULL), _file(NULL), _buffer(NULL),
+                                _requestHeaders(NULL), _request(NULL),
+                                _response(NULL), _socketManager(NULL) {
+    _uuid = factory->createUUID();
+    _file = factory->createUniqFile("tmp", *_uuid);
+    _buffer = factory->createBuffer();
+    _requestHeaders = factory->createRequestHeader();
+    _request = factory->createRequest(*_buffer, *_file, *_requestHeaders);
+    _response = factory->createResponse(*_buffer, *_file);
+    _socketManager = factory->createSocketManager(_fd, *_buffer);
+    if (!_buffer || !_uuid || !_file
+        || !_requestHeaders || !_request
+        || !_response || !_socketManager) {
+        cleanupResources();
+        throw ResourceException();
+    }
 }
 
 ClientResourceManagerFacade::~ClientResourceManagerFacade() {
-    delete _uuid;
-    delete _file;
-    delete _buffer;
-    delete _requestHeaders;
-    delete _request;
-    delete _response;
-    delete _socketManager;
-    delete _fileManager;
-    delete _requestManager;
-    delete _responseManager;
-    delete factory;
+    cleanupResources();
+}
+
+void ClientResourceManagerFacade::cleanupResources() {
+    delete _uuid; _uuid = NULL;
+    delete _file; _file = NULL;
+    delete _buffer; _buffer = NULL;
+    delete _requestHeaders; _requestHeaders = NULL;
+    delete _request; _request = NULL;
+    delete _response; _response = NULL;
+    delete _socketManager; _socketManager = NULL;
+    delete factory; factory = NULL;
 }
 
 ClientResourceManagerFacade::ClientResourceManagerFacade(const ClientResourceManagerFacade& other) :
@@ -430,19 +245,14 @@ ISocketManager& ClientResourceManagerFacade::socketManager() {
 	return *_socketManager;
 }
 
-IFileManager& ClientResourceManagerFacade::fileManager() {
-	if (!_fileManager) {
-		if (!factory)
-			throw std::runtime_error("factory is not set");
-		if (!_file)
-			createUniqFile();
-		_fileManager = factory->createFileManager(*_file);
-	}
-	return *_fileManager;
+IUniqFile& ClientResourceManagerFacade::file() {
+	if (!_file)
+		createUniqFile();
+	return *_file;
 }
 
-IRequestManager& ClientResourceManagerFacade::requestManager() {
-	if (!_requestManager)  {
+IRequest& ClientResourceManagerFacade::request() {
+	if (!_request)  {
 		if (!factory)
 			throw std::runtime_error("factory is not set");
 		if (!_buffer)
@@ -451,26 +261,22 @@ IRequestManager& ClientResourceManagerFacade::requestManager() {
 			createUniqFile();
         if (!_requestHeaders)
             _requestHeaders = factory->createRequestHeader();
-		if (!_request)
-			_request = factory->createRequest(*_buffer, *_file, *_requestHeaders);
-		_requestManager = factory->createRequestManager(*_request);
+		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders);
 	}
-	return *_requestManager;
+	return *_request;
 }
 
-IResponseManager& ClientResourceManagerFacade::responseManager() {
-	if (!_responseManager) {
+IResponse& ClientResourceManagerFacade::response() {
+	if (!_response) {
 		if (!factory)
 			throw std::runtime_error("factory is not set");
 		if (!_buffer)
 			_buffer = factory->createBuffer();
 		if (!_file)
 			createUniqFile();
-		if (!_response)
-			_response = factory->createResponse(*_buffer, *_file);
-		_responseManager = factory->createResponseManager(*_response);
+	    _response = factory->createResponse(*_buffer, *_file);
 	}
-	return *_responseManager;
+	return *_response;
 }
 
 void ClientResourceManagerFacade::destroyFactory() {
@@ -497,5 +303,5 @@ Iuuid& ClientResourceManagerFacade::uuid() {
 }
 
 ServerSocket& ClientResourceManagerFacade::servSock() {
-    return _servSock;
+    return *_servSock;
 }

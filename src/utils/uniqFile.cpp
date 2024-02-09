@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/07 00:02:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 01:54:14 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/09 19:55:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,8 @@ UniqFile::UniqFile(string rootPath, Iuuid &uuid) : _path(rootPath), _uuid(uuid) 
 }
 
 UniqFile::~UniqFile() {
-    closeFile();
-    deleteFile();
+    close();
+    remove();
 }
 
 void UniqFile::createFile() {
@@ -34,18 +34,18 @@ void UniqFile::createFile() {
     _file.close();
 }
 
-void UniqFile::openFile() {
+void UniqFile::open() {
     _file.open(_path.c_str(), std::ios::in | std::ios::out | std::ios::app);
     // if (!_file.is_open()) {
     //     createFile(); // TODO this create a problem when the file is already created
     // }
 }
 
-void UniqFile::closeFile() {
+void UniqFile::close() {
     _file.close();
 }
 
-void UniqFile::deleteFile() {
+void UniqFile::remove() {
     // _file.close();
     // remove(_path.c_str()); // TODO delete file when client disconnect
 }

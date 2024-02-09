@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/08 21:48:26 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/09 19:43:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ enum transferState {
 class ITransferStrategy {
 public:
     virtual ~ITransferStrategy() {};
-    virtual transferState    transfer(ISBuffer& buffer, IuniqFile& file) = 0;
+    virtual transferState    transfer(ISBuffer& buffer, IUniqFile& file) = 0;
 };
 
 class NormalTransferStrategy : public ITransferStrategy {
@@ -48,7 +48,7 @@ class NormalTransferStrategy : public ITransferStrategy {
 public:
     NormalTransferStrategy(size_t contentLength);
     ~NormalTransferStrategy();
-    transferState    transfer(ISBuffer& buffer, IuniqFile& file);
+    transferState    transfer(ISBuffer& buffer, IUniqFile& file);
 };
 
 class ChunkedTransferStrategy : public ITransferStrategy {
@@ -62,7 +62,7 @@ class ChunkedTransferStrategy : public ITransferStrategy {
 public:
     ChunkedTransferStrategy();
     ~ChunkedTransferStrategy();
-    transferState    transfer(ISBuffer& buffer, IuniqFile& file);
+    transferState    transfer(ISBuffer& buffer, IUniqFile& file);
 };
     
 
@@ -75,7 +75,7 @@ public:
 
 class Request : public IRequest {
 public:
-    Request(ISBuffer& buffer, IuniqFile& file, IHeader& headers);
+    Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers);
     ~Request();
     bool    parse();
     string  getHeader(const string& key);
@@ -86,10 +86,10 @@ private:
     Request(const Request& other);
     Request& operator=(const Request& other);
     bool hasCRLF(ISBuffer& buffer, size_t pos);
-    void recieveChunkedBody(ISBuffer& buffer, IuniqFile& file);
-    void recieveNormalBody(ISBuffer& buffer, IuniqFile& file);
+    void recieveChunkedBody(ISBuffer& buffer, IUniqFile& file);
+    void recieveNormalBody(ISBuffer& buffer, IUniqFile& file);
     ISBuffer& buffer;
-    IuniqFile& file;
+    IUniqFile& file;
     IHeader&  headers;
     bool    headerComplete;
     ITransferStrategy* strategy; 
