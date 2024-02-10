@@ -15,20 +15,11 @@ void Response::initResponse(Client *client)
     this->uuid = &client->uuid;
     this->fd = client->fd;
     this->method = request->headers.method;
-    this->uri = request->headers.uri;
+    this->uri = decodingURI(request->headers.uri);
+    std::cout << "uri: " << uri << std::endl;
+    this->bodyPath = request->body;
     setLocation();
     this->locationPath = joinPath(location.root , uri);
-    //  need to check if the file exists
-    if(stat((location.root+uri).c_str(),&buff) != 0)
-    {
-        if(errno == ENOENT)
-            handleError(404);
-        else if(errno == EACCES)
-            handleError(403);
-        else
-            handleError(500);
-        return;
-    }
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
 
 }
@@ -39,8 +30,9 @@ void Response::setLocation()
     
     this->location.methods.push_back(GET);
     this->location.methods.push_back(POST);
+    this->location.methods.push_back(DELETE);
     this->location.root = "./nginx-html";
-    this->location.index.push_back("index.html");
+    this->location.index.push_back("index.html");   
     this->location.index.push_back("index.htm");
     this->location.index.push_back("page8.html");
     this->location.error_page[404] = "404.html";
@@ -48,6 +40,10 @@ void Response::setLocation()
     this->location.autoindex = true;
     this->location.return_code = 0;
     this->location.return_url = "";
+    this->location.allow_upload = true;
+    this->location.upload_path = "nginx-html/";
+    this->location.allow_CGI = true;
+    this->location.CGI_path = "user/bin/php-cgi";
 
 }
 void Response::sendResponse()
@@ -69,6 +65,17 @@ void Response::sendResponse()
 
 void Response::handleGet()
 {
+    cout << "++++++++++++ handleGet ++++++++++++" << endl;
+    if(stat(locationPath.c_str(), &buff) != 0)
+    {
+        if(errno == ENOENT)
+            handleError(404);
+        else if(errno == EACCES)
+            handleError(403);
+        else
+            handleError(500);
+        return;
+    }
     if(S_ISDIR(buff.st_mode))
         handleDirectory();
     else if(S_ISREG(buff.st_mode))
@@ -79,8 +86,65 @@ void Response::handleGet()
 
 void Response::handlePost()
 {
-    
+    std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
+    std::string newPath = joinPath( location.upload_path,uri);
+    std::string oldPath = joinPath("./tmp", uuid->getStr());
+    if(location.allow_upload)
+    {
+        if(rename(oldPath.c_str(), newPath.c_str()) != 0)
+        {
+            if(errno == ENOENT)
+                handleError(404);
+            else if(errno == EACCES)
+                handleError(403);
+            else
+                handleError(500);
+            return;
+        }
+        header.setStatusCode(201);
+        header.setConnection("close");
+        header.setContentType("application/octet-stream");
+        header.setContentLength(0);
+        bufferToSend = header.getHeader();
+        sendNextChunk();
+        if(bufferToSend.size() == 0)
+            ended = true;
+        return;
+    }
+    else
+        handleError(403);
 
+}
+void Response::handleDelete()
+{ 
+    std::cout << "++++++++++++ handleDelete ++++++++++++" << std::endl;
+    std::string pathToDelete = joinPath(location.upload_path, uri);
+    if( location.allow_upload)
+    {
+        if(stat(pathToDelete.c_str(), &buff) != 0)
+        {
+            if(errno == ENOENT)
+                handleError(404);
+            else if(errno == EACCES)
+                handleError(403);
+            else
+                handleError(500);
+            return;
+        }
+        if(S_ISDIR(buff.st_mode))
+            return handleError(403);
+        remove(pathToDelete.c_str());
+            return;
+    }
+    header.setStatusCode(204);
+    header.setConnection("close");
+    header.setContentType("application/octet-stream");
+    header.setContentLength(0);
+    bufferToSend = header.getHeader();
+    sendNextChunk();
+    if(bufferToSend.size() == 0)
+        ended = true;
+    return;
 }
 
 void Response::handleDirectory()
@@ -419,10 +483,6 @@ bool Response::handleRedirection()
     }
     return false;
 }
-void Response::handleDelete()
-{
-
-}
 
 std::string Response::joinPath(const std::string &path1, const std::string &path2)
 {
@@ -433,3 +493,43 @@ std::string Response::joinPath(const std::string &path1, const std::string &path
     else
         return path1 + path2;
 }
+
+std::string Response::decodingURI(const std::string &uri)
+{
+    std::string decodedURI;
+    char *end;
+    size_t i = 0;
+    while(i < uri.size())
+    {
+        if(uri[i] == '%')
+        {
+            char c = std::strtol(uri.substr(i + 1, 2).c_str(), &end, 16);
+            decodedURI.push_back(c);
+            i += 3;
+        }
+        else
+        {
+            decodedURI.push_back(uri[i]);
+            i++;
+        }
+    }
+    return(decodedURI) ;
+}
+
+// void Response::uriParser()
+// {
+   
+//     size_t pos = uri.find('?');
+//     if(pos != std::string::npos)
+//     {   std::string newURI;
+//         newURI = uri.substr(0, pos);
+//         std::string query = uri.substr(pos + 1);
+//         std::stringstream ss(query);
+//         std::string key;
+//         std::string value;
+//         while(std::getline(ss, key, '=') && std::getline(ss, value, '&'))
+//             query[key] = value;
+//         uri = newURI;
+//     }
+// }
+

@@ -29,6 +29,10 @@ typedef struct s_location
     string return_url;
     int return_code;
     bool autoindex;
+    bool allow_upload;
+    std::string upload_path;
+    bool allow_CGI; 
+    std::string CGI_path;
 
 } t_location;
 
@@ -51,6 +55,8 @@ class Response
         std::string bufferToSend;
         std::fstream fileToSend;
         std::string locationPath;
+        std::string bodyPath;
+        std::map<std::string, std::string> query;
     public:
         Response();
         ~Response();
@@ -74,5 +80,7 @@ class Response
         void handleDelete();
         std::string joinPath(const std::string &path1, const std::string &path2);
         std::string generateListHTML(struct dirent* entry);
+        std::string decodingURI(const std::string &uri);
+        // void uriParser();
 };
 #endif

@@ -6,7 +6,7 @@
 /*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/04 17:29:43 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/05 19:22:14 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,12 +40,12 @@ public:
     bool    parseRequest(SBuffer& buffer, fstream& file);
     string  getHeader(const string& key);
     Header  headers;
+    string  body;
 
 private:
     bool hasCRLF(SBuffer& buffer, size_t pos);
     void recieveChunkedBody(SBuffer& buffer, fstream& file);
     void recieveNormalBody(SBuffer& buffer, fstream& file);
-    string  body;
     bool    headerComplete;
     size_t  bodySize;
     size_t  contentLength;

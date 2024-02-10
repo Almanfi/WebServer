@@ -6,7 +6,7 @@
 /*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/04 17:15:50 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/08 15:28:50 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,5 +23,6 @@
 # include "client.hpp"
 # include "serverSocket.hpp"
 # include "epoll.hpp"
+# include "CGI.hpp"
 
 #endif // SOCKET_HPP
