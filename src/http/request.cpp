@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/09 19:43:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/11 17:31:26 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,8 @@
 
 Request::Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers) :
         buffer(buffer), file(file), headers(headers),
-        headerComplete(false), strategy(NULL) {
+        headerComplete(false), haveRequestLine(false),
+        strategy(NULL) {
 }
 
 Request::~Request() {
@@ -26,6 +27,7 @@ Request::Request(const Request& other) :
         file(other.file),
         headers(other.headers),
         headerComplete(other.headerComplete),
+        haveRequestLine(other.haveRequestLine),
         strategy(other.strategy) {
     throw std::runtime_error("Request::Request: copy constructor forbidden");
 }
@@ -40,7 +42,7 @@ void Request::parseHeaders() {
     char *buff = &buffer;
     ssize_t size = buffer.size();
     ssize_t i = 0;
-    
+
     while (i < size) {
         if (!(buff[i] == '\r' && buff[i + 1] == '\n'))
         {
@@ -56,15 +58,16 @@ void Request::parseHeaders() {
             return ;
         }
         string  line(buff, i);
-        size_t  pos = line.find(": ");
-        if (pos != string::npos) {
-            string  key(line, 0, pos);
-            string  value(line, pos + 2);
-            headers.insertHeader(key, value);
+        if (haveRequestLine == false) {
+            headers.setRequestLine(line);
+            haveRequestLine = true;
         }
         else {
-            string  key(line, 0, line.find(" "));
-            string  value(line, line.find(" ") + 1);
+            size_t  pos = line.find(": ");
+            if (pos == string::npos)
+                throw RequestException::BAD_REQUEST();
+            string  key(line, 0, pos);
+            string  value(line, pos + 2);
             headers.insertHeader(key, value);
         }
         buff += i + 2;
@@ -72,14 +75,13 @@ void Request::parseHeaders() {
         i = 0;
     }
     if (buffer.skip(buff - &buffer) == false) // buffer overflowing with no headers end
-        throw std::runtime_error("bad request headers too long");
+        throw RequestException::REQUEST_HEADER_FIELDS_TOO_LARGE();
 }
 
 bool    Request::parse() {
     if (!headerComplete)
         parseHeaders();
-   if (headerComplete) {
-    // TODO check content lenght and empty socket after ?
+    if (headerComplete) {
         if (strategy->transfer(buffer, file) == COMPLETE)
             return (true);
     }
@@ -99,6 +101,7 @@ void Request::setTransferStrategy() {
         ss >> contentLength;
         this->strategy = new NormalTransferStrategy(contentLength);
     }
+    cout << "transfer strategy set" << endl;
 }
 
 
@@ -156,7 +159,7 @@ bool ChunkedTransferStrategy::findChunckSize(ISBuffer& buffer, size_t& chunkSize
     char *chunk = &buffer;
     size_t i = buffer.find("\r\n", 0);
     if (i == string::npos) {
-        if (buffer.freeSpace() < (buffer.capacity() / 100)) // TODO what if buffer capacity is bellow 100
+        if (buffer.freeSpace() < 100) // TODO what if buffer capacity is bellow 100
             buffer.moveDataToStart();
         return (false);
     }
@@ -198,4 +201,24 @@ transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& 
     if (contentLength == 0)
         haveChunckSize = false;// TODO added this in cas buffer size is not enough to contain the next chunck???
     return (transfer(buffer, file));
+}
+
+const char* RequestException::BAD_REQUEST::what() const throw() {
+    return ("400");
+}
+
+const char* RequestException::REQUEST_HEADER_FIELDS_TOO_LARGE::what() const throw() {
+    return ("431");
+}
+
+const char* RequestException::NOT_IMPLIMENTED::what() const throw() {
+    return ("501");
+}
+
+const char* RequestException::HTTP_VERSION_NOT_SUPPORTED::what() const throw() {
+    return ("505");
+}
+
+const char* RequestException::LENGTH_REQUIRED::what() const throw() {
+    return ("411");
 }

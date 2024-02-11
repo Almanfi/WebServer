@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/09 21:07:50 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/11 18:07:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ Client::Client(IClientResourceManagerFacade* RMF) :
                 file(RMF->file()),
                 request(RMF->request()),
                 response(RMF->response()),
-                state(NONE) {
+                state(NONE), statusCode(200) {
 }
 
 Client::Client(const Client& other) : RMF(other.RMF) ,
@@ -26,7 +26,8 @@ Client::Client(const Client& other) : RMF(other.RMF) ,
                                       file(other.file),
                                       request(other.request),
                                       response(other.response),
-                                      state(other.state) {
+                                      state(other.state),
+                                      statusCode(other.statusCode) {
     throw std::runtime_error("Client::copy constructor: forbidden");
 }
 
@@ -58,9 +59,37 @@ ssize_t Client::send() {
 ssize_t Client::recieve() {
     cout << "++++++++++++ recieve ++++++++++++" << endl;
     ssize_t bytes_received = socketManager.recv();
+    if (bytes_received == 0)
+        state = CLOSE;
     file.open();
-    if (request.parse() == true)
+    try {
+        if (request.parse() == true)
+            state = WRITE;
+    }
+    catch (const RequestException::BAD_REQUEST& e) {
         state = WRITE;
+        statusCode = 400;
+    }
+    catch (const RequestException::REQUEST_HEADER_FIELDS_TOO_LARGE& e) {
+        state = WRITE;
+        statusCode = 431;
+    }
+    catch (const RequestException::NOT_IMPLIMENTED& e) {
+        state = WRITE;
+        statusCode = 501;
+    }
+    catch (const RequestException::HTTP_VERSION_NOT_SUPPORTED& e) {
+        state = WRITE;
+        statusCode = 505;
+    }
+    catch (const RequestException::LENGTH_REQUIRED& e) {
+        state = WRITE;
+        statusCode = 411;
+    }
+    catch (const std::exception& e) {
+        state = WRITE;
+        statusCode = 500;
+    }
     file.close();
     cout << "++++++++++++ recieve end ++++++++++++" << endl;
     return (bytes_received);
@@ -71,23 +100,23 @@ const cnx_state& Client::handleState() {
         state = READ;
     switch (state) {
         case READ:
-            if (recieve() == 0)
-                state = CLOSE;
+            recieve();
             break ;
         case WRITE:
             send();
             break ;
         case CLOSE:
-            cout << "++++++++++++ closing ++++++++++++" << endl;
             break ;
         default:
-            throw std::runtime_error("Client::handle: invalid state");
+            statusCode = 500;
+            state = WRITE;
+            break;
     }
     return (state);
 }
 
 Server& Client::getServer() {
-    ServerSocket& servSock = RMF->servSock();
+    IServerSocket& servSock = RMF->servSock();
     return (*servSock.getServers()[0]);
 }
 
@@ -97,7 +126,7 @@ const Iuuid& Client::getUUID() {
 
 // SocketManager
 
-SocketManager::SocketManager(sock_fd& fd, ISBuffer& buffer) : _fd(fd), _buffer(buffer) {}
+SocketManager::SocketManager(const sock_fd fd, ISBuffer& buffer) : _fd(fd), _buffer(buffer) {}
 
 SocketManager::~SocketManager() {
     close(_fd);
@@ -145,7 +174,7 @@ ClientResourceManagerFactory& ClientResourceManagerFactory::operator=(const Clie
 	throw std::runtime_error("ClientResourceManagerFactory is not copyable");
 }
 
-IClientResourceManagerFacade* ClientResourceManagerFactory::createFacade(sock_fd fd, ServerSocket& servSock) {
+IClientResourceManagerFacade* ClientResourceManagerFactory::createFacade(sock_fd fd, IServerSocket& servSock) {
 	return new ClientResourceManagerFacade(fd, servSock, this);
 }
 
@@ -187,7 +216,7 @@ const char* ClientResourceManagerFacade::ResourceException::what() const throw()
 
 ClientResourceManagerFacade::ClientResourceManagerFacade (
 							sock_fd fd,
-							ServerSocket& servSock,
+							IServerSocket& servSock,
 							IClientResourceManagerFactory* factory) :
                                 factory(factory), _fd(fd), _servSock(&servSock),
                                 _uuid(NULL), _file(NULL), _buffer(NULL),
@@ -302,6 +331,6 @@ Iuuid& ClientResourceManagerFacade::uuid() {
     return *_uuid;
 }
 
-ServerSocket& ClientResourceManagerFacade::servSock() {
+IServerSocket& ClientResourceManagerFacade::servSock() {
     return *_servSock;
 }

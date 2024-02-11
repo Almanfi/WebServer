@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 01:12:19 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/11 16:54:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,8 +106,8 @@ size_t SBuffer::find(const string& str, size_t pos) {
 ssize_t SBuffer::recv(sock_fd fd, int flags) {
     // if (end() == SBUFFER_SIZE) // TODO is this necesary? might delete data
     //     clear(); //
-    if (freeSpace() < 2)
-        moveDataToStart();
+    // if (freeSpace() < 2)
+        // moveDataToStart(); // TODO shouldnt move to keep check on the buffer size
     ssize_t recvSize = ::recv(fd, buffer + end(), freeSpace(), flags);
     if (recvSize == -1) {
         perror("recv1");

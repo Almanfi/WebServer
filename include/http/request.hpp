@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/09 19:43:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/11 17:01:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,30 @@ public:
     virtual string getHeader(const string& key) = 0;
 };
 
+class RequestException {
+public:
+    class BAD_REQUEST : public std::exception {
+    public:
+        const char* what() const throw();
+    };
+    class REQUEST_HEADER_FIELDS_TOO_LARGE : public std::exception {
+    public:
+        const char* what() const throw();
+    };
+    class NOT_IMPLIMENTED : public std::exception {
+    public:
+        const char* what() const throw();
+    };
+    class HTTP_VERSION_NOT_SUPPORTED : public std::exception {
+    public:
+        const char* what() const throw();
+    };
+    class LENGTH_REQUIRED : public std::exception {
+    public:
+        const char* what() const throw();
+    };
+};
+
 class Request : public IRequest {
 public:
     Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers);
@@ -92,6 +116,7 @@ private:
     IUniqFile& file;
     IHeader&  headers;
     bool    headerComplete;
+    bool    haveRequestLine;
     ITransferStrategy* strategy; 
 };
 
