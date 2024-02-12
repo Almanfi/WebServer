@@ -6,13 +6,23 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 17:51:57 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 17:48:36 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Epoll::Epoll(Config& config) {
+Epoll::Epoll() {
+}
+
+Epoll::~Epoll() {
+    close(epollfd);
+    for (itrServSock it = servSockets.begin();
+            it != servSockets.end(); it++)
+        delete it->second;
+}
+
+void Epoll::init(Config& config) {
     if (MAX_EVENTS < 1) // TODO check on macros at compile time
         throw std::runtime_error("Epoll::Epoll: MAX_EVENTS must be greater than 0");
     Header::initHeadersRules();
@@ -40,7 +50,15 @@ Epoll::Epoll(Config& config) {
         }
         if (!tmp)
             continue ;
-        tmp->init();
+        try {
+            tmp->init();
+        }
+        catch (const ServerSocket::SOCKET_EXCEPTION& e) {
+            delete tmp;
+            throw std::runtime_error(
+                string("could not init server " + servers[i].getInfo(S_HOST)
+                        + ":" + servers[i].getInfo(S_PORT)).c_str());
+        }
         servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
         addEvent(tmp->getSockid(), EPOLLIN); // TODO no need to add EPOLLOUT right?
     }
@@ -49,13 +67,7 @@ Epoll::Epoll(Config& config) {
         cout << "server " << it->second->getServers()[0]->getInfo(S_HOST) << ":"
             << it->second->getServers()[0]->getInfo(S_PORT) << endl;
     }
-}
-
-Epoll::~Epoll() {
-    close(epollfd);
-    for (itrServSock it = servSockets.begin();
-            it != servSockets.end(); it++)
-        delete it->second;
+    loop();
 }
 
 void Epoll::addEvent(sock_fd fd, uint32_t events) {

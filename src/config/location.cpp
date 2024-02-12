@@ -3,18 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/28 14:46:04 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/12 17:13:15 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/config.hpp"
 
-Location::Location(Config& c, Server& serv, Parser& p, const string& uri)
-    : c(c), serv(serv), p(p), uri(uri) {
-    setAlloedDirective();
+Location::Location(const string& uri) : uri(uri), serv(NULL) {
+    setAlloedDirective(); 
 }
 
 Location::~Location() {
@@ -36,6 +35,7 @@ void Location::setAlloedDirective() {
     directive.insert(std::make_pair("error_page", 1));
 }
 
+map<string, Location>::iterator Location::it;
 map<string, void (Location::*) (const string&)> Location::validationMap;
 vector<string> Location::httpAllowedMethods;
 
@@ -162,31 +162,29 @@ void Location::insertDirective(const string& key, const string& value) {
 }
 
 
-void Location::addToInLoc(Location* loc) {
-    inLoc.push_back(loc);
-}
-
 void Location::setNewLoc() {
-    deque<Location>& allLoc = c.getLocations();
-    string uri = p.getToken(); // validate URI!
+    string uri = Parser::getTok(); // validate URI!
     if (uri.empty() || uri == "{")
         throw LocationException::MISSING_LOCATION_URI();
     if (uri[0] != '/')
         throw LocationException::INVALID_LOCATION_URI(uri);
-    allLoc.push_back(Location(c, serv, p, uri));
-    Location& loc = allLoc.back();
+    map<string, Location>::iterator it;
+    it = innerLocations.insert(std::make_pair(uri, Location(uri))).first;
+
+    Location& loc = it->second;
+    loc.setServer(*serv);
     loc.set();
-    addToInLoc(&loc);
+}
+void Location::setServer(Server& servRef) {
+    serv = &servRef;
 }
 
 void Location:: set() {
-    vector<configScope>& scope = p.getScopes();
-    scope.push_back(LOCATION);
-    if (p.getToken() != "{")
+    if (Parser::getTok() != "{")
         throw ConfigException::MISSING_BRACKET("{");
     std::string token;
     while (true) {
-        token = p.getToken();
+        token = Parser::getTok();
         if (token == "}" || token.empty()) {
             break;
         }
@@ -194,9 +192,8 @@ void Location:: set() {
             continue;
         setLocationInfo(token);
     }
-    if (scope.back() != LOCATION || token.empty())
+    if (token != "}" || token.empty())
         throw ConfigException::MISSING_BRACKET("}");
-    scope.pop_back();
 }
 
 string& Location::getUri() const {
@@ -212,7 +209,7 @@ void Location::setLocationInfo(string& token) {
     string value = "";
     string newToken = "";
     while (true) {
-        newToken = p.getToken();
+        newToken = Parser::getTok();
         if (newToken == ";" || newToken.empty()) {
             break;
         }
@@ -230,38 +227,39 @@ string Location::getInfo(const string& key) {
     map<string, string>::iterator it = info.find(key);
     if (it != info.end())
         return (it->second);
-    return (serv.getInfo(key));
+    return (serv->getInfo(key));
 }
 
 void Location::print(int space) {
     printThis(space);
-    for (size_t i = 0; i < inLoc.size(); i++) {
-        cout << "____________________ prionting inLoc " << i << " ____________________" << endl;
-        inLoc[i]->print(space + 1);
+    for (map<string, Location>::iterator it = innerLocations.begin(); it != innerLocations.end(); it++) {
+        cout << "____________________ prionting innerLocations " << it->first << " ____________________" << endl;
+        it->second.print(space + 1);
     }
 }
 
 void Location::propagate() {
-    for (size_t i = 0; i < inLoc.size(); i++) {
-        for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
-            KeyVal::iterator infoIt = inLoc[i]->info.find(it->first);
-            if (infoIt == inLoc[i]->info.end())
-                inLoc[i]->info.insert(std::make_pair(it->first, it->second));
-            else if (it->first == "error_page") {
-                infoIt->second += " ; " + it->second;
+    for (map<string, Location>::iterator it = innerLocations.begin();
+                                    it != innerLocations.end(); it++) {
+        Location& loc = it->second;
+        for (KeyVal::const_iterator itr = info.begin(); itr != info.end(); itr++) {
+            KeyVal::iterator infoIt = loc.info.find(itr->first);
+            if (infoIt == loc.info.end())
+                loc.info.insert(std::make_pair(itr->first, itr->second));
+            else if (itr->first == "error_page") {
+                infoIt->second += " ; " + itr->second;
             }
         }
-        inLoc[i]->propagate();
+        loc.propagate();
     }
 }
 
 Location& Location::getLocation(const string& location) {
     string loc = location;
     while (loc != "") {
-        for (size_t i = 0; i < inLoc.size(); i++) {
-            if (inLoc[i]->uri == loc) {
-                return (inLoc[i]->getLocation(location));
-            }
+        it = innerLocations.find(loc);
+        if (it != innerLocations.end()) {
+            return (it->second.getLocation(location));
         }
         size_t pos = loc.rfind("/");
         if (pos == string::npos)
@@ -299,8 +297,8 @@ string Location::getErrorPage(const string& code) {
 
 bool Location::isAllowedMethod(const string& method) {
     string methods = getInfo("methods");
-    if (methods.empty())
-        methods = c.getDefault().find("methods")->second;
+    // if (methods.empty()) // TODO add a default value for methods
+    //     methods = c.getDefault().find("methods")->second;
     if (methods.find(method) == string::npos)
         return (false);
     return (true);

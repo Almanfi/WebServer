@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/28 13:46:07 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/12 17:05:14 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/config.hpp"
 
-Config::Config(const std::string& filePath) : p(filePath) {
+Config::Config(const std::string& filePath) {
+    Parser::init(filePath);
     Location::initValidationMap();
     setAlloedDirective();
     defaultConfig.insert(std::make_pair("root", "www"));
@@ -45,42 +46,20 @@ void Config::read() {
 }
 
 void Config::readMainContext() {
-    vector<configScope>& scopes = p.getScopes();
-    scopes.push_back(MAIN);
     std::string token;
     while (true) {
-        token = p.getToken();
+        token = Parser::getTok();
         if (token.empty())
             break;
         if (token == ";")
             continue;
         set(token);
     }
-    if (scopes.back() != MAIN)
-        throw ConfigException::MISSING_BRACKET("}");
-    scopes.pop_back();
 }
 
 void Config::setServer() {
-        vector<configScope>& scopes = p.getScopes();
-        scopes.push_back(SERVER);
-        string newToken = p.getToken();
-        if (newToken != "{")
-            throw ConfigException::MISSING_BRACKET("{");
-        servers.push_back(Server(*this, p));
-        Server& serv = servers.back();
-        while (true) {
-            newToken = p.getToken();
-            if (newToken == "}" || newToken.empty())
-                break;
-            if (newToken == ";")
-                continue;
-            serv.setServerInfo(newToken);
-        }
-        serv.finalize();
-        if (scopes.back() != SERVER || newToken != "}")
-            throw ConfigException::MISSING_BRACKET("}");
-        scopes.pop_back();
+        servers.push_back(Server());
+        servers.back().set();
 }   
 
 void Config::set(const string& token) {
@@ -92,10 +71,6 @@ void Config::set(const string& token) {
         setServer();
         return ;
     }
-}
-
-deque<Location>& Config::getLocations() {
-    return (locations);
 }
 
 Location& Config::getLocation(const string& uri) {
@@ -117,7 +92,7 @@ Location& Config::getLocation(const string& uri) {
     if (!serv) {
         throw std::runtime_error("Error: server not found");
     }
-    return (serv->locations.find("/")->second->getLocation(location));
+    return (serv->getRootLocation().getLocation(location));
 }
 
 deque<Server>& Config::getServers() {
@@ -140,8 +115,8 @@ void Config::print () {
         cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
         cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
         cout << "server " << i << " error_page is " << servers[i].error_page << endl;
-        cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
-        servers[i].locations.find("/")->second->print(0);
+        // cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
+        servers[i].getRootLocation().print(0);
     cout << "*************printing done**************" << endl;
     }
 }

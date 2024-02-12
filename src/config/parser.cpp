@@ -3,27 +3,27 @@
 /*                                                        :::      ::::::::   */
 /*   parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:24 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/28 13:34:56 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/11 19:13:13 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/parser.hpp"
 
-Parser* Parser::instance = NULL;
+Parser Parser::instance;
 
-Parser::Parser(const std::string& filePath) : lineNumber(0), linePos(0) {
-    configFile.open(filePath.c_str(), std::ios::in);
-    if (!configFile.is_open()) {
-        throw std::runtime_error("Failed to open config file " + filePath);
-    }
-    if (instance != NULL) {
-        throw std::runtime_error("Parser already instanciated");
-    }
-    instance = this;
+Parser::Parser() : lineNumber(0), linePos(0) {
 }
+
+// Parser::Parser(const std::string& filePath) : lineNumber(0), linePos(0) {
+//     configFile.open(filePath.c_str(), std::ios::in);
+//     if (!configFile.is_open()) {
+//         throw std::runtime_error("Failed to open config file " + filePath);
+//     }
+//     instance = this;
+// }
 
 Parser::~Parser() {
     configFile.close();
@@ -79,6 +79,31 @@ std::vector<configScope>& Parser::getScopes() {
     return scopes;
 }
 
+void Parser::init(const std::string& filePath) {
+    if (instance.isInitialized) {
+        throw std::runtime_error("Parser already initialized");
+    }
+    instance.configFile.open(filePath.c_str(), std::ios::in);
+    if (!instance.configFile.is_open()) {
+        throw std::runtime_error("Failed to open config file " + filePath);
+    }
+    instance.isInitialized = true;
+}
+
 Parser& Parser::getInstance() {
-    return *instance;
+    if (!instance.isInitialized) {
+        throw std::runtime_error("Parser not initialized");
+    }
+    return instance;
+}
+
+void Parser::destroy() {
+    if (!instance.isInitialized) {
+        throw std::runtime_error("Parser not initialized");
+    }
+    instance.configFile.close();
+}
+
+std::string Parser::getTok() {
+    return instance.getToken();
 }

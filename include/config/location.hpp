@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 17:54:14 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 16:27:13 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,10 @@
 
 class Location {
 public:
-    Location(Config& c, Server& serv, Parser& p, const string& uri);
+    Location(const string& uri);
+    // Location(const Location& loc);
     ~Location();
+    void setServer(Server& servRef);
     void set();
     void setLocationInfo(string& token);
     void addToInLoc(Location* loc);
@@ -49,14 +51,14 @@ private:
 
     void setNewLoc();
     map<string, string> info;
-    deque<Location*> inLoc;
+    // deque<Location*> inLoc;
     static map<string, int> directive;
     static vector<string> httpAllowedMethods;
     static map<string, void (Location::*) (const string&)> validationMap;
-    Config& c;
-    Server& serv;
-    Parser& p;
+    map<string, Location> innerLocations;
+    static map<string, Location>::iterator it;
     string uri;
+    Server* serv;
 };
 
 #endif // LOCATION_HPP

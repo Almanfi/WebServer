@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 17:34:16 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/04 17:04:19 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/12 17:24:59 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ int main() {
     {
         Config conf("config/default.config");
         conf.read();
-        // conf.print();
+        conf.print();
 
         // Location& loc = conf.getLocation("127.0.0.3/a/b");
         // loc.print(0);
@@ -35,8 +35,11 @@ int main() {
         // string method = "DELETE";
         // cout << "method " << method << " is allowed " << loc.isAllowedMethod(method) << endl;
         
-        Epoll epoll(conf);
-        epoll.loop();
+        Epoll epoll;
+        epoll.init(conf);
+        // epoll.loop();
+        // epoll.init(conf);
+        // epoll.loop();
     }
     catch(const std::exception& e)
     {

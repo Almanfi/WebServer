@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:40:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 18:03:00 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 17:45:44 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,14 @@ public:
     void    addServer(Server& serv);
     ClientConf&       getLocation(const string& uri);
     deque<Server*>& getServers();
+
+    class SOCKET_EXCEPTION: public std::exception {
+        string msg;
+    public :
+        ~SOCKET_EXCEPTION() throw();
+        SOCKET_EXCEPTION(const string& error);
+        virtual const char* what() const throw();
+    };
 private:
     addrinfo        *res;
     sock_fd         sockid;

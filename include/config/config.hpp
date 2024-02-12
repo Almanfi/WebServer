@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   config.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/28 15:15:16 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/12 17:09:38 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ public:
     Config(const string& filePath);
     ~Config();
     void read();
-    deque<Location>& getLocations();
     void print();
     void setAlloedDirective();
     Location& getLocation(const string& uri);
@@ -34,9 +33,8 @@ private:
     void set(const string& token);
     void setServer();
     void readMainContext();
-    Parser p;
     deque<Server> servers;
-    deque<Location> locations;
+    // deque<Location> locations;
     static map<string, int> directive;
 };
 
@@ -173,7 +171,7 @@ public:
         ~INVALID_METHOD() throw() {}
         INVALID_METHOD(const string& method) {
             msg = "Error: method `" + method
-                + "` not valid at line " + getLineNum();
+                + "` is not supported at line " + getLineNum();
         }
         virtual const char* what() const throw() {
             return msg.c_str();

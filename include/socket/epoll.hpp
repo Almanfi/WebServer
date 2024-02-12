@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:43:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/24 20:24:51 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 17:20:58 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,9 @@
 
 class Epoll {
 public:
-    Epoll(Config& config);
+    Epoll();
     ~Epoll();
+    void init(Config& config);
     void loop();
     void checkEvents(int n);
 private:
