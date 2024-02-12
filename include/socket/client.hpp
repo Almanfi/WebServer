@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 18:07:01 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:42:41 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,8 @@ public:
 	virtual IHeader* createRequestHeader() = 0;
 	virtual IUniqFile* createUniqFile(string rootPath, Iuuid& uuid) = 0;
 	virtual ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer) = 0;
-	virtual IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers) = 0;
+	virtual IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
+							IServerSocket& servSock, IClientConf* config) = 0;
 	virtual Response* createResponse(ISBuffer& buffer, IUniqFile& file) = 0;
 };
 
@@ -80,7 +81,8 @@ public:
 	IHeader* createRequestHeader();
 	IUniqFile* createUniqFile(string rootPath, Iuuid& uuid);
 	ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer);
-	IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers);
+	IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
+							IServerSocket& servSock, IClientConf* config);
 	Response* createResponse(ISBuffer& buffer, IUniqFile& file);
 };
 
@@ -92,8 +94,11 @@ public:
     virtual IResponse&			response() = 0;
     virtual IUniqFile&			file() = 0;
 	virtual void				destroyFactory() = 0;
+	virtual void 			    destroyRequest() = 0;
 	virtual Iuuid&				uuid() = 0;
 	virtual IServerSocket&		servSock() = 0;
+	virtual IClientConf*		configRef() = 0;
+	virtual IClientConf&		config() = 0;
 };
 
 class ClientResourceManagerFacade : public IClientResourceManagerFacade {
@@ -106,7 +111,8 @@ class ClientResourceManagerFacade : public IClientResourceManagerFacade {
 	IHeader*		_requestHeaders;
 	IRequest*       _request;
 	Response*       _response;
-	ISocketManager*     _socketManager;
+	ISocketManager* _socketManager;
+	IClientConf*	_config;
 public:
 	ClientResourceManagerFacade(sock_fd fd, IServerSocket& servSock,
 								IClientResourceManagerFactory* factory);
@@ -116,8 +122,11 @@ public:
     IResponse&			response();
     IUniqFile&			file();
 	void				destroyFactory();
+	void 			    destroyRequest();
 	Iuuid&				uuid();
 	IServerSocket&		servSock();
+	IClientConf*		configRef();
+	IClientConf&		config();
     class ResourceException : public std::exception {
     public:
         ResourceException();

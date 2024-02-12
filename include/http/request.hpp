@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 17:01:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:22:38 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,8 @@ typedef map<string, string>  KeyVal;
 
 class SBuffer;
 
+class IServerSocket;
+
 enum transferState {
     INCOMPLETE,
     COMPLETE,
@@ -41,17 +43,19 @@ public:
 };
 
 class NormalTransferStrategy : public ITransferStrategy {
+    IClientConf& config;
     size_t  bodySize;
     size_t  contentLength;
     NormalTransferStrategy(const NormalTransferStrategy& other);
     NormalTransferStrategy& operator=(const NormalTransferStrategy& other);
 public:
-    NormalTransferStrategy(size_t contentLength);
+    NormalTransferStrategy(IClientConf& config, size_t contentLength);
     ~NormalTransferStrategy();
     transferState    transfer(ISBuffer& buffer, IUniqFile& file);
 };
 
 class ChunkedTransferStrategy : public ITransferStrategy {
+    IClientConf& config;
     size_t  bodySize;
     size_t  contentLength;
     bool    haveChunckSize;
@@ -60,7 +64,7 @@ class ChunkedTransferStrategy : public ITransferStrategy {
     bool findChunckSize(ISBuffer& buffer, size_t& chunkSize);
     bool hasCRLF(ISBuffer& buffer, size_t pos);
 public:
-    ChunkedTransferStrategy();
+    ChunkedTransferStrategy(IClientConf& config);
     ~ChunkedTransferStrategy();
     transferState    transfer(ISBuffer& buffer, IUniqFile& file);
 };
@@ -97,9 +101,12 @@ public:
     };
 };
 
+class ISBuffer;
+
 class Request : public IRequest {
 public:
-    Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers);
+    Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
+            IServerSocket& servSock, IClientConf* config);
     ~Request();
     bool    parse();
     string  getHeader(const string& key);
@@ -107,17 +114,18 @@ public:
 private:
     void    setTransferStrategy();
     void    parseHeaders();
+    void    setConfig();
     Request(const Request& other);
     Request& operator=(const Request& other);
     bool hasCRLF(ISBuffer& buffer, size_t pos);
-    void recieveChunkedBody(ISBuffer& buffer, IUniqFile& file);
-    void recieveNormalBody(ISBuffer& buffer, IUniqFile& file);
-    ISBuffer& buffer;
-    IUniqFile& file;
-    IHeader&  headers;
-    bool    headerComplete;
-    bool    haveRequestLine;
-    ITransferStrategy* strategy; 
+    ISBuffer&           buffer;
+    IUniqFile&          file;
+    IHeader&            headers;
+    bool                headerComplete;
+    bool                haveRequestLine;
+    ITransferStrategy*  strategy; 
+    IServerSocket&      servSock;
+    IClientConf*        config;
 };
 
 #endif // REQUEST_HPP

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 18:07:31 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:43:24 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,8 +63,10 @@ ssize_t Client::recieve() {
         state = CLOSE;
     file.open();
     try {
-        if (request.parse() == true)
+        if (request.parse() == true) {
             state = WRITE;
+            RMF->destroyRequest();
+        }
     }
     catch (const RequestException::BAD_REQUEST& e) {
         state = WRITE;
@@ -198,8 +200,9 @@ ISocketManager* ClientResourceManagerFactory::createSocketManager(sock_fd& fd, I
 	return new SocketManager(fd, buffer);
 }
 
-IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers) {
-	return new Request(buffer, file, headers);
+IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
+							IServerSocket& servSock, IClientConf* config) {
+	return new Request(buffer, file, headers, servSock, config);
 }
 
 Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IUniqFile& file) {
@@ -221,12 +224,14 @@ ClientResourceManagerFacade::ClientResourceManagerFacade (
                                 factory(factory), _fd(fd), _servSock(&servSock),
                                 _uuid(NULL), _file(NULL), _buffer(NULL),
                                 _requestHeaders(NULL), _request(NULL),
-                                _response(NULL), _socketManager(NULL) {
+                                _response(NULL), _socketManager(NULL),
+                                _config(NULL) {
     _uuid = factory->createUUID();
     _file = factory->createUniqFile("tmp", *_uuid);
     _buffer = factory->createBuffer();
     _requestHeaders = factory->createRequestHeader();
-    _request = factory->createRequest(*_buffer, *_file, *_requestHeaders);
+    _request = factory->createRequest(*_buffer, *_file, *_requestHeaders
+                                    , servSock, _config);
     _response = factory->createResponse(*_buffer, *_file);
     _socketManager = factory->createSocketManager(_fd, *_buffer);
     if (!_buffer || !_uuid || !_file
@@ -290,7 +295,7 @@ IRequest& ClientResourceManagerFacade::request() {
 			createUniqFile();
         if (!_requestHeaders)
             _requestHeaders = factory->createRequestHeader();
-		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders);
+		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders, *_servSock, _config);
 	}
 	return *_request;
 }
@@ -313,6 +318,11 @@ void ClientResourceManagerFacade::destroyFactory() {
 	factory = NULL;
 }
 
+void ClientResourceManagerFacade::destroyRequest() {
+    delete _request;
+    _request = NULL;
+}
+
 void ClientResourceManagerFacade::createUniqFile() {
 	if (!factory)
 		throw std::runtime_error("factory is not set");
@@ -333,4 +343,14 @@ Iuuid& ClientResourceManagerFacade::uuid() {
 
 IServerSocket& ClientResourceManagerFacade::servSock() {
     return *_servSock;
+}
+
+IClientConf* ClientResourceManagerFacade::configRef() {
+    return _config;
+}
+
+IClientConf& ClientResourceManagerFacade::config() {
+    if (!_config)
+        throw std::runtime_error("config is not set");
+    return *_config;
 }

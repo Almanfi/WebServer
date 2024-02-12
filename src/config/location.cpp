@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:13:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:24:55 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,6 @@ void Location::setAlloedDirective() {
     directive.insert(std::make_pair("error_page", 1));
 }
 
-map<string, Location>::iterator Location::it;
 map<string, void (Location::*) (const string&)> Location::validationMap;
 vector<string> Location::httpAllowedMethods;
 
@@ -257,6 +256,7 @@ void Location::propagate() {
 Location& Location::getLocation(const string& location) {
     string loc = location;
     while (loc != "") {
+        map<string, Location>::iterator it;
         it = innerLocations.find(loc);
         if (it != innerLocations.end()) {
             return (it->second.getLocation(location));
@@ -295,10 +295,16 @@ string Location::getErrorPage(const string& code) {
     return (errorPageStr.substr(start, end - start));
 }
 
+string Location::getErrorPage(const int code) {
+    stringstream ss;
+    ss << code;
+    return (getErrorPage(ss.str()));
+}
+
 bool Location::isAllowedMethod(const string& method) {
     string methods = getInfo("methods");
-    // if (methods.empty()) // TODO add a default value for methods
-    //     methods = c.getDefault().find("methods")->second;
+    if (methods.empty()) // TODO add a default value for methods
+        methods = Config::getDefault("methods");
     if (methods.find(method) == string::npos)
         return (false);
     return (true);

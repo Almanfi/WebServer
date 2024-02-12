@@ -6,14 +6,40 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:05:14 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:48:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/config.hpp"
 
-Config::Config(const std::string& filePath) {
+Config Config::instance;
+
+Config& Config::getInstance() {
+    if (!instance.isInitialized) {
+        throw std::runtime_error("Config not initialized");
+    }
+    return instance;
+}
+
+Config& Config::init(const std::string& filePath) {
+    if (instance.isInitialized) {
+        throw std::runtime_error("Config already initialized");
+    }
     Parser::init(filePath);
+    instance.initRules();
+    instance.isInitialized = true;
+    instance.read();
+    return instance;
+}
+
+void Config::destroy() {
+    Parser::destroy();
+}
+
+Config::Config() : isInitialized(false) {
+}
+
+void Config::initRules() {
     Location::initValidationMap();
     setAlloedDirective();
     defaultConfig.insert(std::make_pair("root", "www"));
@@ -25,6 +51,7 @@ Config::Config(const std::string& filePath) {
 }
 
 Config::~Config() {
+    Parser::destroy();
 }
 
 map<string, int> Config::directive;
@@ -43,6 +70,7 @@ void Config::read() {
     // catch (std::exception& e) {
         // std::cerr << e.what() << std::endl;
     // }
+    Parser::destroy();
 }
 
 void Config::readMainContext() {
@@ -99,8 +127,14 @@ deque<Server>& Config::getServers() {
     return (servers);
 }
 
-const KeyVal& Config::getDefault() const {
-    return (defaultConfig);
+const string Config::getDefault(const string& key) {
+    if (!instance.isInitialized) {
+        throw std::runtime_error("Config not initialized");
+    }
+    KeyVal::iterator it = instance.defaultConfig.find(key);
+    if (it != instance.defaultConfig.end())
+        return (it->second);
+    return "";
 }
 
 void Config::print () {

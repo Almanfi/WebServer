@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:09:38 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 19:24:46 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,22 +20,28 @@
 
 class Config {
 public:
-    Config(const string& filePath);
     ~Config();
     void read();
     void print();
     void setAlloedDirective();
     Location& getLocation(const string& uri);
     deque<Server>& getServers();
-    const KeyVal& getDefault() const;
+    static const string getDefault(const string& key);
+    static Config& getInstance();
+    static Config& init(const string& filePath);
+    static void destroy();
+    
 private:
+    Config();
+    void initRules();
+    static Config instance;
     KeyVal defaultConfig;
     void set(const string& token);
     void setServer();
     void readMainContext();
     deque<Server> servers;
-    // deque<Location> locations;
     static map<string, int> directive;
+    bool isInitialized;
 };
 
 class ConfigException {

@@ -6,16 +6,17 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 17:31:26 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:38:53 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers) :
+Request::Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
+            IServerSocket& servSock, IClientConf* config) :
         buffer(buffer), file(file), headers(headers),
         headerComplete(false), haveRequestLine(false),
-        strategy(NULL) {
+        strategy(NULL), servSock(servSock), config(config) {
 }
 
 Request::~Request() {
@@ -28,13 +29,20 @@ Request::Request(const Request& other) :
         headers(other.headers),
         headerComplete(other.headerComplete),
         haveRequestLine(other.haveRequestLine),
-        strategy(other.strategy) {
+        strategy(other.strategy),
+        servSock(other.servSock),
+        config(other.config) {
     throw std::runtime_error("Request::Request: copy constructor forbidden");
 }
 
 Request& Request::operator=(const Request& other) {
     (void) other;
     throw std::runtime_error("Request::operator=: forbidden");
+}
+
+void Request::setConfig() {
+    string configName = headers.getHeader(HOST) + headers.getUri();
+    config = &servSock.getLocation(configName);
 }
 
 void Request::parseHeaders() {
@@ -53,6 +61,7 @@ void Request::parseHeaders() {
             buffer.skip(buff - &buffer + 2);
             headerComplete = true;
             headers.check();
+            setConfig();
             setTransferStrategy();
             cout << "end of headers" << endl;
             return ;
@@ -82,6 +91,7 @@ bool    Request::parse() {
     if (!headerComplete)
         parseHeaders();
     if (headerComplete) {
+        cout << "====== this is for server " << config->getInfo("server_name") << endl;
         if (strategy->transfer(buffer, file) == COMPLETE)
             return (true);
     }
@@ -94,21 +104,22 @@ string Request::getHeader(const string& key) {
 
 void Request::setTransferStrategy() {
     if (headers.getHeader(TRANSFER_ENCODING) == "chunked")
-        this->strategy = new ChunkedTransferStrategy();
+        this->strategy = new ChunkedTransferStrategy(*config);
     else {
         size_t contentLength;
         stringstream ss(headers.getHeader(CONTENT_LENGTH));
         ss >> contentLength;
-        this->strategy = new NormalTransferStrategy(contentLength);
+        this->strategy = new NormalTransferStrategy(*config, contentLength);
     }
     cout << "transfer strategy set" << endl;
 }
 
 
-NormalTransferStrategy::NormalTransferStrategy(size_t contentLength) : bodySize(0), contentLength(contentLength) {
+NormalTransferStrategy::NormalTransferStrategy(IClientConf& conf, size_t contentLength) :
+            config(conf), bodySize(0), contentLength(contentLength) {
 }
 
-NormalTransferStrategy::NormalTransferStrategy(const NormalTransferStrategy& other) {
+NormalTransferStrategy::NormalTransferStrategy(const NormalTransferStrategy& other) : config(other.config) {
     (void) other;
     throw std::runtime_error("NormalTransferStrategy::NormalTransferStrategy: copy constructor forbidden");
 }
@@ -131,10 +142,11 @@ transferState    NormalTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& f
     return (contentLength == 0 ? COMPLETE : INCOMPLETE);
 }
 
-ChunkedTransferStrategy::ChunkedTransferStrategy() : bodySize(0), contentLength(0), haveChunckSize(false) {
+ChunkedTransferStrategy::ChunkedTransferStrategy(IClientConf& conf) :
+            config(conf), bodySize(0), contentLength(0), haveChunckSize(false) {
 }
 
-ChunkedTransferStrategy::ChunkedTransferStrategy(const ChunkedTransferStrategy& other) {
+ChunkedTransferStrategy::ChunkedTransferStrategy(const ChunkedTransferStrategy& other) : config(other.config) {
     (void) other;
     throw std::runtime_error("ChunkedTransferStrategy::ChunkedTransferStrategy: copy constructor forbidden");
 }

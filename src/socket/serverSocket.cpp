@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:48:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:39:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,7 @@ void ServerSocket::addServer(Server& serv) {
 
 Location& ServerSocket::getLocation(const string& uri) {
     string server_name = uri.substr(0, uri.find("/"));
+    server_name = server_name.substr(0, server_name.find(":"));// TODO do i need port?
     string location = uri.substr(uri.find("/"));
     Server* serv = NULL;
     for (deque<Server*>::iterator it = servers.begin(); it != servers.end(); it++) {
@@ -112,9 +113,8 @@ Location& ServerSocket::getLocation(const string& uri) {
             break;
         }
     }
-    if (!serv) {
+    if (!serv)
         throw std::runtime_error("Error: server not found");
-    }
     return (serv->getLocation(location));
 }
 

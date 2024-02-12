@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 16:27:13 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 19:12:01 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,16 @@
 
 # include "definition.hpp"
 
-class Location {
+class IClientConf {
+public:
+    virtual ~IClientConf() {};
+    virtual string getErrorPage(const string& code) = 0;
+    virtual string getErrorPage(const int code) = 0;
+    virtual bool isAllowedMethod(const string& method) = 0;
+    virtual string getInfo(const string& key) = 0;
+};
+
+class Location  : public IClientConf {
 public:
     Location(const string& uri);
     // Location(const Location& loc);
@@ -56,7 +65,6 @@ private:
     static vector<string> httpAllowedMethods;
     static map<string, void (Location::*) (const string&)> validationMap;
     map<string, Location> innerLocations;
-    static map<string, Location>::iterator it;
     string uri;
     Server* serv;
 };

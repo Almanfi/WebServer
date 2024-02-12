@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 17:34:16 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:24:59 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 18:40:32 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,9 +25,8 @@ int main() {
     //signal(SIGPIPE, SIG_IGN);
     try
     {
-        Config conf("config/default.config");
-        conf.read();
-        conf.print();
+        Config& conf = Config::init("config/default.config");
+        // conf.print();
 
         // Location& loc = conf.getLocation("127.0.0.3/a/b");
         // loc.print(0);
@@ -37,9 +36,6 @@ int main() {
         
         Epoll epoll;
         epoll.init(conf);
-        // epoll.loop();
-        // epoll.init(conf);
-        // epoll.loop();
     }
     catch(const std::exception& e)
     {
