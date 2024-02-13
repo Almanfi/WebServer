@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:43:24 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/13 19:08:42 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,15 +44,26 @@ Client::~Client() {
 //     return (fd);
 // }
 
+// ssize_t Client::send() {
+//     cout << "++++++++++++ send ++++++++++++" << endl;
+//     response.sendResponse();
+//     ssize_t bytes_sent = socketManager.send();
+//     if (bytes_sent == -1) {
+//         perror("send");
+//         throw std::exception();
+//     }
+//     state = CLOSE;
+//     return (bytes_sent);
+// }
+
 ssize_t Client::send() {
-    cout << "++++++++++++ send ++++++++++++" << endl;
+    ssize_t bytes_sent = 0;
+    if(!response.isStarted())
+        response.initResponse(this);
     response.sendResponse();
-    ssize_t bytes_sent = socketManager.send();
-    if (bytes_sent == -1) {
-        perror("send");
-        throw std::exception();
-    }
-    state = CLOSE;
+    // sendFile(fd, "./tmp/en.subject.pdf");
+    if(response.isEnded())
+        state = CLOSE;
     return (bytes_sent);
 }
 
@@ -148,17 +159,17 @@ ssize_t SocketManager::recv() {
 
 // Response
 
-Response::Response(ISBuffer& buffer, IUniqFile& file) :
-				buffer(buffer), file(file) {}
+// Response::Response(ISBuffer& buffer, IUniqFile& file) :
+// 				buffer(buffer), file(file) {}
 
-void Response::sendResponse() {
-	(void) file;
-	buffer.clear();
-    std::string response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
-    // std::string response = "HTTP/1.1 300\r\nLocation: https://www.google.com/\r\n\r\n";
-    buffer.write(response);// TODO check size
-	// std::memcpy(&buffer, response.c_str(), response.size());
-}
+// void Response::sendResponse() {
+// 	(void) file;
+// 	buffer.clear();
+//     std::string response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
+//     // std::string response = "HTTP/1.1 300\r\nLocation: https://www.google.com/\r\n\r\n";
+//     buffer.write(response);// TODO check size
+// 	// std::memcpy(&buffer, response.c_str(), response.size());
+// }
 
 // ResourceManagerFactory
 
@@ -205,9 +216,9 @@ IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IUniqFil
 	return new Request(buffer, file, headers, servSock, config);
 }
 
-Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IUniqFile& file) {
-	return new Response(buffer, file);
-}
+// Response* ClientResourceManagerFactory::createResponse(ISBuffer& buffer, IUniqFile& file) {
+// 	return new Response(buffer, file);
+// }
 
 // ResourceManagerFacade
 
@@ -300,18 +311,18 @@ IRequest& ClientResourceManagerFacade::request() {
 	return *_request;
 }
 
-IResponse& ClientResourceManagerFacade::response() {
-	if (!_response) {
-		if (!factory)
-			throw std::runtime_error("factory is not set");
-		if (!_buffer)
-			_buffer = factory->createBuffer();
-		if (!_file)
-			createUniqFile();
-	    _response = factory->createResponse(*_buffer, *_file);
-	}
-	return *_response;
-}
+// IResponse& ClientResourceManagerFacade::response() {
+// 	if (!_response) {
+// 		if (!factory)
+// 			throw std::runtime_error("factory is not set");
+// 		if (!_buffer)
+// 			_buffer = factory->createBuffer();
+// 		if (!_file)
+// 			createUniqFile();
+// 	    _response = factory->createResponse(*_buffer, *_file);
+// 	}
+// 	return *_response;
+// }
 
 void ClientResourceManagerFacade::destroyFactory() {
 	delete factory;

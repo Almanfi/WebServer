@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/11 18:05:41 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/13 19:41:17 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,4 +190,12 @@ void Header::initHeadersRules() {
     httpMethods["CONNECT"] = CONNECT;
     httpMethods["TRACE"] = TRACE;
     httpMethods["PATCH"] = PATCH;
+    for (map<string, t_method>::iterator it = httpMethods.begin();
+        it != httpMethods.end(); it++) {
+            methodToString[it->second] = it->first;
+    }
+}
+
+string& Header::getMethodString(t_method method) {
+    return (methodToString[method]);
 }

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/11 17:45:20 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/13 19:41:05 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,6 +110,7 @@ public:
     void setRequestLine(const string& value);
 
     static void initHeadersRules();
+    static string& getMethodString(t_method method);
 private:
     KeyVal& getKeyVal();
     void validateHeader(const string& key, const string& value);
@@ -129,7 +130,7 @@ private:
     typedef map<string, void (Header::*)(const string&)> HEADER_VALIDATORS;
     static HEADER_VALIDATORS validationMap;
     static map<string, t_method> httpMethods;
-
+    static map<t_method, string> methodToString;
 };
 
 // #define BUFFER_SIZE 1024
