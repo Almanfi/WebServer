@@ -39,26 +39,33 @@ class IHeader;
 class IResponseStrategy {
 public:
     virtual ~IResponseStrategy() {};
-    virtual void sendResponse() = 0;
+    virtual transferState sendResponse(ISBuffer& buffer) = 0;
 };
 
 class ErrorResponseStrategy : public IResponseStrategy {
 private:
-    int error_code;
+    string          error_code;
+    IClientConf&    config;
+    string          bufferToSend;
+    size_t          sentSize;
+    void            generateHeaders();
+    void            generateBody();
+    void            generateErrorPage();
+    string          errorMsg();
 public:
-    ErrorResponseStrategy(int error_code);
+    ErrorResponseStrategy(const string& error_code, IClientConf& config);
     virtual ~ErrorResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 
 class RedirectionResponseStrategy : public IResponseStrategy {
 private:
     std::string location;
-    int status_code;
+    int         status_code;
 public:
     RedirectionResponseStrategy(const std::string& location, int status_code);
     virtual ~RedirectionResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 
 class GetResponseStrategy : public IResponseStrategy {
@@ -73,7 +80,7 @@ public:
     GetResponseStrategy(const string& path, const string& uri,
                                         IClientConf& config);
     virtual ~GetResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 
 class GetFileResponseStrategy : public IResponseStrategy {
@@ -83,23 +90,25 @@ private:
 public:
     GetFileResponseStrategy(const std::string& path);
     virtual ~GetFileResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 
 class GetDirectoryResponseStrategy : public IResponseStrategy {
 private:
-    const string& path;
-    const string& uri;
-    size_t sentSize;
-    DIR* dir;
-    string header;
+    const string&       path;
+    const string&       uri;
+    const IClientConf&  config;
+    DIR*                dir;
+    size_t              sentSize;
+    string              bufferToSend;
     string generateDirectoryListingPage() const;
     string generateListHTML(struct dirent* entry) const;
+    string generateHeaders(const string& body) const;
 public:
     GetDirectoryResponseStrategy(const std::string& path,
-                            DIR* dir, const string& uri);
+        const string& uri, const IClientConf& config, DIR* dir);
     virtual ~GetDirectoryResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 
 class PostResponseStrategy : public IResponseStrategy {
@@ -109,7 +118,7 @@ private:
 public:
     PostResponseStrategy(IResponse* response, const std::string& path);
     virtual ~PostResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 
 class DeleteResponseStrategy : public IResponseStrategy {
@@ -119,14 +128,14 @@ private:
 public:
     DeleteResponseStrategy(IResponse* response, const std::string& path);
     virtual ~DeleteResponseStrategy() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 };
 //================================================== RESPONSE STRATEGY
 
 class IResponse {
 public:
     virtual ~IResponse() {};
-    virtual void sendResponse() = 0;
+    virtual transferState sendResponse(ISBuffer& buffer) = 0;
 };
 
 class ResponseA : public IResponse {
@@ -156,7 +165,7 @@ public:
     ResponseA(ISBuffer& buffer, IUniqFile& file,
             IHeader& headers, IClientConf& config);
     virtual ~ResponseA() {};
-    virtual void sendResponse();
+    virtual transferState sendResponse(ISBuffer& buffer);
 
     void setStrategy();
 
@@ -165,7 +174,7 @@ public:
     bool isStarted();
     void sendNextChunk();
     void setLocation();
-    void sendResponse();
+    transferState sendResponse();
     void handleDirectory();
     void handleFile();
     void sendDirectory(const std::string &path);

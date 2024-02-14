@@ -1,12 +1,163 @@
 #include "socket.hpp"
 
-
-ErrorResponseStrategy::ErrorResponseStrategy(int error_code) :
-    error_code(error_code) {
+void Response::handleError(int error_code)
+{
+    std::string errorPage;
+    if(location.error_page.find(error_code) != location.error_page.end())
+    {
+        std::string path = joinPath(locationPath, location.error_page[error_code]);
+        if(stat(path.c_str(),&buff) == 0 && S_ISREG(buff.st_mode))
+        {
+            sendFile(path);
+            return;
+        }
+    }
+    errorPage = generateErrorPage(error_code , header.getStatusMessage(error_code));
+    if(!started)
+    {
+        header.setStatusCode(error_code);
+        header.setHeader("Connection", "close");
+        header.setHeader("Content-Type", "text/html");
+        header.setContentLength(errorPage.size());
+        bufferToSend = header.getHeader();
+        started = true;
+    }
+    bufferToSend.append(errorPage);
+    sendNextChunk(); 
+    if(bufferToSend.size() == 0)
+        ended = true;
 }
 
-void ErrorResponseStrategy::sendResponse() {
-    cout << "error code: " << error_code << endl;
+
+ErrorResponseStrategy::ErrorResponseStrategy(
+    const string& error_code, IClientConf& config) :
+    error_code(error_code), config(config),
+    bufferToSend(), sentSize(0) {
+}
+
+transferState ErrorResponseStrategy::sendResponse(ISBuffer& buffer) {
+    if (bufferToSend.empty()) {
+        generateHeaders(); // TODO need content length
+        generateBody();
+    }
+    if (sentSize < bufferToSend.size()) {
+        size_t writeSize = buffer.write(bufferToSend.c_str() + sentSize,
+                                        bufferToSend.size() - sentSize);
+        sentSize += writeSize;
+    }
+    if (sentSize == bufferToSend.size())
+        return COMPLETE;
+    return INCOMPLETE;
+}
+
+void ErrorResponseStrategy::generateHeaders() {
+    bufferToSend = "HTTP/1.1 " + error_code + " " + errorMsg() + "\r\n";
+    bufferToSend+= "server: webserv\r\n";
+
+    std::time_t now = std::time(NULL);
+    std::tm* timeStruct = std::localtime(&now);
+    char dateBuffer[100];
+    std::strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S %Z", timeStruct);
+    bufferToSend+= "date: " + std::string(dateBuffer) + "\r\n";
+    
+    bufferToSend+= "Connection: close\r\n";
+    bufferToSend+= "Content-Type: text/html\r\n";
+    bufferToSend+= "Content-Length: " + std::to_string(bufferToSend.size()) + "\r\n";
+    bufferToSend+= "\r\n";
+}
+
+void ErrorResponseStrategy::generateErrorPage() {
+    bufferToSend+= "<!DOCTYPE html>\n";
+    bufferToSend+= "<html>\n";
+    bufferToSend+= "<head>\n";
+    bufferToSend+= "  <title>Error " + error_code + "</title>\n";
+    bufferToSend+= "  <style>\n";
+    bufferToSend+= "    * {\n";
+    bufferToSend+= "      transition: all 0.6s;\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "    html {\n";
+    bufferToSend+= "      height: 100%;\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "    body {\n";
+    bufferToSend+= "      font-family: 'Lato', sans-serif;\n";
+    bufferToSend+= "      color: #333;\n";
+    bufferToSend+= "      margin: 0;\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "    #main {\n";
+    bufferToSend+= "      display: table;\n";
+    bufferToSend+= "      width: 100%;\n";
+    bufferToSend+= "      height: 100vh;\n";
+    bufferToSend+= "      text-align: center;\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "    .fof {\n";
+    bufferToSend+= "      display: table-cell;\n";
+    bufferToSend+= "      vertical-align: middle;\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "    .fof h1 {\n";
+    bufferToSend+= "      font-size: 50px;\n";
+    bufferToSend+= "      display: inline-block;\n";
+    bufferToSend+= "      padding-right: 12px;\n";
+    bufferToSend+= "      animation: type .5s alternate infinite;\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "    @keyframes type {\n";
+    bufferToSend+= "      from { box-shadow: inset -3px 0px 0px #888; }\n";
+    bufferToSend+= "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
+    bufferToSend+= "    }\n";
+    bufferToSend+= "  </style>\n";
+    bufferToSend+= "</head>\n";
+    bufferToSend+= "<body>\n";
+    bufferToSend+= "  <div id=\"main\">\n";
+    bufferToSend+= "    <div class=\"fof\">\n";
+    bufferToSend+= "      <h1>Error " + error_code + "</h1>\n";
+    bufferToSend+= "      <p>" + errorMsg() + "</p>\n";
+    bufferToSend+= "    </div>\n";
+    bufferToSend+= "  </div>\n";
+    bufferToSend+= "</body>\n";
+    bufferToSend+= "</html>\n";
+}
+
+string ErrorResponseStrategy::errorMsg() { // TODO change this later
+    switch (std::stoi(error_code))
+    {
+    case 400:
+        return "Bad Request";
+    case 401:
+        return "Unauthorized";
+    case 403:
+        return "Forbidden";
+    case 404:
+        return "Not Found";
+    case 405:
+        return "Method Not Allowed";
+    case 500:
+        return "Internal Server Error";
+    case 501:
+        return "Not Implemented";
+    case 502:
+        return "Bad Gateway";
+    case 503:
+        return "Service Unavailable";
+    case 504:
+        return "Gateway Timeout";
+    default:
+        return "Unknown Error";
+    }
+}
+
+void ErrorResponseStrategy::generateBody() {
+    string error_page = config.getErrorPage(error_code);
+    if (error_page.empty() == true) {
+        generateErrorPage();
+        return;
+    }
+    fstream file(error_page, std::ios::in);
+    if (file.is_open() == false) {
+        generateErrorPage();
+        return;
+    }
+    bufferToSend.append((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+    file.close();
 }
 
 ResponseA::ResponseA(ISBuffer& buffer, IUniqFile& file,
@@ -35,12 +186,12 @@ void GetResponseStrategy::setDirectoryStrategy() {
         DIR* dir = opendir(path.c_str());
         if (!dir) {
             if(errno == EACCES)
-                strategy = new ErrorResponseStrategy(403);
+                strategy = new ErrorResponseStrategy("403", config);
             else
-                strategy = new ErrorResponseStrategy(500);
+                strategy = new ErrorResponseStrategy("500", config);
             return;
         }
-        strategy = new GetDirectoryResponseStrategy(path, dir, uri);
+        strategy = new GetDirectoryResponseStrategy(path, uri, config, dir);
         if (!strategy)
             closedir(dir);
         return;
@@ -59,7 +210,7 @@ void GetResponseStrategy::setDirectoryStrategy() {
             return;
         }
     }
-    strategy = new ErrorResponseStrategy(403);
+    strategy = new ErrorResponseStrategy("403", config);
 }
 
 void GetResponseStrategy::setStrategy() {
@@ -68,13 +219,13 @@ void GetResponseStrategy::setStrategy() {
         switch (errno)
         {
         case ENOENT:
-            strategy = new ErrorResponseStrategy(404);
+            strategy = new ErrorResponseStrategy("404", config);
             return;
         case EACCES:
-            strategy = new ErrorResponseStrategy(403);
+            strategy = new ErrorResponseStrategy("403", config);
             return;
         default:
-            strategy = new ErrorResponseStrategy(500);
+            strategy = new ErrorResponseStrategy("500", config);
             return;
         }
     }
@@ -86,13 +237,13 @@ void GetResponseStrategy::setStrategy() {
         strategy = new GetFileResponseStrategy(path);
         return;
     }
-    strategy = new ErrorResponseStrategy(500);
+    strategy = new ErrorResponseStrategy("500", config);
 }
 
-void GetResponseStrategy::sendResponse() {
+transferState GetResponseStrategy::sendResponse(ISBuffer& buffer) {
     if (!strategy)
         setStrategy();
-    strategy->sendResponse();
+    return strategy->sendResponse(buffer);
 }
 
 GetFileResponseStrategy::GetFileResponseStrategy(const std::string& path) :
@@ -102,14 +253,17 @@ GetFileResponseStrategy::GetFileResponseStrategy(const std::string& path) :
 GetFileResponseStrategy::~GetFileResponseStrategy() {
 }
 
-void GetFileResponseStrategy::sendResponse() {
+transferState GetFileResponseStrategy::sendResponse(ISBuffer& buffer) {
     cout << "path: " << path << endl;
     cout << "sentSize: " << sentSize << endl;
+    return (COMPLETE);
 }
 
 GetDirectoryResponseStrategy::GetDirectoryResponseStrategy(
-    const std::string& path, DIR* dir, const std::string& uri) :
-    path(path), uri(uri), sentSize(0), dir(dir) {
+    const std::string& path, const string& uri,
+    const IClientConf& config, DIR* dir) :
+    path(path), uri(uri), config(config),
+    dir(dir), sentSize(0), bufferToSend() {
 }
 
 GetDirectoryResponseStrategy::~GetDirectoryResponseStrategy() {
@@ -207,35 +361,49 @@ string GetDirectoryResponseStrategy::generateListHTML(struct dirent* entry) cons
     return html.str();
 }
 
-void GetDirectoryResponseStrategy::sendResponse() {
-    std::string listingPageHTML;
+transferState GetDirectoryResponseStrategy::sendResponse(ISBuffer& buffer) {
+    if (bufferToSend.empty()) {
+        std::string listingPageHTML;
+        listingPageHTML = generateDirectoryListingPage();
+        bufferToSend    = generateHeaders(listingPageHTML) + listingPageHTML;
+    }
+    if (sentSize < bufferToSend.size()) {
+        size_t writeSize = buffer.write(bufferToSend.c_str() + sentSize, bufferToSend.size() - sentSize);
+        sentSize += writeSize;
+    }
+    if (sentSize == bufferToSend.size())
+        return COMPLETE;
+    return INCOMPLETE;
+}
 
-    listingPageHTML = generateDirectoryListingPage(dir);
-    header.setStatusCode(301);
-    header.setHeader("Connection", "close");
-    header.setHeader("Content-Type", "text/html");
-    header.setContentLength(listingPageHTML.size());
-    bufferToSend = header.getHeader();
+string GetDirectoryResponseStrategy::generateHeaders(const string& body) const {
+    std::stringstream headers;
 
-    started = true;
-    
-    bufferToSend.append(listingPageHTML);
-    sendNextChunk();
-    if(bufferToSend.size() == 0)
-        ended = true; 
-    closedir(dir);
+    headers << "HTTP/1.1 200 OK\r\n";
+    headers << "server: webserv\r\n";
 
+    std::time_t now = std::time(NULL);
+    std::tm* timeStruct = std::localtime(&now);
+    char dateBuffer[100];
+    std::strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S %Z", timeStruct);
+    headers << "date: " << dateBuffer << "\r\n";
+
+    headers << "Connection: close\r\n";
+    headers << "Content-Type: text/html\r\n";
+    headers << "Content-Length: " << body.size() << "\r\n";
+    headers << "\r\n";
+    return headers.str();
 }
 
 ResponseA::~ResponseA() {
     delete strategy;
 }
 
-void ResponseA::sendResponse()
+transferState ResponseA::sendResponse(ISBuffer& buffer)
 {
     if (!strategy)
         setStrategy();
-    strategy->sendResponse();
+    return strategy->sendResponse(buffer);
 }
 
 void ResponseA::setStrategy()
@@ -243,7 +411,7 @@ void ResponseA::setStrategy()
     t_method method = RequestHeader.getMethod();
     string& methodStr = Header::getMethodString(method);
     if (config.isAllowedMethod(methodStr) == false) {
-        strategy = new ErrorResponseStrategy(405);
+        strategy = new ErrorResponseStrategy("405", config);
         return;
     }
     string return_value = config.getInfo("return");
@@ -259,7 +427,8 @@ void ResponseA::setStrategy()
     switch (method)
     {
     case GET:
-        strategy = new GetResponseStrategy(createPath());
+        strategy = new GetResponseStrategy(createPath(),
+                        RequestHeader.getUri(), config);
         break;
     case POST:
         // strategy = new PostResponseStrategy(this, config.getRootPath());
@@ -270,19 +439,7 @@ void ResponseA::setStrategy()
     default:
         break;
     }
-
-    // string locationPath = joinPath(location.root , uri);
-    // //  need to check if the file exists
-    // if(stat((location.root+uri).c_str(),&buff) != 0)
-    // {
-    //     if(errno == ENOENT)
-    //         handleError(404);
-    //     else if(errno == EACCES)
-    //         handleError(403);
-    //     else
-    //         handleError(500);
-    //     return;
-    // }
+    // if (strategy == NULL)// TODO why this?
 }
 
 std::string ResponseA::createPath()
@@ -310,13 +467,13 @@ Response::~Response()
 
 void Response::initResponse(Client *client)
 {
-    this->request = &client->request;
-    this->servSock = &client->servSock;
-    this->uuid = &client->uuid;
-    this->fd = client->fd;
-    this->method = request->headers.method;
-    this->uri = request->headers.uri;
-    setLocation();
+    // this->request = &client->request;
+    // this->servSock = &client->servSock;
+    // this->uuid = &client->uuid;
+    // this->fd = client->fd;
+    // this->method = request->headers.method;
+    // this->uri = request->headers.uri;
+    // setLocation();
     this->locationPath = joinPath(location.root , uri);
     //  need to check if the file exists
     if(stat((location.root+uri).c_str(),&buff) != 0)
@@ -334,22 +491,20 @@ void Response::initResponse(Client *client)
 }
 
 
-void Response::setLocation()
-{
-    
-    this->location.methods.push_back(GET);
-    this->location.methods.push_back(POST);
-    this->location.root = "./nginx-html";
-    this->location.index.push_back("index.html");
-    this->location.index.push_back("index.htm");
-    this->location.index.push_back("page8.html");
-    this->location.error_page[404] = "404.html";
-    this->location.error_page[500] = "500.html";
-    this->location.autoindex = true;
-    this->location.return_code = 0;
-    this->location.return_url = "";
-
-}
+// void Response::setLocation()
+// {
+//     this->location.methods.push_back(GET);
+//     this->location.methods.push_back(POST);
+//     this->location.root = "./nginx-html";
+//     this->location.index.push_back("index.html");
+//     this->location.index.push_back("index.htm");
+//     this->location.index.push_back("page8.html");
+//     this->location.error_page[404] = "404.html";
+//     this->location.error_page[500] = "500.html";
+//     this->location.autoindex = true;
+//     this->location.return_code = 0;
+//     this->location.return_url = "";
+// }
 
 void Response::sendResponse()
 {
@@ -487,100 +642,100 @@ void Response::handleError(int error_code)
         ended = true;
 }
 
-bool Response::isEnded()
-{
-    return ended;
-}
+// bool Response::isEnded()
+// {
+//     return ended;
+// }
 
-bool Response::isStarted()
-{
-    return started;
-}
-void Response::sendDirectory(const std::string &path)
-{
-    DIR *dir= NULL;
-    std::string listingPageHTML;
+// bool Response::isStarted()
+// {
+//     return started;
+// }
+// void Response::sendDirectory(const std::string &path)
+// {
+//     DIR *dir= NULL;
+//     std::string listingPageHTML;
     
-    if(!started)
-    {
-        dir = opendir(path.c_str());
-        if (!dir) {
-            // perror("opendir");
-            if(errno == EACCES)
-                return handleError(403);
-            else
-                return handleError(500);
-        }
-        listingPageHTML = generateDirectoryListingPage(dir);
-        header.setStatusCode(301);
-        header.setHeader("Connection", "close");
-        header.setHeader("Content-Type", "text/html");
-        header.setContentLength(listingPageHTML.size());
-        bufferToSend = header.getHeader();
+//     if(!started)
+//     {
+//         dir = opendir(path.c_str());
+//         if (!dir) {
+//             // perror("opendir");
+//             if(errno == EACCES)
+//                 return handleError(403);
+//             else
+//                 return handleError(500);
+//         }
+//         listingPageHTML = generateDirectoryListingPage(dir);
+//         header.setStatusCode(301);
+//         header.setHeader("Connection", "close");
+//         header.setHeader("Content-Type", "text/html");
+//         header.setContentLength(listingPageHTML.size());
+//         bufferToSend = header.getHeader();
 
-        started = true;
-    }
+//         started = true;
+//     }
     
-    bufferToSend.append(listingPageHTML);
-    sendNextChunk();
-    if(bufferToSend.size() == 0)
-        ended = true; 
-    closedir(dir);
-}
+//     bufferToSend.append(listingPageHTML);
+//     sendNextChunk();
+//     if(bufferToSend.size() == 0)
+//         ended = true; 
+//     closedir(dir);
+// }
 
-std::string Response::generateErrorPage(int errorCode, const std::string& errorMsg) {
-    std::stringstream htmlPage;
+// std::string Response::generateErrorPage(int errorCode, const std::string& errorMsg) {
+//     std::stringstream htmlPage;
 
-    htmlPage << "<!DOCTYPE html>\n";
-    htmlPage << "<html>\n";
-    htmlPage << "<head>\n";
-    htmlPage << "  <title>Error " << errorCode << "</title>\n";
-    htmlPage << "  <style>\n";
-    htmlPage << "    * {\n";
-    htmlPage << "      transition: all 0.6s;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    html {\n";
-    htmlPage << "      height: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    body {\n";
-    htmlPage << "      font-family: 'Lato', sans-serif;\n";
-    htmlPage << "      color: #333;\n";
-    htmlPage << "      margin: 0;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    #main {\n";
-    htmlPage << "      display: table;\n";
-    htmlPage << "      width: 100%;\n";
-    htmlPage << "      height: 100vh;\n";
-    htmlPage << "      text-align: center;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    .fof {\n";
-    htmlPage << "      display: table-cell;\n";
-    htmlPage << "      vertical-align: middle;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    .fof h1 {\n";
-    htmlPage << "      font-size: 50px;\n";
-    htmlPage << "      display: inline-block;\n";
-    htmlPage << "      padding-right: 12px;\n";
-    htmlPage << "      animation: type .5s alternate infinite;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    @keyframes type {\n";
-    htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
-    htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
-    htmlPage << "    }\n";
-    htmlPage << "  </style>\n";
-    htmlPage << "</head>\n";
-    htmlPage << "<body>\n";
-    htmlPage << "  <div id=\"main\">\n";
-    htmlPage << "    <div class=\"fof\">\n";
-    htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
-    htmlPage << "      <p>" << errorMsg << "</p>\n";
-    htmlPage << "    </div>\n";
-    htmlPage << "  </div>\n";
-    htmlPage << "</body>\n";
-    htmlPage << "</html>\n";
+//     htmlPage << "<!DOCTYPE html>\n";
+//     htmlPage << "<html>\n";
+//     htmlPage << "<head>\n";
+//     htmlPage << "  <title>Error " << errorCode << "</title>\n";
+//     htmlPage << "  <style>\n";
+//     htmlPage << "    * {\n";
+//     htmlPage << "      transition: all 0.6s;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    html {\n";
+//     htmlPage << "      height: 100%;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    body {\n";
+//     htmlPage << "      font-family: 'Lato', sans-serif;\n";
+//     htmlPage << "      color: #333;\n";
+//     htmlPage << "      margin: 0;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    #main {\n";
+//     htmlPage << "      display: table;\n";
+//     htmlPage << "      width: 100%;\n";
+//     htmlPage << "      height: 100vh;\n";
+//     htmlPage << "      text-align: center;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    .fof {\n";
+//     htmlPage << "      display: table-cell;\n";
+//     htmlPage << "      vertical-align: middle;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    .fof h1 {\n";
+//     htmlPage << "      font-size: 50px;\n";
+//     htmlPage << "      display: inline-block;\n";
+//     htmlPage << "      padding-right: 12px;\n";
+//     htmlPage << "      animation: type .5s alternate infinite;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    @keyframes type {\n";
+//     htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
+//     htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "  </style>\n";
+//     htmlPage << "</head>\n";
+//     htmlPage << "<body>\n";
+//     htmlPage << "  <div id=\"main\">\n";
+//     htmlPage << "    <div class=\"fof\">\n";
+//     htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
+//     htmlPage << "      <p>" << errorMsg << "</p>\n";
+//     htmlPage << "    </div>\n";
+//     htmlPage << "  </div>\n";
+//     htmlPage << "</body>\n";
+//     htmlPage << "</html>\n";
 
-    return htmlPage.str();
-}
+//     return htmlPage.str();
+// }
 
 static bool compareDirent(const struct dirent* a, const struct dirent* b)
 {
@@ -588,6 +743,7 @@ static bool compareDirent(const struct dirent* a, const struct dirent* b)
         return true;
     return std::strcmp(a->d_name, b->d_name) < 0;
 }
+
 static std::string formatDateTime(time_t timestamp)
 {
     struct tm* localTime = localtime(&timestamp);
@@ -596,101 +752,101 @@ static std::string formatDateTime(time_t timestamp)
     return buffer;
 }
 
-std::string Response::generateListHTML(struct dirent* entry)
-{
-    std::stringstream html;
-    struct stat buffer;
-    if(stat(joinPath(locationPath, entry->d_name).c_str(), &buffer) != 0)
-        return "";
-    if(entry->d_type == DT_DIR && std::strcmp(entry->d_name, "..") != 0)
-        html << "<tr><td><a href=\"" << joinPath(uri,entry->d_name) << "\">&#128193;" << " " << "<b>" << entry->d_name<< "/</b></a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td> - </td></tr>\n";
-    else if(std::strcmp(entry->d_name, "..") == 0)
-        html << "<tr><td><a href=\"" << joinPath(uri,entry->d_name) << "\">&#128281;" << " "<< entry->d_name << "/</a></td><td> </td><td>  </td></tr>\n";
-    else
-        html << "<tr><td><a href=\"" << joinPath(uri,entry->d_name) << "\">&#128195;" << " "<< entry->d_name << "</a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td>" << buffer.st_size << "</td></tr>\n";
-    return html.str();
-}
+// std::string Response::generateListHTML(struct dirent* entry)
+// {
+//     std::stringstream html;
+//     struct stat buffer;
+//     if(stat(joinPath(locationPath, entry->d_name).c_str(), &buffer) != 0)
+//         return "";
+//     if(entry->d_type == DT_DIR && std::strcmp(entry->d_name, "..") != 0)
+//         html << "<tr><td><a href=\"" << joinPath(uri,entry->d_name) << "\">&#128193;" << " " << "<b>" << entry->d_name<< "/</b></a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td> - </td></tr>\n";
+//     else if(std::strcmp(entry->d_name, "..") == 0)
+//         html << "<tr><td><a href=\"" << joinPath(uri,entry->d_name) << "\">&#128281;" << " "<< entry->d_name << "/</a></td><td> </td><td>  </td></tr>\n";
+//     else
+//         html << "<tr><td><a href=\"" << joinPath(uri,entry->d_name) << "\">&#128195;" << " "<< entry->d_name << "</a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td>" << buffer.st_size << "</td></tr>\n";
+//     return html.str();
+// }
 
-std::string Response::generateDirectoryListingPage(DIR* dir) 
-{
-    std::stringstream htmlPage;
-    struct dirent* entry;
-    std::vector<struct dirent*> entries;
-    while((entry = readdir(dir)) != NULL)
-    {
-        entries.push_back(entry);
-    }
+// std::string Response::generateDirectoryListingPage(DIR* dir) 
+// {
+//     std::stringstream htmlPage;
+//     struct dirent* entry;
+//     std::vector<struct dirent*> entries;
+//     while((entry = readdir(dir)) != NULL)
+//     {
+//         entries.push_back(entry);
+//     }
 
-    htmlPage << "<!DOCTYPE html>\n";
-    htmlPage << "<html>\n";
-    htmlPage << "<head>\n";
-    htmlPage << "  <title>Directory Listing</title>\n";
-    htmlPage << "  <style>\n";
-    htmlPage << "    * {\n";
-    htmlPage << "      background: #333;\n";
-    htmlPage << "      transition: all 0.6s;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    html {\n";
-    htmlPage << "      height: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    body {\n";
-    htmlPage << "      font-family: 'Lato', sans-serif;\n";
-    htmlPage << "      margin: 0;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    #main {\n";
-    htmlPage << "      width: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    table {\n";
-    htmlPage << "      width: 80%;\n";
-    htmlPage << "      margin: 0 auto;\n";
-    htmlPage << "      border-collapse: collapse;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    th, td {\n";
-    htmlPage << "      border: 1px solid #333;\n";
-    htmlPage << "      padding: 6px;\n";
-    htmlPage << "      text-align: left;\n";
-    htmlPage << "      color: #fff;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    a {\n";
-    htmlPage << "      color: #fff;\n";
-    htmlPage << "      text-decoration: none;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    h1 {\n";
-    htmlPage << "      color: #fff;\n";
-    htmlPage << "      margin-left: 10%;\n";
-    htmlPage << "      margin-top: 2%;\n";
-    htmlPage << "      margin-bottom: 2%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "  </style>\n";
-    htmlPage << "</head>\n";
-    htmlPage << "<body>\n";
-    htmlPage << "  <div id=\"main\">\n";
-    htmlPage << "    <h1> Index of " << uri << "</h1>\n";
-    htmlPage << "    <table>\n";
-    std::sort(entries.begin(), entries.end(), compareDirent);
-    for(size_t i = 0; i < entries.size(); i++)
-    {
-        if(entries[i]->d_name[0] == '.' && std::strcmp(entries[i]->d_name, "..") != 0)
-            continue;
-        htmlPage << generateListHTML(entries[i]);
-    }
-    htmlPage << "    </table>\n";
-    htmlPage << "  </div>\n";
-    htmlPage << "</body>\n";
-    htmlPage << "</html>\n";
+//     htmlPage << "<!DOCTYPE html>\n";
+//     htmlPage << "<html>\n";
+//     htmlPage << "<head>\n";
+//     htmlPage << "  <title>Directory Listing</title>\n";
+//     htmlPage << "  <style>\n";
+//     htmlPage << "    * {\n";
+//     htmlPage << "      background: #333;\n";
+//     htmlPage << "      transition: all 0.6s;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    html {\n";
+//     htmlPage << "      height: 100%;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    body {\n";
+//     htmlPage << "      font-family: 'Lato', sans-serif;\n";
+//     htmlPage << "      margin: 0;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    #main {\n";
+//     htmlPage << "      width: 100%;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    table {\n";
+//     htmlPage << "      width: 80%;\n";
+//     htmlPage << "      margin: 0 auto;\n";
+//     htmlPage << "      border-collapse: collapse;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    th, td {\n";
+//     htmlPage << "      border: 1px solid #333;\n";
+//     htmlPage << "      padding: 6px;\n";
+//     htmlPage << "      text-align: left;\n";
+//     htmlPage << "      color: #fff;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    a {\n";
+//     htmlPage << "      color: #fff;\n";
+//     htmlPage << "      text-decoration: none;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    h1 {\n";
+//     htmlPage << "      color: #fff;\n";
+//     htmlPage << "      margin-left: 10%;\n";
+//     htmlPage << "      margin-top: 2%;\n";
+//     htmlPage << "      margin-bottom: 2%;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "  </style>\n";
+//     htmlPage << "</head>\n";
+//     htmlPage << "<body>\n";
+//     htmlPage << "  <div id=\"main\">\n";
+//     htmlPage << "    <h1> Index of " << uri << "</h1>\n";
+//     htmlPage << "    <table>\n";
+//     std::sort(entries.begin(), entries.end(), compareDirent);
+//     for(size_t i = 0; i < entries.size(); i++)
+//     {
+//         if(entries[i]->d_name[0] == '.' && std::strcmp(entries[i]->d_name, "..") != 0)
+//             continue;
+//         htmlPage << generateListHTML(entries[i]);
+//     }
+//     htmlPage << "    </table>\n";
+//     htmlPage << "  </div>\n";
+//     htmlPage << "</body>\n";
+//     htmlPage << "</html>\n";
 
-    return htmlPage.str();
-}
+//     return htmlPage.str();
+// }
 
-bool Response::checkForValidMethod()
-{
-    for(size_t i = 0; i < location.methods.size(); i++)
-    {
-        if(location.methods[i] == request->headers.method)
-            return true;
-    }
-    return false;
-}
+// bool Response::checkForValidMethod()
+// {
+//     for(size_t i = 0; i < location.methods.size(); i++)
+//     {
+//         if(location.methods[i] == request->headers.method)
+//             return true;
+//     }
+//     return false;
+// }
 
 bool Response::handleRedirection()
 {
@@ -721,6 +877,7 @@ bool Response::handleRedirection()
     }
     return false;
 }
+
 void Response::handleDelete()
 {
 

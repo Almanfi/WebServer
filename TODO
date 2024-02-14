@@ -6,4 +6,7 @@ serve files on GET
 upload file on POST
 cgi
 
-remove request with ..
+add timeout to epoll and timestamp to client
+
+if config location end with slash match only with url that end with / change getLocation 
+

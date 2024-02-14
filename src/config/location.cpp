@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:24:55 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/14 18:55:25 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -157,6 +157,10 @@ void Location::insertDirective(const string& key, const string& value) {
         }
         throw LocationException::DIRECT_ALREADY_SET(key);
     }
+    if (key == "root" && value.back() == '/') { // TODO check this, this is for concatination of root and uri
+        info.insert(std::make_pair(key, value.substr(0, value.size() - 1)));
+        return ;
+    }
     info.insert(std::make_pair(key, value));
 }
 
@@ -255,7 +259,7 @@ void Location::propagate() {
 
 Location& Location::getLocation(const string& location) {
     string loc = location;
-    while (loc != "") {
+    while (loc != "/") {
         map<string, Location>::iterator it;
         it = innerLocations.find(loc);
         if (it != innerLocations.end()) {
@@ -265,6 +269,8 @@ Location& Location::getLocation(const string& location) {
         if (pos == string::npos)
             pos = 0;
         loc = loc.substr(0, pos);
+        if (location.back() == '/') // TODO check if this is correct
+            loc += "/";
     }
     return (*this);
 }

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/13 19:41:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/14 18:05:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,6 +107,8 @@ void Header::setRequestLine(const string& value) {
         throw RequestException::BAD_REQUEST();
    uri = value.substr(start , pos - start);
     if (uri[0] != '/')
+        throw RequestException::BAD_REQUEST();
+    if (uri.find("..") != string::npos)
         throw RequestException::BAD_REQUEST();
     string version = value.substr(pos + 1);
     if (version != HTTP_VERSION)

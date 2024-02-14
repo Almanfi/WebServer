@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:18:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 01:04:07 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/14 17:37:37 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ public:
     virtual char* operator&() = 0;
     virtual char&  operator*() = 0;
     virtual size_t write(const string& str) = 0;
+    virtual size_t write(const char* str, size_t size) = 0;
     // virtual char* operator+(size_t i) = 0;
     // virtual char* operator-(size_t i) = 0;
     // virtual char& operator[](size_t i) = 0;
@@ -67,6 +68,7 @@ public:
     char* operator-(size_t i);
     char& operator[](size_t i);
     size_t write(const string& str);
+    size_t write(const char* str, size_t size);
 private:
     ssize_t start;
     ssize_t count;

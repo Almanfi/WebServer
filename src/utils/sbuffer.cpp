@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 16:54:31 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/14 17:37:20 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,12 +55,16 @@ char& SBuffer::operator[](size_t i) {
 }
 
 size_t SBuffer::write(const string& str) {
-    if (static_cast<size_t>(freeSpace()) < str.size())
+    return (write(str.c_str(), str.size()));
+}
+
+size_t SBuffer::write(const char* str, size_t size) {
+    if (static_cast<size_t>(freeSpace()) < size)
         moveDataToStart();
-    size_t size = std::min(str.size(), static_cast<size_t>(freeSpace()));
-    std::memcpy(buffer + end(), str.c_str(), size);
-    count += size;
-    return (size);
+    size_t writeSize = std::min(size, static_cast<size_t>(freeSpace()));
+    std::memcpy(buffer + end(), str, writeSize);
+    count += writeSize;
+    return (writeSize);
 }
 
 ssize_t SBuffer::begin() {
@@ -125,8 +129,8 @@ ssize_t SBuffer::send(sock_fd fd, int flags) {
         perror("send");
         throw std::exception();
     }
-    cout << "sendSize = " << sendSize << endl;
-    cout << "buffer = " << *this << endl; // for debuging
+    // cout << "sendSize = " << sendSize << endl;
+    // cout << "buffer = " << *this << endl; // TODO for debuging
     start += sendSize;
     count -= sendSize;
     return (sendSize);
