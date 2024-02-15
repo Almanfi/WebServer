@@ -15,6 +15,7 @@
 
 # include "definition.hpp"
 # include "uuid.hpp"
+# include "uniqFile.hpp"
 # include "config.hpp"
 # include "sbuffer.hpp"
 # include "header.hpp"
@@ -23,6 +24,6 @@
 # include "client.hpp"
 # include "serverSocket.hpp"
 # include "epoll.hpp"
-# include "CGI.hpp"
+
 
 #endif // SOCKET_HPP

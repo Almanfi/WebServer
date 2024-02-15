@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 class Headers
 {
     private:
@@ -31,6 +33,7 @@ class Headers
         std::string getStatusMessage(int status_code);
 
         std::string getHeader();
+        std::string getCGIHeader();
 };  
 
 #endif // HEADERS_HPP

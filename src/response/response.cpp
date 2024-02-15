@@ -1,8 +1,10 @@
 #include "socket.hpp"
 
-Response::Response():started(false),ended(false),reachedEOF(false)
+Response::Response():started(false),ended(false),reachedEOF(false),isCGIStarted(false),isCGIEnded(false),
+newUUID(), CGItmpFile("./tmp",newUUID)
 {
 }
+
 
 Response::~Response()
 {
@@ -43,22 +45,28 @@ void Response::setLocation()
     this->location.allow_upload = true;
     this->location.upload_path = "nginx-html/";
     this->location.allow_CGI = true;
-    this->location.CGI_path = "user/bin/php-cgi";
+    this->location.CGI_path = "/usr/bin/php-cgi";
 
 }
+
 void Response::sendResponse()
 {
     cout << "++++++++++++ sendResponse ++++++++++++" << endl;
-        if(!checkForValidMethod())
+        if(location.allow_CGI)
+            handleCGI();
+        else if(!checkForValidMethod())
             handleError(405);
-        if(handleRedirection())
+        else if(handleRedirection())
             return;
-        if(method == GET)
-            handleGet();
-        else if(method == POST)
-            handlePost();
-        else if(method == DELETE)
-            handleDelete();
+        else
+        {
+            if(method == GET)
+                handleGet();
+            else if(method == POST)
+                handlePost();
+            else if(method == DELETE)
+                handleDelete();
+        }
         //started = true;
 }
 
@@ -126,7 +134,7 @@ void Response::handleDelete()
             if(errno == ENOENT)
                 handleError(404);
             else if(errno == EACCES)
-                handleError(403);
+                handleError(403); 
             else
                 handleError(500);
             return;
@@ -261,7 +269,7 @@ bool Response::isStarted()
 }
 void Response::sendDirectory(const std::string &path)
 {
-    DIR *dir;
+    DIR *dir = NULL;
     std::string listingPageHTML;
     
     if(!started)
@@ -351,6 +359,7 @@ static bool compareDirent(const struct dirent* a, const struct dirent* b)
         return true;
     return std::strcmp(a->d_name, b->d_name) < 0;
 }
+
 static std::string formatDateTime(time_t timestamp)
 {
     struct tm* localTime = localtime(&timestamp);

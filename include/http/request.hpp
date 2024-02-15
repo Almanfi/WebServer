@@ -50,6 +50,9 @@ private:
     size_t  bodySize;
     size_t  contentLength;
     bool    haveChunckSize;
+    // server 
+    // method 
+    
 };
 
 #endif // REQUEST_HPP
