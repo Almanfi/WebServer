@@ -48,7 +48,7 @@ class Response
         std::string bodyPath;
         std::string query;
         std::string uri;
-
+        
         bool started;
         bool ended;
         bool reachedEOF;
@@ -65,7 +65,7 @@ class Response
         t_method method;
         t_location location;
         //----------------------CGI----------------------//
-        std::string tmpOutFileName;
+        std::string cgiOutPutFile;
         std::map<std::string, std::string> env;
         bool isCGIStarted;
         bool isCGIEnded;
@@ -82,8 +82,9 @@ class Response
         int cgiStatus;
         int fdOut;
         int fdIn;
+        int cgiHeaderSize;
         char **envp;
-        time_t cgiStartTimer;
+        std::clock_t cgiStartTimer;
 
 
 
@@ -116,7 +117,7 @@ class Response
 
         // ----------------------CGI----------------------//
         char **getEnvironmentVariables();
-        void executeCGI();
+        // void executeCGI();
         bool checkGGIProcess();
         void uriParser();
         void initCGI();

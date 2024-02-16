@@ -217,11 +217,11 @@ void Headers::setHeader(const std::string &key, const std::string &value)
 std::string Headers::getCGIHeader()
 {
     // loking for status code in headers
-    char *end;
+    // char *end;
     std::string status_code = headersField["Status"];
     if(status_code.empty())
         status_code = "200";
-    std::string header = "HTTP/1.1 " + status_code + " " + getStatusMessage(std::strtol(status_code.c_str(), &end, 10)) + "\r\n";  
+    std::string header = "HTTP/1.1 " + status_code + " " + headersField["Status"] + "\r\n"; 
     for(std::map<std::string, std::string>::iterator it = headersField.begin(); it != headersField.end(); it++)
     {
         if(it->first == "Status")
