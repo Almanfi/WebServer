@@ -10,12 +10,15 @@
 #include <unistd.h>
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 class Headers
 {
     private:
         std::map<std::string, std::string> content_type;
         std::map<int, std::string> status_message;
         std::map<std::string, std::string> headersField;
+        std::multimap<std::string, std::string> cgiHeaders;
 
     public:
         Headers();
@@ -23,6 +26,7 @@ class Headers
         std::string getContentType(const std::string &file_name);
         void setStatusCode(int status_code);
         void setHeader(const std::string &key, const std::string &value);
+        void setCGIHeader(const std::string &key, const std::string &value);
         void setStatusMessage(int status_code);
         void setContentLength(int content_length);
         void setContentType(const std::string &path);
@@ -31,6 +35,7 @@ class Headers
         std::string getStatusMessage(int status_code);
 
         std::string getHeader();
+        std::string getCGIHeader();
 };  
 
 #endif // HEADERS_HPP
