@@ -3,48 +3,54 @@
 /*                                                        :::      ::::::::   */
 /*   request.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/26 17:45:36 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/12 20:38:53 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
-Request::Request() : headerComplete(false) , bodySize(0), contentLength(0), haveChunckSize(false) {
+Request::Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
+            IServerSocket& servSock, IClientConf* config) :
+        buffer(buffer), file(file), headers(headers),
+        headerComplete(false), haveRequestLine(false),
+        strategy(NULL), servSock(servSock), config(config) {
 }
 
 Request::~Request() {
+    delete strategy;
 }
 
 Request::Request(const Request& other) : 
+        buffer(other.buffer),
+        file(other.file),
         headers(other.headers),
-        body(other.body),
         headerComplete(other.headerComplete),
-        bodySize(other.bodySize),
-        contentLength(other.contentLength),
-        haveChunckSize(other.haveChunckSize){
+        haveRequestLine(other.haveRequestLine),
+        strategy(other.strategy),
+        servSock(other.servSock),
+        config(other.config) {
+    throw std::runtime_error("Request::Request: copy constructor forbidden");
 }
 
 Request& Request::operator=(const Request& other) {
-    if (this != &other) {
-        headers = other.headers;
-        body = other.body;
-        headerComplete = other.headerComplete;
-        bodySize = other.bodySize;
-        contentLength = other.contentLength;
-        haveChunckSize = other.haveChunckSize;
-    }
-    return (*this);
+    (void) other;
+    throw std::runtime_error("Request::operator=: forbidden");
 }
 
-void Request::parseHeaders(SBuffer& buffer) {
+void Request::setConfig() {
+    string configName = headers.getHeader(HOST) + headers.getUri();
+    config = &servSock.getLocation(configName);
+}
+
+void Request::parseHeaders() {
     cout << "parsing headers" << endl;
     char *buff = &buffer;
     ssize_t size = buffer.size();
     ssize_t i = 0;
-    
+
     while (i < size) {
         if (!(buff[i] == '\r' && buff[i + 1] == '\n'))
         {
@@ -55,22 +61,22 @@ void Request::parseHeaders(SBuffer& buffer) {
             buffer.skip(buff - &buffer + 2);
             headerComplete = true;
             headers.check();
-            stringstream ss(headers.getHeader(CONTENT_LENGTH));
-            ss >> contentLength;
-            body.empty();
+            setConfig();
+            setTransferStrategy();
             cout << "end of headers" << endl;
             return ;
         }
         string  line(buff, i);
-        size_t  pos = line.find(": ");
-        if (pos != string::npos) {
-            string  key(line, 0, pos);
-            string  value(line, pos + 2);
-            headers.insertHeader(key, value);
+        if (haveRequestLine == false) {
+            headers.setRequestLine(line);
+            haveRequestLine = true;
         }
         else {
-            string  key(line, 0, line.find(" "));
-            string  value(line, line.find(" ") + 1);
+            size_t  pos = line.find(": ");
+            if (pos == string::npos)
+                throw RequestException::BAD_REQUEST();
+            string  key(line, 0, pos);
+            string  value(line, pos + 2);
             headers.insertHeader(key, value);
         }
         buff += i + 2;
@@ -78,10 +84,82 @@ void Request::parseHeaders(SBuffer& buffer) {
         i = 0;
     }
     if (buffer.skip(buff - &buffer) == false) // buffer overflowing with no headers end
-        throw std::runtime_error("bad request headers too long");
+        throw RequestException::REQUEST_HEADER_FIELDS_TOO_LARGE();
 }
 
-bool Request::hasCRLF(SBuffer& buffer, size_t pos) {
+bool    Request::parse() {
+    if (!headerComplete)
+        parseHeaders();
+    if (headerComplete) {
+        cout << "====== this is for server " << config->getInfo("server_name") << endl;
+        if (strategy->transfer(buffer, file) == COMPLETE)
+            return (true);
+    }
+    return (false);
+};
+
+string Request::getHeader(const string& key) {
+    return (headers.getHeader(key));
+}
+
+void Request::setTransferStrategy() {
+    if (headers.getHeader(TRANSFER_ENCODING) == "chunked")
+        this->strategy = new ChunkedTransferStrategy(*config);
+    else {
+        size_t contentLength;
+        stringstream ss(headers.getHeader(CONTENT_LENGTH));
+        ss >> contentLength;
+        this->strategy = new NormalTransferStrategy(*config, contentLength);
+    }
+    cout << "transfer strategy set" << endl;
+}
+
+
+NormalTransferStrategy::NormalTransferStrategy(IClientConf& conf, size_t contentLength) :
+            config(conf), bodySize(0), contentLength(contentLength) {
+}
+
+NormalTransferStrategy::NormalTransferStrategy(const NormalTransferStrategy& other) : config(other.config) {
+    (void) other;
+    throw std::runtime_error("NormalTransferStrategy::NormalTransferStrategy: copy constructor forbidden");
+}
+
+NormalTransferStrategy& NormalTransferStrategy::operator=(const NormalTransferStrategy& other) {
+    (void) other;
+    throw std::runtime_error("NormalTransferStrategy::operator=: forbidden");
+}
+
+NormalTransferStrategy::~NormalTransferStrategy() {
+}
+
+transferState    NormalTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& file) {
+    size_t size = std::min(static_cast<size_t>(buffer.size()), contentLength);
+    if (!buffer.empty())
+        file.write(&buffer, size);
+    bodySize += size;
+    contentLength -= size;
+    buffer.clear();
+    return (contentLength == 0 ? COMPLETE : INCOMPLETE);
+}
+
+ChunkedTransferStrategy::ChunkedTransferStrategy(IClientConf& conf) :
+            config(conf), bodySize(0), contentLength(0), haveChunckSize(false) {
+}
+
+ChunkedTransferStrategy::ChunkedTransferStrategy(const ChunkedTransferStrategy& other) : config(other.config) {
+    (void) other;
+    throw std::runtime_error("ChunkedTransferStrategy::ChunkedTransferStrategy: copy constructor forbidden");
+}
+
+ChunkedTransferStrategy& ChunkedTransferStrategy::operator=(const ChunkedTransferStrategy& other) {
+    (void) other;
+    throw std::runtime_error("ChunkedTransferStrategy::operator=: forbidden");
+}
+
+ChunkedTransferStrategy::~ChunkedTransferStrategy() {
+}
+
+bool ChunkedTransferStrategy::hasCRLF(ISBuffer& buffer, size_t pos) {
     if (buffer.find("\r\n", pos) == pos)
         return (true);
     if (static_cast<size_t>(buffer.size()) >= 2)
@@ -89,11 +167,11 @@ bool Request::hasCRLF(SBuffer& buffer, size_t pos) {
     return (false);
 }
 
-bool findChunckSize(SBuffer& buffer, size_t& chunkSize) {
+bool ChunkedTransferStrategy::findChunckSize(ISBuffer& buffer, size_t& chunkSize) {
     char *chunk = &buffer;
     size_t i = buffer.find("\r\n", 0);
     if (i == string::npos) {
-        if (buffer.freeSpace() < (buffer.capacity() / 100)) // TODO what if buffer capacity is bellow 100
+        if (buffer.freeSpace() < 100) // TODO what if buffer capacity is bellow 100
             buffer.moveDataToStart();
         return (false);
     }
@@ -106,62 +184,53 @@ bool findChunckSize(SBuffer& buffer, size_t& chunkSize) {
     return (true);
 }
 
-void Request::recieveChunkedBody(SBuffer& buffer, fstream& file) {
+transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& file) {
     if (haveChunckSize == false) {
         if (findChunckSize(buffer, contentLength) == false)
-            return;
+            return (INCOMPLETE);
         haveChunckSize = true;
     }
     if (contentLength == 0) { // TODO check if this is correct if content length is 0 and we still have a body
         if (hasCRLF(buffer, 0) == false)
-            return;
+            return (INCOMPLETE);
         buffer.clear();
+        cout << "++++++++++++++++++ end of chunck ++++++++++++++++" << endl;
+        return (COMPLETE);
     }
     if (static_cast<size_t>(buffer.size()) <= contentLength) {
-        file << buffer;
+        file.write(&buffer, buffer.size());
         bodySize += buffer.size();
         contentLength -= buffer.size();
         buffer.clear();
-        return;
+        return (INCOMPLETE);
     }
     if (hasCRLF(buffer, contentLength) == false)
-        return;
+        return (INCOMPLETE);
     file.write(&buffer, contentLength);
-    bodySize += contentLength;
     buffer.skip(contentLength + 2);
+    bodySize += contentLength;
     contentLength -= contentLength;
-    haveChunckSize = false;
-    recieveChunkedBody(buffer, file);
+    if (contentLength == 0)
+        haveChunckSize = false;// TODO added this in cas buffer size is not enough to contain the next chunck???
+    return (transfer(buffer, file));
 }
 
-void Request::recieveNormalBody(SBuffer& buffer, fstream& file) {
-    size_t size = std::min(static_cast<size_t>(buffer.size()), contentLength);
-    if (!buffer.empty())
-        file.write(&buffer, size);
-    bodySize += size;
-    contentLength -= size;
-    buffer.clear();
-    // if (contentLength == 0) // TODO check if this is correct if content length is 0 and we still have a body
-    //     state = WRITE;
+const char* RequestException::BAD_REQUEST::what() const throw() {
+    return ("400");
 }
 
-bool    Request::parseRequest(SBuffer& buffer, fstream& file) {
-    // ssize_t byte_recieved = 0;
-    // byte_recieved = buffer.recv(fd, 0); // TODO check flags later
-    if (!headerComplete)
-        parseHeaders(buffer);
-   if (headerComplete) {
-    // TODO check content lenght and empty socket after ?
-        if (getHeader(TRANSFER_ENCODING).empty() == false)
-            recieveChunkedBody(buffer, file);
-        else
-            recieveNormalBody(buffer, file);
-        if (contentLength == 0)
-            return (true);
-    }
-    return (false);
-};
+const char* RequestException::REQUEST_HEADER_FIELDS_TOO_LARGE::what() const throw() {
+    return ("431");
+}
 
-string Request::getHeader(const string& key) {
-    return (headers.getHeader(key));
+const char* RequestException::NOT_IMPLIMENTED::what() const throw() {
+    return ("501");
+}
+
+const char* RequestException::HTTP_VERSION_NOT_SUPPORTED::what() const throw() {
+    return ("505");
+}
+
+const char* RequestException::LENGTH_REQUIRED::what() const throw() {
+    return ("411");
 }

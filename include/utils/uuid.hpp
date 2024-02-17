@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   uuid.hpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: elasce <elasce@student.42.fr>              +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 20:19:57 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/26 16:45:33 by elasce           ###   ########.fr       */
+/*   Updated: 2024/02/06 23:41:28 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,26 @@ private:
     ~bitManip();
 };
 
-class UUID {
+class UUID;
+
+class Iuuid {
+public:
+    virtual ~Iuuid() {};
+    virtual const string& getStr() const = 0;
+    virtual const int* getVal() const = 0;
+    virtual bool isSame(const UUID& other) const = 0;
+    virtual bool isSame(const string& other) const = 0;
+    virtual bool isSame(const int* other) const = 0;
+    virtual bool operator==(const UUID& other) const = 0;
+    virtual bool operator==(const string& other) const = 0;
+    virtual bool operator==(const int* other) const = 0;
+    virtual bool operator!=(const UUID& other) const = 0;
+    virtual bool operator!=(const string& other) const = 0;
+    virtual bool operator!=(const int* other) const = 0;
+    virtual void regen() = 0;
+};
+
+class UUID  : public Iuuid {
 public:
     UUID();
     UUID(const string& uuid_str);

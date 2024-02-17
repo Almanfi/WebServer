@@ -5,3 +5,5 @@ saving budy in tmpfile
 serve files on GET
 upload file on POST
 cgi
+
+remove request with ..

@@ -1,5 +1,5 @@
-#ifndef RESPONSE_HPP
-#define RESPONSE_HPP
+// #ifndef RESPONSE_HPP
+// #define RESPONSE_HPP
 
 #include <string>
 #include <map>
@@ -37,7 +37,7 @@ typedef struct s_location
     std::string CGI_path;
     std::string CGI_timeout;
 
-} t_location;
+// } t_location;
 
 class Response
 {

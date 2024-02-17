@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 15:38:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:39:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,23 +52,15 @@ ServerSocket::~ServerSocket() {
 
 void ServerSocket::init() {
     sockid = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (sockid == -1) {
-        perror("socket");
-        throw std::exception();
-    }
+    if (sockid == -1)
+        throw SOCKET_EXCEPTION("could not create socket");
     int opt = 1;
-    if (setsockopt(sockid, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
-        perror("setsockopt");
-        throw std::exception();
-    }
-    if (bind(sockid, res->ai_addr, res->ai_addrlen) == -1) {
-        perror("bind");
-        throw std::exception();
-    }
-    if (listen(sockid, MAX_LISTEN) == -1) {
-        perror("listen");
-        throw std::exception();
-    }
+    if (setsockopt(sockid, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+        throw SOCKET_EXCEPTION("could not set socket options");
+    if (bind(sockid, res->ai_addr, res->ai_addrlen) == -1)
+        throw SOCKET_EXCEPTION("could not bind socket");
+    if (listen(sockid, MAX_LISTEN) == -1)
+        throw SOCKET_EXCEPTION("could not listen on socket");
 }
 
 bool ServerSocket::isDupulicate(ServerSocket& other) {
@@ -106,6 +98,7 @@ void ServerSocket::addServer(Server& serv) {
 
 Location& ServerSocket::getLocation(const string& uri) {
     string server_name = uri.substr(0, uri.find("/"));
+    server_name = server_name.substr(0, server_name.find(":"));// TODO do i need port?
     string location = uri.substr(uri.find("/"));
     Server* serv = NULL;
     for (deque<Server*>::iterator it = servers.begin(); it != servers.end(); it++) {
@@ -120,12 +113,22 @@ Location& ServerSocket::getLocation(const string& uri) {
             break;
         }
     }
-    if (!serv) {
+    if (!serv)
         throw std::runtime_error("Error: server not found");
-    }
-    return (serv->locations.find("/")->second->getLocation(location));
+    return (serv->getLocation(location));
 }
 
 deque<Server*>& ServerSocket::getServers() {
     return (servers);
+}
+
+ServerSocket::SOCKET_EXCEPTION::SOCKET_EXCEPTION(const string& error) {
+    msg = "Error: " + error;
+}
+
+ServerSocket::SOCKET_EXCEPTION::~SOCKET_EXCEPTION() throw() {
+}
+
+const char* ServerSocket::SOCKET_EXCEPTION::what() const throw() {
+    return msg.c_str();
 }

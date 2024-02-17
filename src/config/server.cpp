@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 18:12:58 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 16:57:53 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,66 +23,89 @@ void Server::setAllowedDirective() {
 
 map<string, int> Server::directive;
 
-Server::Server(Config& c, Parser& p) : c(c), p(p) {
+Server::Server() : rootLocation("/") {
     setAllowedDirective();
 }
+
+// Server::Server(const Server& serv) :  rootLocation(serv.rootLocation) {
+//     for (map<string, string>::const_iterator it = serv.info.begin(); it != serv.info.end(); it++) {
+//         info.insert(std::make_pair(it->first, it->second));
+//     }
+//     for (vector<string>::const_iterator it = serv.server_name.begin(); it != serv.server_name.end(); it++) {
+//         server_name.push_back(*it);
+//     }
+//     listenIp = serv.listenIp;
+//     listenPort = serv.listenPort;
+//     error_page = serv.error_page;
+// }
 
 Server::~Server() {
 }
 
-void Server::setMainLocation(string& token) {
-    map<string, Location*>::iterator it = locations.find("/");
-    if (it == locations.end()) {
-        deque<Location>& allLoc = c.getLocations();
-        allLoc.push_back(Location(c, *this, p, "/"));
-        Location& loc = allLoc.back();
-        locations.insert(std::make_pair("/", &loc));
+void Server::set() {
+    string newToken = Parser::getTok();
+    if (newToken != "{")
+        throw ConfigException::MISSING_BRACKET("{");
+    rootLocation.setServer(*this);
+    while (true) {
+        newToken = Parser::getTok();
+        if (newToken == "}" || newToken.empty())
+            break;
+        if (newToken == ";")
+            continue;
+        setServerInfo(newToken);
     }
-    Location& loc = *(locations.find("/")->second);
-    loc.setLocationInfo(token);
+    if (newToken != "}")
+        throw ConfigException::MISSING_BRACKET("}");
+    finalize();
 }
 
-void Server::setNewLocation() {
-    deque<Location>& allLoc = c.getLocations();
-    string uri = p.getToken(); // validate URI!
-    if (uri.empty() || uri == "{") {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing uri at line " + ss.str());
-    }
-    if (uri[0] != '/') {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Invalid uri at line " + ss.str());
-    }
-    allLoc.push_back(Location(c, *this, p, uri));
-    Location& loc = allLoc.back();
-    loc.set();
-    locations.insert(std::make_pair(loc.getUri(), &loc));
+void Server::setMainLocation(string& token) {
+    // map<string, Location>::iterator it = locations.find("/");
+    // if (it == locations.end()) {
+    //     locations.insert(std::make_pair("/", Location(c, *this, "/")));
+    //     // deque<Location>& allLoc = c.getLocations();
+    //     // allLoc.push_back(Location(c, *this, p, "/"));
+    //     // Location& loc = allLoc.back();
+    //     // locations.insert(std::make_pair("/", &loc));
+    // }
+    // Location& loc = (locations.find("/")->second);
+    // loc.setLocationInfo(token);
+    rootLocation.setLocationInfo(token);
 }
+
+// void Server::setNewLocation() {
+//     // deque<Location>& allLoc = c.getLocations();
+//     string uri = Parser::getTok(); // TODO validate URI!
+//     if (uri.empty() || uri == "{")
+//         throw ServerException::MISSING_LOCATION_URI();
+//     if (uri[0] != '/') 
+//         throw ServerException::INVALID_LOCATION_URI(uri);
+//     locations.insert(std::make_pair(uri, Location(c, *this, uri)));
+//     // allLoc.push_back(Location(c, *this, p, uri));
+//     Location& loc = locations.find(uri)->second;
+//     loc.set();
+//     // locations.insert(std::make_pair(loc.getUri(), &loc));
+// }
 
 void Server::setServerInfo(string& token) {
-    if (token == "location") {
-        setNewLocation();
-        return ;
-    }
-    map<string, int>::iterator it = directive.find(token);
-    if (it == directive.end()) {
-        setMainLocation(token);
-        return ;
-    }
     // if (token == "location") {
-    //     // location loc(p, *this, p.getToken());
+    //     setNewLocation();
     //     return ;
     // }
-    if (info.find(token) != info.end()) {
-        throw locExp::DIRECT_ALREADY_SET();
+    map<string, int>::iterator it = directive.find(token);
+    if (it == directive.end()) {
+        rootLocation.setLocationInfo(token);
+        // setMainLocation(token);
+        return ;
     }
+    if (info.find(token) != info.end())
+        throw ConfigException::DIRECT_ALREADY_SET(token);
     int count = 0;
     string value = "";
     string newToken = "";
     while (true) {
-        newToken = p.getToken();
+        newToken = Parser::getTok();
         if (newToken == ";" || newToken.empty()) {
             break;
         }
@@ -91,13 +114,9 @@ void Server::setServerInfo(string& token) {
         }
         value += newToken;
         count++;
-        if (it->second && it->second < count) {
-            throw locExp::TOO_MANY_ARGS();
-        }
+        if (it->second && it->second < count)
+            throw ConfigException::TOO_MANY_ARGS(token);
     }
-    // if (newToken != ";") { // unnecessary!
-    //     throw locExp::DIRECT_NOT_VALID();
-    // }
     info[token] = value;
     token = newToken;
 }
@@ -124,12 +143,12 @@ const string& Server::validateIp(const string& ip) {
 int Server::validatePort(const string& portStr) {
     if (portStr[0] == '+' || portStr[0] == '-'
         || (portStr[0] == '0' && portStr.size() > 1))
-        throw locExp::NOT_VALID_PORT();
+        throw ServerException::NOT_VALID_PORT(portStr);
     std::stringstream ss(portStr);
     int port;
     ss >> port;
     if (ss.fail() || !ss.eof() || port < 0 || port > 65535)
-        throw locExp::NOT_VALID_PORT();
+        throw ServerException::NOT_VALID_PORT(portStr);
     return (port);
 }
 
@@ -184,37 +203,49 @@ void Server::parseErrorPage() {
 
 void Server::checkServerInfo() {
     if (info.find("listen") == info.end()) {
-        throw locExp::LISTEN_NOT_FOUND();
+        throw ServerException::LISTEN_NOT_FOUND();
     }
     parseListen();
     parseServerName();
     parseErrorPage();
 }
 
-void Server::linkLocation() {
-    Location& rootLoc = *(locations.find("/")->second);
-    for (map<string, Location*>::iterator it = locations.begin(); it != locations.end(); it++) {
-        if (it->first == "/")
-            continue ;
-        rootLoc.addToInLoc(it->second);
-    }
-    rootLoc.propagate();
-}
+// void Server::linkLocation() {
+//     Location& rootLoc = (locations.find("/")->second);
+//     for (map<string, Location>::iterator it = locations.begin(); it != locations.end(); it++) {
+//         if (it->first == "/")
+//             continue ;
+//         rootLoc.addToInLoc(it->second);
+//     }
+//     rootLoc.propagate();
+// }
 
 void Server::finalize() {
-    deque<Location>& allLoc = c.getLocations();
-    if (locations.find("/") == locations.end()) {
-        allLoc.push_back(Location(c, *this, p, "/"));
-        Location& loc = allLoc.back();
-        locations.insert(std::make_pair("/", &loc));
-    }
-    linkLocation();
     checkServerInfo();
+    // if (locations.find("/") == locations.end())
+    //     locations.insert(std::make_pair("/", Location(c, *this, "/")));
+    rootLocation.propagate();
+    // linkLocation();
 }
 
 string Server::getInfo(const string& key) const {
+    // (void )key;
+    // const_cast<map<string, string>&>(info).clear();
+    // cout << endl << "Server info : " << endl;
+    // for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
+    //     cout << it->first << " : " << it->second << endl;
+    // }
+    // cout << endl;
     map<string, string>::const_iterator it = info.find(key);
     if (it != info.end())
         return (it->second);
     return "";
+}
+
+Location& Server::getRootLocation() {
+    return rootLocation;
+}
+
+Location& Server::getLocation(const string& uri) {
+    return rootLocation.getLocation(uri);
 }

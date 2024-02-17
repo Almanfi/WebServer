@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 17:54:14 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 19:12:01 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,21 @@
 
 # include "definition.hpp"
 
-class Location {
+class IClientConf {
 public:
-    Location(Config& c, Server& serv, Parser& p, const string& uri);
+    virtual ~IClientConf() {};
+    virtual string getErrorPage(const string& code) = 0;
+    virtual string getErrorPage(const int code) = 0;
+    virtual bool isAllowedMethod(const string& method) = 0;
+    virtual string getInfo(const string& key) = 0;
+};
+
+class Location  : public IClientConf {
+public:
+    Location(const string& uri);
+    // Location(const Location& loc);
     ~Location();
+    void setServer(Server& servRef);
     void set();
     void setLocationInfo(string& token);
     void addToInLoc(Location* loc);
@@ -49,14 +60,13 @@ private:
 
     void setNewLoc();
     map<string, string> info;
-    deque<Location*> inLoc;
+    // deque<Location*> inLoc;
     static map<string, int> directive;
     static vector<string> httpAllowedMethods;
     static map<string, void (Location::*) (const string&)> validationMap;
-    Config& c;
-    Server& serv;
-    Parser& p;
+    map<string, Location> innerLocations;
     string uri;
+    Server* serv;
 };
 
 #endif // LOCATION_HPP

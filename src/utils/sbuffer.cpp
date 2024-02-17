@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/23 23:55:26 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/11 16:54:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,15 @@ char& SBuffer::operator[](size_t i) {
     return (buffer[start + i]);
 }
 
+size_t SBuffer::write(const string& str) {
+    if (static_cast<size_t>(freeSpace()) < str.size())
+        moveDataToStart();
+    size_t size = std::min(str.size(), static_cast<size_t>(freeSpace()));
+    std::memcpy(buffer + end(), str.c_str(), size);
+    count += size;
+    return (size);
+}
+
 ssize_t SBuffer::begin() {
     return (start);
 }
@@ -97,8 +106,8 @@ size_t SBuffer::find(const string& str, size_t pos) {
 ssize_t SBuffer::recv(sock_fd fd, int flags) {
     // if (end() == SBUFFER_SIZE) // TODO is this necesary? might delete data
     //     clear(); //
-    if (freeSpace() < 2)
-        moveDataToStart();
+    // if (freeSpace() < 2)
+        // moveDataToStart(); // TODO shouldnt move to keep check on the buffer size
     ssize_t recvSize = ::recv(fd, buffer + end(), freeSpace(), flags);
     if (recvSize == -1) {
         perror("recv1");
@@ -108,6 +117,19 @@ ssize_t SBuffer::recv(sock_fd fd, int flags) {
     // cout << "buffer free space = " << begin() << endl;
     count += recvSize;
     return (recvSize);
+}
+
+ssize_t SBuffer::send(sock_fd fd, int flags) {
+    ssize_t sendSize = ::send(fd, buffer + start, count, flags);
+    if (sendSize == -1) {
+        perror("send");
+        throw std::exception();
+    }
+    cout << "sendSize = " << sendSize << endl;
+    cout << "buffer = " << *this << endl; // for debuging
+    start += sendSize;
+    count -= sendSize;
+    return (sendSize);
 }
 
 bool SBuffer::skip(ssize_t offset) {

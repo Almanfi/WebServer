@@ -6,15 +6,14 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 18:02:23 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:24:55 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/config.hpp"
 
-Location::Location(Config& c, Server& serv, Parser& p, const string& uri)
-    : c(c), serv(serv), p(p), uri(uri) {
-    setAlloedDirective();
+Location::Location(const string& uri) : uri(uri), serv(NULL) {
+    setAlloedDirective(); 
 }
 
 Location::~Location() {
@@ -60,29 +59,31 @@ void Location::initValidationMap() {
 void Location::validateDirective(const string& key, const string& value) {
     map<string, void (Location::*) (const string&)>::iterator it = validationMap.find(key);
     if (it == validationMap.end()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw ConfigException::DIRECT_NOT_VALID(key);
     }
     (this->*(it->second))(value);
 }
 
 void Location::validateRoot(const string& value) {
     if (value.empty() || value[0] != '/') {
-        throw std::runtime_error("Error: Invalid path");
+        throw LocationException::INVALID_ROOT(value);
     }
     if (value.find(" ") != string::npos) {
-        throw std::runtime_error("Error: path has too many args");
+        throw LocationException::INVALID_ROOT(value
+                            + " (too many arguments)");
     }
 }
 
 void Location::validateIndex(const string& value) {
     if (value.empty()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE("index", value);
     }
 }
 
 void Location::validateAutoindex(const string& value) {
     if (value != "on" && value != "off") {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE(
+                            "autoindex", value);
     }
 }
 
@@ -91,34 +92,33 @@ void Location::validateClientMaxBodySize(const string& value) {
     ssize_t val;
     ss >> val;
     if (value.empty() || ss.fail() || val < 0) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE(
+                            "client_max_body_size", value);
     }
 }
 
 void Location::validateCgi(const string& value) {
-    if (value.empty() || (value != "on" && value != "off")) {
-        throw locExp::DIRECT_NOT_VALID();
-    }
+    if (value.empty() || (value != "on" && value != "off"))
+        throw LocationException::INVALID_VALUE("cgi", value);
 }
 //TODO come back add allowed methods
 void Location::validateMethods(const string& value) {
-    if (value.empty()) {
-        throw locExp::DIRECT_NOT_VALID();
-    }
+    if (value.empty())
+        throw LocationException::INVALID_METHOD("(empty)");
     stringstream ss(value);
     vector<string>& allowed = httpAllowedMethods;
     string method;
     while (ss >> method) {
         if (method.empty()
             || std::find(allowed.begin(), allowed.end(), method) == allowed.end()) {
-            throw std::runtime_error("Error: Invalid method");
+            throw LocationException::INVALID_METHOD(method);
         }
     }
 }
 
 void Location::validateReturn(const string& value) {
     if (value.empty()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw LocationException::INVALID_VALUE("return", value);
     }
 }
 
@@ -129,20 +129,21 @@ void Location::validateErrorPage(const string& value) {
     while (ss >> val) {
         count++;
         if (val < 300 || val > 599)
-            throw std::runtime_error("Error: Invalid status code");
+            throw LocationException::INVALID_VALUE("error_page", value);
     }
     if (count == 0)
-        throw std::runtime_error("no status code");
+        throw LocationException::INVALID_VALUE("error_page", ("(no code)"));
     ss.clear();
     string path;
     ss >> path;
     if (ss.fail() || path.empty() || path[0] != '/') {
-        throw std::runtime_error("Error: Invalid path");
+        throw LocationException::INVALID_VALUE("error_page", path);
     }
     string extra;
     ss >> extra;
     if (!extra.empty() || !ss.eof()) {
-        throw std::runtime_error("Error: extra arguments for error_page");
+        throw LocationException::INVALID_VALUE(
+                            "error_page", value + " (too many arguments)");
     }
 }
 
@@ -154,46 +155,35 @@ void Location::insertDirective(const string& key, const string& value) {
             it->second += " ; " + value;
             return ;
         }
-        throw locExp::DIRECT_ALREADY_SET();
+        throw LocationException::DIRECT_ALREADY_SET(key);
     }
     info.insert(std::make_pair(key, value));
 }
 
 
-void Location::addToInLoc(Location* loc) {
-    inLoc.push_back(loc);
-}
-
 void Location::setNewLoc() {
-    deque<Location>& allLoc = c.getLocations();
-    string uri = p.getToken(); // validate URI!
-    if (uri.empty() || uri == "{") {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing uri at line " + ss.str());
-    }
-    if (uri[0] != '/') {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Invalid uri at line " + ss.str());
-    }
-    allLoc.push_back(Location(c, serv, p, uri));
-    Location& loc = allLoc.back();
+    string uri = Parser::getTok(); // validate URI!
+    if (uri.empty() || uri == "{")
+        throw LocationException::MISSING_LOCATION_URI();
+    if (uri[0] != '/')
+        throw LocationException::INVALID_LOCATION_URI(uri);
+    map<string, Location>::iterator it;
+    it = innerLocations.insert(std::make_pair(uri, Location(uri))).first;
+
+    Location& loc = it->second;
+    loc.setServer(*serv);
     loc.set();
-    addToInLoc(&loc);
+}
+void Location::setServer(Server& servRef) {
+    serv = &servRef;
 }
 
 void Location:: set() {
-    vector<configScope>& scope = p.getScopes();
-    scope.push_back(LOCATION);
-    if (p.getToken() != "{") {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing opening bracket '{' at line " + ss.str());
-    }
+    if (Parser::getTok() != "{")
+        throw ConfigException::MISSING_BRACKET("{");
     std::string token;
     while (true) {
-        token = p.getToken();
+        token = Parser::getTok();
         if (token == "}" || token.empty()) {
             break;
         }
@@ -201,12 +191,8 @@ void Location:: set() {
             continue;
         setLocationInfo(token);
     }
-    if (scope.back() != LOCATION || token.empty()) {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
-    }
-    scope.pop_back();
+    if (token != "}" || token.empty())
+        throw ConfigException::MISSING_BRACKET("}");
 }
 
 string& Location::getUri() const {
@@ -222,7 +208,7 @@ void Location::setLocationInfo(string& token) {
     string value = "";
     string newToken = "";
     while (true) {
-        newToken = p.getToken();
+        newToken = Parser::getTok();
         if (newToken == ";" || newToken.empty()) {
             break;
         }
@@ -240,38 +226,40 @@ string Location::getInfo(const string& key) {
     map<string, string>::iterator it = info.find(key);
     if (it != info.end())
         return (it->second);
-    return (serv.getInfo(key));
+    return (serv->getInfo(key));
 }
 
 void Location::print(int space) {
     printThis(space);
-    for (size_t i = 0; i < inLoc.size(); i++) {
-        cout << "____________________ prionting inLoc " << i << " ____________________" << endl;
-        inLoc[i]->print(space + 1);
+    for (map<string, Location>::iterator it = innerLocations.begin(); it != innerLocations.end(); it++) {
+        cout << "____________________ prionting innerLocations " << it->first << " ____________________" << endl;
+        it->second.print(space + 1);
     }
 }
 
 void Location::propagate() {
-    for (size_t i = 0; i < inLoc.size(); i++) {
-        for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
-            KeyVal::iterator infoIt = inLoc[i]->info.find(it->first);
-            if (infoIt == inLoc[i]->info.end())
-                inLoc[i]->info.insert(std::make_pair(it->first, it->second));
-            else if (it->first == "error_page") {
-                infoIt->second += " ; " + it->second;
+    for (map<string, Location>::iterator it = innerLocations.begin();
+                                    it != innerLocations.end(); it++) {
+        Location& loc = it->second;
+        for (KeyVal::const_iterator itr = info.begin(); itr != info.end(); itr++) {
+            KeyVal::iterator infoIt = loc.info.find(itr->first);
+            if (infoIt == loc.info.end())
+                loc.info.insert(std::make_pair(itr->first, itr->second));
+            else if (itr->first == "error_page") {
+                infoIt->second += " ; " + itr->second;
             }
         }
-        inLoc[i]->propagate();
+        loc.propagate();
     }
 }
 
 Location& Location::getLocation(const string& location) {
     string loc = location;
     while (loc != "") {
-        for (size_t i = 0; i < inLoc.size(); i++) {
-            if (inLoc[i]->uri == loc) {
-                return (inLoc[i]->getLocation(location));
-            }
+        map<string, Location>::iterator it;
+        it = innerLocations.find(loc);
+        if (it != innerLocations.end()) {
+            return (it->second.getLocation(location));
         }
         size_t pos = loc.rfind("/");
         if (pos == string::npos)
@@ -307,10 +295,16 @@ string Location::getErrorPage(const string& code) {
     return (errorPageStr.substr(start, end - start));
 }
 
+string Location::getErrorPage(const int code) {
+    stringstream ss;
+    ss << code;
+    return (getErrorPage(ss.str()));
+}
+
 bool Location::isAllowedMethod(const string& method) {
     string methods = getInfo("methods");
-    if (methods.empty())
-        methods = c.getDefault().find("methods")->second;
+    if (methods.empty()) // TODO add a default value for methods
+        methods = Config::getDefault("methods");
     if (methods.find(method) == string::npos)
         return (false);
     return (true);

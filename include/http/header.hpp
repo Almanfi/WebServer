@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/04 17:04:12 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/11 17:45:20 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,54 +73,63 @@ typedef enum {
     GET,
     POST,
     DELETE,
+    PUT,
+    HEAD,
+    OPTIONS,
+    CONNECT,
+    TRACE,
+    PATCH,
 }   t_method;
 
-class Header {
+class IHeader {
 public:
-    Header();
-    Header(const Header &src);
-    Header &operator=(const Header &rhs);
-    ~Header();
-   
-    void validateHeader(const string& key, const string& value);
-    void validateHeader(KeyVal::const_iterator& header);
-    
-    void check();
-    void insertHeader(const string& key, const string& value);
-    KeyVal& getKeyVal();
-    string getHeader(const string& key);
-    // void parseHeaders(const string& value);
-    // void parseHeader(std::string header);
-    static void initHeadersRules();
+    virtual ~IHeader() {};
+    virtual void check() = 0;
+    virtual void setRequestLine(const string& value) = 0;
+    virtual void insertHeader(const string& key, const string& value) = 0;
+    virtual string getHeader(const string& key) = 0;
+    virtual t_method getMethod() const = 0;
+    virtual const string& getUri() const = 0;
+};
+
+class Header : public IHeader {
     KeyVal      keyVal;
     long        flags;
     t_method    method;
     string      uri;
-private:
-    void validateRequestLine(const string& value);
-    void validateHost(const string& value);
-    void validateContentLength(const string& value);
-    void validateContentType(const string& value);
-    void validateTransferEncoding(const string& value);
-    void validateConnection(const string& value);
-    void validateAcceptCharsets(const string& value);
-    void validateAcceptLanguage(const string& value);
-    void validateAuthorization(const string& value);
-    void validateAcceptEncoding(const string& value);
-    void validateReferer(const string& value);
-    void validateUserAgent(const string& value);
-    void validateCookie(const string& value);
-    void validateDate(const string& value);
-    void validateServer(const string& value);
-    void validateOther(const string& key, const string& value);
+public:
+    Header();
+    Header(const Header &src);
+    ~Header();
 
+    void check();
+    string getHeader(const string& key);
+    t_method getMethod() const;
+    const string& getUri() const;
+    void insertHeader(const string& key, const string& value);
+    void setRequestLine(const string& value);
+
+    static void initHeadersRules();
+private:
+    KeyVal& getKeyVal();
+    void validateHeader(const string& key, const string& value);
+    void validateHeader(KeyVal::const_iterator& header);
+    
     void checkHeadersConflicts();
     void checkRequiredHeaders();
     
+    Header &operator=(const Header &rhs);
+    void validateHost(const string& value);
+    void validateDate(const string& value);
+    void validateContentLength(const string& value);
+    void validateContentType(const string& value);
+    void validateTransferEncoding(const string& value);
+    void validateOther(const string& key, const string& value);
+
     typedef map<string, void (Header::*)(const string&)> HEADER_VALIDATORS;
     static HEADER_VALIDATORS validationMap;
-    static vector<string> httpAllowedMethods;
-    static vector<string> httpOtherMethods;
+    static map<string, t_method> httpMethods;
+
 };
 
 // #define BUFFER_SIZE 1024

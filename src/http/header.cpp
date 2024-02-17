@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/01/24 20:36:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/11 18:05:41 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,7 @@ Header::~Header() {
 }
 
 map<string, void (Header::*)(const string&)> Header::validationMap;
-vector<string> Header::httpAllowedMethods;
-vector<string> Header::httpOtherMethods;
+map<string, t_method> Header::httpMethods;
 
 void Header::checkHeadersConflicts () {
     if (HAS_CONTENT_LENGTH(flags) && HAS_TRANSFER_ENCODING(flags)) {
@@ -38,13 +37,15 @@ void Header::checkHeadersConflicts () {
 }
 
 void Header::checkRequiredHeaders() {
-    if (method == INVALID)
-        throw std::runtime_error("Missing Request-Line");
+    if (!HAS_REQUEST_LINE(flags))
+        throw RequestException::BAD_REQUEST();
+    // if (method == INVALID)
+    //     throw std::runtime_error("Missing Request-Line");
     if (!HAS_HOST(flags))
-        throw std::runtime_error("Missing Host");
+        throw RequestException::BAD_REQUEST();
     if (method == POST) {
         if (!HAS_CONTENT_LENGTH(flags) && !HAS_TRANSFER_ENCODING(flags))
-            throw std::runtime_error("Missing Content-Length");
+            throw RequestException::LENGTH_REQUIRED();
         // if (!HAS_CONTENT_TYPE(flags)) // TODO check if content type is really mandatory
         //     throw std::runtime_error("Missing Content-Type");
     }
@@ -70,6 +71,14 @@ string Header::getHeader(const string& key) {
     return (keyVal[key]);
 }
 
+t_method Header::getMethod() const {
+    return (method);
+}
+
+const string& Header::getUri() const {
+    return (uri);
+}
+
 void Header::validateHeader(const string& key, const string& value) {
     if (validationMap.find(key) != validationMap.end())
         (this->*validationMap[key])(value);
@@ -84,195 +93,101 @@ void Header::validateHeader(KeyVal::const_iterator& header) {
         validateOther(header->first, header->second);
 }
 
-void Header::validateRequestLine(const string& value) {
+void Header::setRequestLine(const string& value) {
     size_t pos = value.find(" ");
     if (pos == string::npos)
-        throw std::runtime_error("Invalid Request-Line");
+        throw RequestException::BAD_REQUEST();
     string methodType = value.substr(0, pos);
-    if (std::binary_search(httpAllowedMethods.begin(), httpAllowedMethods.end(), methodType)) {
-        if (methodType == "GET")
-            method = GET;
-        else if (methodType == "POST")
-            method = POST;
-        else if (methodType == "DELETE")
-            method = DELETE;
-    }
-    else if (std::binary_search(httpOtherMethods.begin(), httpOtherMethods.end(), methodType))
-        throw std::runtime_error("Method Not Implemented");
-    else
-        throw std::runtime_error("Invalid METHOD");
+    if (httpMethods.find(methodType) == httpMethods.end())
+        throw RequestException::NOT_IMPLIMENTED();
+    method = httpMethods[methodType];
     size_t start = pos + 1;
     pos = value.find(" ", start);
     if (pos == string::npos)
-        throw std::runtime_error("Invalid Request-Line");
+        throw RequestException::BAD_REQUEST();
    uri = value.substr(start , pos - start);
     if (uri[0] != '/')
-        throw std::runtime_error("Invalid URI");
+        throw RequestException::BAD_REQUEST();
     string version = value.substr(pos + 1);
     if (version != HTTP_VERSION)
-        throw std::runtime_error("Invalid HTTP-Version");
+        throw RequestException::HTTP_VERSION_NOT_SUPPORTED();
     if (HAS_REQUEST_LINE(flags))
-        throw std::runtime_error("duplicate Request-Line");
+        throw RequestException::BAD_REQUEST();
     SET_REQUEST_LINE(flags);
 }
 
 void Header::validateHost(const string& value) {
     if (value.empty())
-        throw std::runtime_error("Invalid Host");
+        throw RequestException::BAD_REQUEST();
     if (HAS_HOST(flags))
-        throw std::runtime_error("duplicate Host");
+        throw RequestException::BAD_REQUEST();
     SET_HOST(flags);
 }
 
 void Header::validateContentLength(const string& value) {
     if (value.empty())
-        throw std::runtime_error("Invalid Content-Length");
+        throw RequestException::BAD_REQUEST();
     for (size_t i = 0; i < value.length(); i++) {
         if (!std::isdigit(value[i]))
-            throw std::runtime_error("Invalid Content-Length");
+            throw RequestException::BAD_REQUEST();
     }
     stringstream ss(value);
     size_t contentLength;
     ss >> contentLength;
     if (ss.fail())
-        throw std::runtime_error("Invalid Content-Length");
-    // if (contentLength > MAX_CONTENT_LENGTH)
+        throw RequestException::BAD_REQUEST();
+    // if (contentLength > MAX_CONTENT_LENGTH) // TODO add limit checking here
     //     throw std::runtime_error("Content-Length too large");
     if (HAS_CONTENT_LENGTH(flags))
-        throw std::runtime_error("duplicate Content-Length");
+        throw RequestException::BAD_REQUEST();
     SET_CONTENT_LENGTH(flags);
 }
 
 void Header::validateContentType(const string& value) {
     if (value.empty())
-        throw std::runtime_error("Invalid Content-Type");
+        throw RequestException::BAD_REQUEST();
     if (HAS_CONTENT_TYPE(flags))
-        throw std::runtime_error("duplicate Content-Type");
+        throw RequestException::BAD_REQUEST();
     SET_CONTENT_TYPE(flags);
 }
 
 void Header::validateTransferEncoding(const string& value) {
     if (value != "chunked")
-        throw std::runtime_error("501 Not Implemented");
+        throw RequestException::NOT_IMPLIMENTED();
     if (HAS_TRANSFER_ENCODING(flags))
-        throw std::runtime_error("duplicate Transfer-Encoding");
+        throw RequestException::BAD_REQUEST();
     SET_TRANSFER_ENCODING(flags);
-}
-
-void Header::validateConnection(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Connection");
-    if (HAS_CONNECTION(flags))
-        throw std::runtime_error("duplicate Connection");
-    SET_CONNECTION(flags);
-}
-
-void Header::validateAcceptCharsets(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Accept-Charsets");
-    if (HAS_ACCEPT_CHARSET(flags))
-        throw std::runtime_error("duplicate Accept-Charsets");
-    SET_ACCEPT_CHARSET(flags);
-}
-
-void Header::validateAcceptLanguage(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Accept-Language");
-    if (HAS_ACCEPT_LANGUAGE(flags))
-        throw std::runtime_error("duplicate Accept-Language");
-    SET_ACCEPT_LANGUAGE(flags);
-}
-
-void Header::validateAuthorization(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Authorization");
-    if (HAS_AUTHORIZATION(flags))
-        throw std::runtime_error("duplicate Authorization");
-    SET_AUTHORIZATION(flags);
-}
-
-void Header::validateAcceptEncoding(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Accept-Encoding");
-    if (HAS_ACCEPT_ENCODING(flags))
-        throw std::runtime_error("duplicate Accept-Encoding");
-    SET_ACCEPT_ENCODING(flags);
-}
-
-void Header::validateReferer(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Referer");
-    if (HAS_REFERER(flags))
-        throw std::runtime_error("duplicate Referer");
-    SET_REFERER(flags);
-}
-
-void Header::validateUserAgent(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid User-Agent");
-    if (HAS_USER_AGENT(flags))
-        throw std::runtime_error("duplicate User-Agent");
-    SET_USER_AGENT(flags);
-}
-
-void Header::validateCookie(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Cookie");
-    if (HAS_COOKIE(flags))
-        throw std::runtime_error("duplicate Cookie");
-    SET_COOKIE(flags);
 }
 
 void Header::validateDate(const string& value) {
     if (value.empty())
-        throw std::runtime_error("Invalid Date");
+        throw RequestException::BAD_REQUEST();
     if (HAS_DATE(flags))
-        throw std::runtime_error("duplicate Date");
+        throw RequestException::BAD_REQUEST();
     SET_DATE(flags);
 }
 
-void Header::validateServer(const string& value) {
-    if (value.empty())
-        throw std::runtime_error("Invalid Server");
-    if (HAS_SERVER(flags))
-        throw std::runtime_error("duplicate Server");
-    SET_SERVER(flags);
-}
 
 void Header::validateOther(const string& key, const string& value) {
-    if (std::binary_search(httpAllowedMethods.begin(), httpAllowedMethods.end(), key)
-        || std::binary_search(httpOtherMethods.begin(), httpOtherMethods.end(), key))
-        validateRequestLine(key + " " + value);
-    if (key.empty() || value.empty())
-        throw std::runtime_error("Invalid Header");
+    (void) value;
+    if (key.empty())
+        throw RequestException::BAD_REQUEST();
 }
 
 void Header::initHeadersRules() {
-    validationMap["Request-Line"] = &Header::validateRequestLine; // TODO ddd key while reading headers
     validationMap["Host"] = &Header::validateHost;
+    validationMap["Date"] = &Header::validateDate;
     validationMap["Content-Length"] = &Header::validateContentLength;
     validationMap["Content-Type"] = &Header::validateContentType;
     validationMap["Transfer-Encoding"] = &Header::validateTransferEncoding;
-    validationMap["Connection"] = &Header::validateConnection;
-    validationMap["Accept-Charsets"] = &Header::validateAcceptCharsets;
-    validationMap["Accept-Language"] = &Header::validateAcceptLanguage;
-    validationMap["Authorization"] = &Header::validateAuthorization;
-    validationMap["Accept-Encoding"] = &Header::validateAcceptEncoding;
-    validationMap["Referer"] = &Header::validateReferer;
-    validationMap["User-Agent"] = &Header::validateUserAgent;
-    validationMap["Cookie"] = &Header::validateCookie;
-    validationMap["Date"] = &Header::validateDate;
-    validationMap["Server"] = &Header::validateServer;
 
-    httpAllowedMethods.push_back("GET");
-    httpAllowedMethods.push_back("POST");
-    httpAllowedMethods.push_back("DELETE");
-    std::sort(httpAllowedMethods.begin(), httpAllowedMethods.end());
-
-    httpOtherMethods.push_back("PUT");
-    httpOtherMethods.push_back("HEAD");
-    httpOtherMethods.push_back("OPTIONS");
-    httpOtherMethods.push_back("TRACE");
-    httpOtherMethods.push_back("CONNECT");
-    std::sort(httpOtherMethods.begin(), httpOtherMethods.end());
+    httpMethods["GET"] = GET;
+    httpMethods["POST"] = POST;
+    httpMethods["DELETE"] = DELETE;
+    httpMethods["PUT"] = PUT;
+    httpMethods["HEAD"] = HEAD;
+    httpMethods["OPTIONS"] = OPTIONS;
+    httpMethods["CONNECT"] = CONNECT;
+    httpMethods["TRACE"] = TRACE;
+    httpMethods["PATCH"] = PATCH;
 }

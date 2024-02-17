@@ -1,13 +1,13 @@
-#include "socket.hpp"
+// #include "socket.hpp"
 
 Response::Response() : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
                        newUUID(), CGItmpFile("./tmp", newUUID)
 {
 }
 
-Response::~Response()
-{
-}
+// Response::~Response()
+// {
+// }
 
 void Response::initResponse(Client *client)
 {
@@ -253,10 +253,10 @@ void Response::handleError(int error_code)
         ended = true;
 }
 
-bool Response::isEnded()
-{
-    return ended;
-}
+// bool Response::isEnded()
+// {
+//     return ended;
+// }
 
 bool Response::isStarted()
 {
@@ -299,56 +299,56 @@ std::string Response::generateErrorPage(int errorCode, const std::string &errorM
 {
     std::stringstream htmlPage;
 
-    htmlPage << "<!DOCTYPE html>\n";
-    htmlPage << "<html>\n";
-    htmlPage << "<head>\n";
-    htmlPage << "  <title>Error " << errorCode << "</title>\n";
-    htmlPage << "  <style>\n";
-    htmlPage << "    * {\n";
-    htmlPage << "      transition: all 0.6s;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    html {\n";
-    htmlPage << "      height: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    body {\n";
-    htmlPage << "      font-family: 'Lato', sans-serif;\n";
-    htmlPage << "      color: #333;\n";
-    htmlPage << "      margin: 0;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    #main {\n";
-    htmlPage << "      display: table;\n";
-    htmlPage << "      width: 100%;\n";
-    htmlPage << "      height: 100vh;\n";
-    htmlPage << "      text-align: center;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    .fof {\n";
-    htmlPage << "      display: table-cell;\n";
-    htmlPage << "      vertical-align: middle;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    .fof h1 {\n";
-    htmlPage << "      font-size: 50px;\n";
-    htmlPage << "      display: inline-block;\n";
-    htmlPage << "      padding-right: 12px;\n";
-    htmlPage << "      animation: type .5s alternate infinite;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    @keyframes type {\n";
-    htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
-    htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
-    htmlPage << "    }\n";
-    htmlPage << "  </style>\n";
-    htmlPage << "</head>\n";
-    htmlPage << "<body>\n";
-    htmlPage << "  <div id=\"main\">\n";
-    htmlPage << "    <div class=\"fof\">\n";
-    htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
-    htmlPage << "      <p>" << errorMsg << "</p>\n";
-    htmlPage << "    </div>\n";
-    htmlPage << "  </div>\n";
-    htmlPage << "</body>\n";
-    htmlPage << "</html>\n";
+//     htmlPage << "<!DOCTYPE html>\n";
+//     htmlPage << "<html>\n";
+//     htmlPage << "<head>\n";
+//     htmlPage << "  <title>Error " << errorCode << "</title>\n";
+//     htmlPage << "  <style>\n";
+//     htmlPage << "    * {\n";
+//     htmlPage << "      transition: all 0.6s;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    html {\n";
+//     htmlPage << "      height: 100%;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    body {\n";
+//     htmlPage << "      font-family: 'Lato', sans-serif;\n";
+//     htmlPage << "      color: #333;\n";
+//     htmlPage << "      margin: 0;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    #main {\n";
+//     htmlPage << "      display: table;\n";
+//     htmlPage << "      width: 100%;\n";
+//     htmlPage << "      height: 100vh;\n";
+//     htmlPage << "      text-align: center;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    .fof {\n";
+//     htmlPage << "      display: table-cell;\n";
+//     htmlPage << "      vertical-align: middle;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    .fof h1 {\n";
+//     htmlPage << "      font-size: 50px;\n";
+//     htmlPage << "      display: inline-block;\n";
+//     htmlPage << "      padding-right: 12px;\n";
+//     htmlPage << "      animation: type .5s alternate infinite;\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "    @keyframes type {\n";
+//     htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
+//     htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
+//     htmlPage << "    }\n";
+//     htmlPage << "  </style>\n";
+//     htmlPage << "</head>\n";
+//     htmlPage << "<body>\n";
+//     htmlPage << "  <div id=\"main\">\n";
+//     htmlPage << "    <div class=\"fof\">\n";
+//     htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
+//     htmlPage << "      <p>" << errorMsg << "</p>\n";
+//     htmlPage << "    </div>\n";
+//     htmlPage << "  </div>\n";
+//     htmlPage << "</body>\n";
+//     htmlPage << "</html>\n";
 
-    return htmlPage.str();
-}
+//     return htmlPage.str();
+// }
 
 static bool compareDirent(const struct dirent *a, const struct dirent *b)
 {
@@ -451,8 +451,8 @@ std::string Response::generateDirectoryListingPage(DIR *dir)
     htmlPage << "</body>\n";
     htmlPage << "</html>\n";
 
-    return htmlPage.str();
-}
+//     return htmlPage.str();
+// }
 
 bool Response::checkForValidMethod()
 {

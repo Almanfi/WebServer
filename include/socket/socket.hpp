@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   socket.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/11 22:25:59 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/04 17:15:50 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/04 20:51:22 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 # include "definition.hpp"
 # include "uuid.hpp"
+# include "uniqFile.hpp"
 # include "config.hpp"
 # include "sbuffer.hpp"
 # include "header.hpp"

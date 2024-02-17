@@ -6,13 +6,40 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/01/21 18:08:31 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/12 20:48:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config/config.hpp"
 
-Config::Config(const std::string& filePath) : p(filePath) {
+Config Config::instance;
+
+Config& Config::getInstance() {
+    if (!instance.isInitialized) {
+        throw std::runtime_error("Config not initialized");
+    }
+    return instance;
+}
+
+Config& Config::init(const std::string& filePath) {
+    if (instance.isInitialized) {
+        throw std::runtime_error("Config already initialized");
+    }
+    Parser::init(filePath);
+    instance.initRules();
+    instance.isInitialized = true;
+    instance.read();
+    return instance;
+}
+
+void Config::destroy() {
+    Parser::destroy();
+}
+
+Config::Config() : isInitialized(false) {
+}
+
+void Config::initRules() {
     Location::initValidationMap();
     setAlloedDirective();
     defaultConfig.insert(std::make_pair("root", "www"));
@@ -24,6 +51,7 @@ Config::Config(const std::string& filePath) : p(filePath) {
 }
 
 Config::~Config() {
+    Parser::destroy();
 }
 
 map<string, int> Config::directive;
@@ -33,7 +61,6 @@ void Config::setAlloedDirective() {
         return ;
     }
     directive.insert(std::make_pair("server", 0));
-
 }
 
 void Config::read() {
@@ -43,70 +70,35 @@ void Config::read() {
     // catch (std::exception& e) {
         // std::cerr << e.what() << std::endl;
     // }
+    Parser::destroy();
 }
 
 void Config::readMainContext() {
-    vector<configScope>& scopes = p.getScopes();
-    scopes.push_back(MAIN);
     std::string token;
     while (true) {
-        token = p.getToken();
+        token = Parser::getTok();
         if (token.empty())
             break;
-        if (token == ";") 
+        if (token == ";")
             continue;
         set(token);
     }
-    if (scopes.back() != MAIN) {
-        stringstream ss;
-        ss << p.getLineNum();
-        throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
-    }
-    scopes.pop_back();
 }
 
-
 void Config::setServer() {
-        vector<configScope>& scopes = p.getScopes();
-        scopes.push_back(SERVER);
-        string newToken = p.getToken();
-        if (newToken != "{") {
-            stringstream ss;
-            ss << p.getLineNum();
-            throw std::runtime_error("Error: Missing opening bracket '{' at line " + ss.str());
-        }
-        servers.push_back(Server(*this, p));
-        Server& serv = servers.back();
-        while (true) {
-            newToken = p.getToken();
-            if (newToken == "}" || newToken.empty())
-                break;
-            if (newToken == ";")
-                continue;
-            serv.setServerInfo(newToken);
-        }
-        serv.finalize();
-        if (scopes.back() != SERVER || newToken != "}") {
-            stringstream ss;
-            ss << p.getLineNum();
-            throw std::runtime_error("Error: Missing closing bracket '}' at line " + ss.str());
-        }
-        scopes.pop_back();
+        servers.push_back(Server());
+        servers.back().set();
 }   
 
 void Config::set(const string& token) {
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
-        throw locExp::DIRECT_NOT_VALID();
+        throw ConfigException::DIRECT_NOT_VALID(token);
     }
     if (token == "server") {
         setServer();
         return ;
     }
-}
-
-deque<Location>& Config::getLocations() {
-    return (locations);
 }
 
 Location& Config::getLocation(const string& uri) {
@@ -128,15 +120,21 @@ Location& Config::getLocation(const string& uri) {
     if (!serv) {
         throw std::runtime_error("Error: server not found");
     }
-    return (serv->locations.find("/")->second->getLocation(location));
+    return (serv->getRootLocation().getLocation(location));
 }
 
 deque<Server>& Config::getServers() {
     return (servers);
 }
 
-const KeyVal& Config::getDefault() const {
-    return (defaultConfig);
+const string Config::getDefault(const string& key) {
+    if (!instance.isInitialized) {
+        throw std::runtime_error("Config not initialized");
+    }
+    KeyVal::iterator it = instance.defaultConfig.find(key);
+    if (it != instance.defaultConfig.end())
+        return (it->second);
+    return "";
 }
 
 void Config::print () {
@@ -151,8 +149,8 @@ void Config::print () {
         cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
         cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
         cout << "server " << i << " error_page is " << servers[i].error_page << endl;
-        cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
-        servers[i].locations.find("/")->second->print(0);
+        // cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
+        servers[i].getRootLocation().print(0);
     cout << "*************printing done**************" << endl;
     }
 }
