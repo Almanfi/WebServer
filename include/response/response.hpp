@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include "socket.hpp"
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -20,6 +21,7 @@
 class Request;
 class ServerSocket;
 class Client;
+
 typedef struct s_location
 {
     map<int, std::string> error_page;
@@ -29,28 +31,64 @@ typedef struct s_location
     string return_url;
     int return_code;
     bool autoindex;
+    bool allow_upload;
+    std::string upload_path;
+    bool allow_CGI; 
+    std::string CGI_path;
+    std::string CGI_timeout;
 
 } t_location;
 
 class Response
 {
     private:
-        bool started;
-        bool ended;
-        bool reachedEOF;
-        Request *request;
-        ServerSocket *servSock;
-        UUID *uuid;
-        fstream file;
-        sock_fd fd;
-        t_method method;
-        string uri;
-        t_location location;
-        struct stat buff;
-        Headers header;
         std::string bufferToSend;
         std::fstream fileToSend;
         std::string locationPath;
+        std::string bodyPath;
+        std::string query;
+        std::string uri;
+        
+        bool started;
+        bool ended;
+        bool reachedEOF;
+        bool isCGI;
+
+        struct stat buff;
+
+        Request *request;
+        ServerSocket *servSock;
+        UUID *uuid;
+        Headers header;
+        fstream file;
+        sock_fd fd;
+        t_method method;
+        t_location location;
+        //----------------------CGI----------------------//
+        std::string cgiOutPutFile;
+        std::map<std::string, std::string> env;
+        bool isCGIStarted;
+        bool isCGIEnded;
+        bool isHeaderSent;
+
+        FILE *tmpout;
+        UUID newUUID;
+        UniqFile CGItmpFile;
+        std::string tmpOutFilePath;
+
+        int cgiFd[2];
+        int bodyFd;
+        pid_t cgiPid;
+        int cgiStatus;
+        int fdOut;
+        int fdIn;
+        int cgiHeaderSize;
+        char **envp;
+        std::clock_t cgiStartTimer;
+
+
+
+
     public:
         Response();
         ~Response();
@@ -74,5 +112,19 @@ class Response
         void handleDelete();
         std::string joinPath(const std::string &path1, const std::string &path2);
         std::string generateListHTML(struct dirent* entry);
+        std::string decodingURI(const std::string &uri);
+        // void uriParser();
+
+        // ----------------------CGI----------------------//
+        char **getEnvironmentVariables();
+        // void executeCGI();
+        bool checkGGIProcess();
+        void uriParser();
+        void initCGI();
+        void handleCGI();
+        void handleCGIResponse();
+        std::string extractCGIHeaders();
+
+
 };
 #endif
