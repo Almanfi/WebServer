@@ -6,13 +6,13 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/07 00:02:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/09 19:55:27 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/15 13:01:10 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "uniqFile.hpp"
 
-UniqFile::UniqFile(string rootPath, Iuuid &uuid) : _path(rootPath), _uuid(uuid) {
+UniqFile::UniqFile(string rootPath, Iuuid &uuid) : _path(rootPath), _uuid(uuid), _stream(NULL) {
     while (access((rootPath + "/" + _uuid.getStr()).c_str(), F_OK) == 0) {
         _uuid.regen();
     }
@@ -41,7 +41,19 @@ void UniqFile::open() {
     // }
 }
 
+void UniqFile::freopen(const char* mode, std::FILE* stream ) {
+    _stream = std::freopen(_path.c_str(), mode, stream);
+    if (_stream == NULL) {
+        perror("freopen");
+        throw std::exception();
+    }
+}
+
 void UniqFile::close() {
+    if (_stream) {
+        std::fclose(_stream); 
+        _stream = NULL;
+    }
     _file.close();
 }
 
@@ -63,4 +75,14 @@ void UniqFile::write(const char* __s, std::streamsize __n) {
 
 void UniqFile::read(char* __s, std::streamsize __n) {
     _file.read(__s, __n);
+}
+
+void UniqFile::seekg(std::streamoff off, std::ios_base::seekdir way) {
+    _file.seekg(off, way);
+}
+
+struct stat UniqFile::getStat() {
+    struct stat buff;
+    stat(_path.c_str(), &buff);
+    return (buff);
 }
