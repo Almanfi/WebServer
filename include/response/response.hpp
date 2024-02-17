@@ -73,7 +73,6 @@ class Response
 
         FILE *tmpout;
         UUID newUUID;
-        UniqFile CGItmpFile;
         std::string tmpOutFilePath;
 
         int cgiFd[2];

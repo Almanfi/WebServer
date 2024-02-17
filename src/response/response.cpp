@@ -1,7 +1,6 @@
 #include "socket.hpp"
 
-Response::Response() : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
-                       newUUID(), CGItmpFile("./tmp", newUUID)
+Response::Response() : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false)
 {
 }
 
@@ -18,7 +17,7 @@ void Response::initResponse(Client *client)
     this->method = request->headers.method;
     this->uri = decodingURI(request->headers.uri);
     std::cout << "uri: " << uri << std::endl;
-    this->bodyPath = request->body;
+    this->bodyPath = "./tmp/" + uuid->getStr();
     setLocation();
     this->locationPath = joinPath(location.root, uri);
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
@@ -49,9 +48,9 @@ void Response::sendResponse()
 {
     if (!started)
         cout << "++++++++++++ sendResponse ++++++++++++" << endl;
-    if (location.allow_CGI)
-        handleCGI();
-    else if (!checkForValidMethod())
+    // if (location.allow_CGI)
+    //     handleCGI();
+   if (!checkForValidMethod())
         handleError(405);
     else if (handleRedirection())
         return;
