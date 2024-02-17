@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 16:54:31 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/17 18:38:38 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,9 @@ ssize_t SBuffer::recv(sock_fd fd, int flags) {
     //     clear(); //
     // if (freeSpace() < 2)
         // moveDataToStart(); // TODO shouldnt move to keep check on the buffer size
+    cout << "in sbuffer recv" << endl;
     ssize_t recvSize = ::recv(fd, buffer + end(), freeSpace(), flags);
+    cout << "after sbuffer recv" << endl;
     if (recvSize == -1) {
         perror("recv1");
         throw std::exception();

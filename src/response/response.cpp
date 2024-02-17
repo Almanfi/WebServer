@@ -1,24 +1,30 @@
-// #include "socket.hpp"
+#include "socket.hpp"
 
-Response::Response() : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
-                       newUUID(), CGItmpFile("./tmp", newUUID)
+Response::Response(IHeader& requestHeaders, IUniqFile& file, IClientConf& config, int fd) :
+        started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
+        newUUID(), CGItmpFile("./tmp", newUUID), requestHeaders(requestHeaders), body(file),
+        config(config), fd(fd)
 {
 }
 
-// Response::~Response()
-// {
-// }
+Response::~Response()
+{
+}
 
 void Response::initResponse(Client *client)
 {
-    this->request = &client->request;
-    this->servSock = &client->servSock;
-    this->uuid = &client->uuid;
-    this->fd = client->fd;
-    this->method = request->headers.method;
-    this->uri = decodingURI(request->headers.uri);
+    (void ) client;
+    // headers
+    // file
+
+    // this->request = &client->request;
+    // this->servSock = &client->servSock;
+    // this->uuid = &client->uuid;
+    // this->fd = 0;  // TODO fd
+    this->method = requestHeaders.getMethod();
+    this->uri = decodingURI(requestHeaders.getUri());
     std::cout << "uri: " << uri << std::endl;
-    this->bodyPath = request->body;
+    this->bodyPath = body.getPath();
     setLocation();
     this->locationPath = joinPath(location.root, uri);
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
@@ -26,23 +32,38 @@ void Response::initResponse(Client *client)
 
 void Response::setLocation()
 {
-
     this->location.methods.push_back(GET);
     this->location.methods.push_back(POST);
     this->location.methods.push_back(DELETE);
+    // config.methods();
+
     this->location.root = "./nginx-html";
+    // config.root();
+
     this->location.index.push_back("index.html");
     this->location.index.push_back("index.htm");
     this->location.index.push_back("page8.html");
+    // config.index();
+
     this->location.error_page[404] = "404.html";
     this->location.error_page[500] = "500.html";
+    // config.getErrorPage(404);
+
     this->location.autoindex = true;
+    // config.autoindex();
+
     this->location.return_code = 0;
+    // config.returnCode();
     this->location.return_url = "";
+    // config.returnUrl();
     this->location.allow_upload = true;
+    // config.allowUpload();
     this->location.upload_path = "nginx-html/";
+    // config.uploadPath();
     this->location.allow_CGI = true;
+    // config.allowCGI();
     this->location.CGI_path = "/usr/bin/php-cgi";
+    // config.CGIPath();
 }
 
 void Response::sendResponse()
@@ -92,7 +113,7 @@ void Response::handlePost()
 {
     std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
     std::string newPath = joinPath(location.upload_path, uri);
-    std::string oldPath = joinPath("./tmp", uuid->getStr());
+    std::string oldPath =     body.getPath();
     if (location.allow_upload)
     {
         if (rename(oldPath.c_str(), newPath.c_str()) != 0)
@@ -253,10 +274,10 @@ void Response::handleError(int error_code)
         ended = true;
 }
 
-// bool Response::isEnded()
-// {
-//     return ended;
-// }
+bool Response::isEnded()
+{
+    return ended;
+}
 
 bool Response::isStarted()
 {
@@ -299,56 +320,56 @@ std::string Response::generateErrorPage(int errorCode, const std::string &errorM
 {
     std::stringstream htmlPage;
 
-//     htmlPage << "<!DOCTYPE html>\n";
-//     htmlPage << "<html>\n";
-//     htmlPage << "<head>\n";
-//     htmlPage << "  <title>Error " << errorCode << "</title>\n";
-//     htmlPage << "  <style>\n";
-//     htmlPage << "    * {\n";
-//     htmlPage << "      transition: all 0.6s;\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "    html {\n";
-//     htmlPage << "      height: 100%;\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "    body {\n";
-//     htmlPage << "      font-family: 'Lato', sans-serif;\n";
-//     htmlPage << "      color: #333;\n";
-//     htmlPage << "      margin: 0;\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "    #main {\n";
-//     htmlPage << "      display: table;\n";
-//     htmlPage << "      width: 100%;\n";
-//     htmlPage << "      height: 100vh;\n";
-//     htmlPage << "      text-align: center;\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "    .fof {\n";
-//     htmlPage << "      display: table-cell;\n";
-//     htmlPage << "      vertical-align: middle;\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "    .fof h1 {\n";
-//     htmlPage << "      font-size: 50px;\n";
-//     htmlPage << "      display: inline-block;\n";
-//     htmlPage << "      padding-right: 12px;\n";
-//     htmlPage << "      animation: type .5s alternate infinite;\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "    @keyframes type {\n";
-//     htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
-//     htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
-//     htmlPage << "    }\n";
-//     htmlPage << "  </style>\n";
-//     htmlPage << "</head>\n";
-//     htmlPage << "<body>\n";
-//     htmlPage << "  <div id=\"main\">\n";
-//     htmlPage << "    <div class=\"fof\">\n";
-//     htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
-//     htmlPage << "      <p>" << errorMsg << "</p>\n";
-//     htmlPage << "    </div>\n";
-//     htmlPage << "  </div>\n";
-//     htmlPage << "</body>\n";
-//     htmlPage << "</html>\n";
+    htmlPage << "<!DOCTYPE html>\n";
+    htmlPage << "<html>\n";
+    htmlPage << "<head>\n";
+    htmlPage << "  <title>Error " << errorCode << "</title>\n";
+    htmlPage << "  <style>\n";
+    htmlPage << "    * {\n";
+    htmlPage << "      transition: all 0.6s;\n";
+    htmlPage << "    }\n";
+    htmlPage << "    html {\n";
+    htmlPage << "      height: 100%;\n";
+    htmlPage << "    }\n";
+    htmlPage << "    body {\n";
+    htmlPage << "      font-family: 'Lato', sans-serif;\n";
+    htmlPage << "      color: #333;\n";
+    htmlPage << "      margin: 0;\n";
+    htmlPage << "    }\n";
+    htmlPage << "    #main {\n";
+    htmlPage << "      display: table;\n";
+    htmlPage << "      width: 100%;\n";
+    htmlPage << "      height: 100vh;\n";
+    htmlPage << "      text-align: center;\n";
+    htmlPage << "    }\n";
+    htmlPage << "    .fof {\n";
+    htmlPage << "      display: table-cell;\n";
+    htmlPage << "      vertical-align: middle;\n";
+    htmlPage << "    }\n";
+    htmlPage << "    .fof h1 {\n";
+    htmlPage << "      font-size: 50px;\n";
+    htmlPage << "      display: inline-block;\n";
+    htmlPage << "      padding-right: 12px;\n";
+    htmlPage << "      animation: type .5s alternate infinite;\n";
+    htmlPage << "    }\n";
+    htmlPage << "    @keyframes type {\n";
+    htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
+    htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
+    htmlPage << "    }\n";
+    htmlPage << "  </style>\n";
+    htmlPage << "</head>\n";
+    htmlPage << "<body>\n";
+    htmlPage << "  <div id=\"main\">\n";
+    htmlPage << "    <div class=\"fof\">\n";
+    htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
+    htmlPage << "      <p>" << errorMsg << "</p>\n";
+    htmlPage << "    </div>\n";
+    htmlPage << "  </div>\n";
+    htmlPage << "</body>\n";
+    htmlPage << "</html>\n";
 
-//     return htmlPage.str();
-// }
+    return htmlPage.str();
+}
 
 static bool compareDirent(const struct dirent *a, const struct dirent *b)
 {
@@ -451,14 +472,14 @@ std::string Response::generateDirectoryListingPage(DIR *dir)
     htmlPage << "</body>\n";
     htmlPage << "</html>\n";
 
-//     return htmlPage.str();
-// }
+    return htmlPage.str();
+}
 
 bool Response::checkForValidMethod()
 {
     for (size_t i = 0; i < location.methods.size(); i++)
     {
-        if (location.methods[i] == request->headers.method)
+        if (location.methods[i] == requestHeaders.getMethod())
             return true;
     }
     return false;

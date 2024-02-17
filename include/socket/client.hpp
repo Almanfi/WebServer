@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:42:41 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/17 18:19:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,9 @@ public:
     virtual void sendResponse() = 0;
 };
 
-class Response : public IResponse {
+class ResponseB : public IResponse {
 public:
-	Response(ISBuffer& buffer, IUniqFile& file);
+	ResponseB(ISBuffer& buffer, IUniqFile& file);
 	void sendResponse();
 private:
 	ISBuffer& buffer;
@@ -66,7 +66,8 @@ public:
 	virtual ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer) = 0;
 	virtual IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
 							IServerSocket& servSock, IClientConf* config) = 0;
-	virtual Response* createResponse(ISBuffer& buffer, IUniqFile& file) = 0;
+	virtual Response* createResponse(IHeader& requestHeaders, IUniqFile& file,
+													IClientConf& config, int fd) = 0;
 };
 
 class ClientResourceManagerFactory : public IClientResourceManagerFactory {
@@ -83,7 +84,7 @@ public:
 	ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer);
 	IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
 							IServerSocket& servSock, IClientConf* config);
-	Response* createResponse(ISBuffer& buffer, IUniqFile& file);
+	Response* createResponse(IHeader& requestHeaders, IUniqFile& file, IClientConf& config, int fd);
 };
 
 class IClientResourceManagerFacade {
@@ -91,7 +92,7 @@ public:
 	virtual ~IClientResourceManagerFacade() {};
 	virtual ISocketManager&		socketManager() = 0;
     virtual IRequest&			request() = 0;
-    virtual IResponse&			response() = 0;
+    virtual Response&			response() = 0;
     virtual IUniqFile&			file() = 0;
 	virtual void				destroyFactory() = 0;
 	virtual void 			    destroyRequest() = 0;
@@ -119,7 +120,7 @@ public:
 	~ClientResourceManagerFacade();
 	ISocketManager&		socketManager();
     IRequest&			request();
-    IResponse&			response();
+    Response&			response();
     IUniqFile&			file();
 	void				destroyFactory();
 	void 			    destroyRequest();
@@ -149,7 +150,7 @@ class Client {
 	ssize_t     recieve();
 	Server&     getServer();
 	const Iuuid& getUUID();
-	friend class Response;
+	friend class ResponseB;
 private:
 	Client(const Client& other);
 	Client& operator=(const Client& other);
@@ -157,7 +158,7 @@ private:
 	ISocketManager&  socketManager;
 	IUniqFile&	file;
 	IRequest&	request;
-	IResponse&	response;
+	Response&	response;
 	cnx_state   state;
 	int			statusCode;
 };

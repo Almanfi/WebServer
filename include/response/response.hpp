@@ -1,5 +1,5 @@
-// #ifndef RESPONSE_HPP
-// #define RESPONSE_HPP
+#ifndef RESPONSE_HPP
+#define RESPONSE_HPP
 
 #include <string>
 #include <map>
@@ -37,7 +37,7 @@ typedef struct s_location
     std::string CGI_path;
     std::string CGI_timeout;
 
-// } t_location;
+} t_location;
 
 class Response
 {
@@ -61,7 +61,6 @@ class Response
         UUID *uuid;
         Headers header;
         fstream file;
-        sock_fd fd;
         t_method method;
         t_location location;
         //----------------------CGI----------------------//
@@ -86,11 +85,14 @@ class Response
         char **envp;
         std::clock_t cgiStartTimer;
 
-
+        IHeader& requestHeaders;
+        IUniqFile& body;
+        IClientConf& config;
+        sock_fd fd;
 
 
     public:
-        Response();
+        Response(IHeader& requestHeaders, IUniqFile& body, IClientConf& config, int fd);
         ~Response();
         void initResponse(Client *client);
         void sendNextChunk();

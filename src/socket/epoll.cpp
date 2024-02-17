@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:48:36 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/17 18:44:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,6 +128,11 @@ bool Epoll::eventOnServer(sock_fd fd) {
 }
 
 void Epoll::handleClient(int i) {
+    // if (events[i].events & EPOLLIN)
+    //     client->setState(READ);
+    // else
+    //     client->setState(WRITE);
+    // events[i].events & EPOLLIN;
     if (client->handleState() == CLOSE) {
         cout << "++++++++++++ closing ++++++++++++" << endl;
         delClient(events[i].data.fd);

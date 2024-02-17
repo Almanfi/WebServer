@@ -16,15 +16,16 @@
 //     ss << n;
 //     return ss.str();
 // }
-static std::string t_methodToString(t_method method)
-{
-    if (method == GET)
-        return "GET";
-    else if (method == POST)
-        return "POST";
-    else
-        return "DELETE";
-}
+
+// static std::string t_methodToString(t_method method)
+// {
+//     if (method == GET)
+//         return "GET";
+//     else if (method == POST)
+//         return "POST";
+//     else
+//         return "DELETE";
+// }
 
 std::string generateRandomFileName(const std::string &prefix, const std::string &extension)
 {
@@ -40,7 +41,8 @@ char **Response::getEnvironmentVariables()
 {
     env["AUTH_TYPE"] = "";
     // env["CONTENT_LENGTH"] = ToString(this->bodyStat.st_size);
-    env["CONTENT_TYPE"] = request->getHeader("Content-Type");
+    // env["CONTENT_TYPE"] = request->getHeader("Content-Type");// TODO I changed this
+    env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
     env["REDIRECT_STATUS"] = "200";
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
     env["PATH_INFO"] = this->locationPath;
@@ -50,7 +52,7 @@ char **Response::getEnvironmentVariables()
     env["REMOTE_HOST"] = "";  // need to be change later
     env["REMOTE_IDENT"] = ""; // need to be change later
     env["REMOTE_USER"] = "";  // need to be change later
-    env["REQUEST_METHOD"] = t_methodToString(request->headers.method);
+    // env["REQUEST_METHOD"] = t_methodToString(request->headers.method); // TODO
     env["SCRIPT_NAME"] = this->locationPath;
     env["SERVER_NAME"] = "Webserv";
     env["SERVER_PORT"] = "9992";
@@ -92,7 +94,7 @@ void Response::initCGI()
         std::cerr << "Error Opening file Output: " << strerror(errno) << std::endl;
         return;
     }
-    cgiFd[0] = open(("./tmp/" + bodyPath).c_str(), O_RDONLY);
+    cgiFd[0] = open((bodyPath).c_str(), O_RDONLY);
     if (cgiFd[0] == -1)
     {
         std::cerr << "Error Opening file Input: " << strerror(errno) << std::endl;

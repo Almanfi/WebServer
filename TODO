@@ -7,3 +7,7 @@ upload file on POST
 cgi
 
 remove request with ..
+
+use makedir to create tmp
+
+add eppol event checking

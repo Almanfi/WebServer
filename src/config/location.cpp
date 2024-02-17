@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:24:55 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/17 18:15:17 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -308,4 +308,110 @@ bool Location::isAllowedMethod(const string& method) {
     if (methods.find(method) == string::npos)
         return (false);
     return (true);
+}
+
+vector<string> Location::methods() {
+    vector <string> methods;
+    string meth = getInfo("methods");
+    if (meth.empty()) {
+        meth = Config::getDefault("methods");
+    }
+    stringstream ss(meth);
+    string token;
+    while (ss >> token) {
+        methods.push_back(token);
+    }
+    return (methods);
+}
+
+string Location::root() {
+    return (getInfo("root"));
+}
+
+vector<string> Location::index() {
+    vector<string> index;
+    string idx = getInfo("index");
+    if (idx.empty())
+        return (index);
+    stringstream ss(idx);
+    string token;
+    while (ss >> token) {
+        index.push_back(token);
+    }
+    return (index);
+}
+
+bool Location::autoindex() {
+    string autoindex = getInfo("autoindex");
+    if (autoindex.empty()) {
+        autoindex = Config::getDefault("autoindex");
+    }
+    if (autoindex == "on")
+        return (true);
+    return (false);
+}
+
+int Location::returnCode() {
+    string ret = getInfo("return");
+    if (ret.empty()) {
+        return (0);
+    }
+    stringstream ss(ret);
+    int code;
+    ss >> code;
+    return (code);
+}
+
+string Location::returnUrl() {
+    string ret = getInfo("return");
+    if (ret.empty()) {
+        return ("");
+    }
+    size_t pos = ret.find(" ");
+    if (pos == string::npos) {
+        return ("");
+    }
+    return (ret.substr(pos + 1));
+}
+
+bool Location::allowUpload() {
+    bool upload = true;
+    return (upload);
+}
+
+string Location::uploadPath() {
+    string path = getInfo("upload_path");
+    if (path.empty()) {
+        path = Config::getDefault("upload_path");
+    }
+    return (path);
+}
+
+bool Location::allowCGI() {
+    string cgi = getInfo("cgi");
+    if (cgi.empty()) {
+        cgi = Config::getDefault("cgi");
+    }
+    if (cgi == "on")
+        return (true);
+    return (false);
+}
+
+string Location::CGIPath() {
+    string path = getInfo("cgi_path");
+    if (path.empty()) {
+        path = Config::getDefault("cgi_path");
+    }
+    return (path);
+}
+
+size_t Location::CGITimeout() {
+    string timeout = getInfo("cgi_timeout");
+    if (timeout.empty()) {
+        timeout = Config::getDefault("cgi_timeout");
+    }
+    stringstream ss(timeout);
+    size_t time;
+    ss >> time;
+    return (time);
 }

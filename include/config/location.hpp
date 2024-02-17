@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 19:12:01 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/17 18:15:02 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,18 @@ public:
     virtual string getErrorPage(const int code) = 0;
     virtual bool isAllowedMethod(const string& method) = 0;
     virtual string getInfo(const string& key) = 0;
+    
+    virtual vector<string>  methods() = 0;
+    virtual string          root() = 0;
+    virtual vector<string>  index() = 0;
+    virtual bool            autoindex() = 0;
+    virtual int             returnCode() = 0;
+    virtual string          returnUrl() = 0;
+    virtual bool            allowUpload() = 0;
+    virtual string          uploadPath() = 0;
+    virtual bool            allowCGI() = 0;
+    virtual string          CGIPath() = 0;
+    virtual size_t          CGITimeout() = 0;
 };
 
 class Location  : public IClientConf {
@@ -46,6 +58,18 @@ public:
     string getErrorPage(const string& code);
     string getErrorPage(const int code);
     bool isAllowedMethod(const string& method);
+
+    virtual vector<string>  methods();
+    virtual string          root();
+    virtual vector<string>  index();
+    virtual bool            autoindex();
+    virtual int             returnCode();
+    virtual string          returnUrl();
+    virtual bool            allowUpload();
+    virtual string          uploadPath();
+    virtual bool            allowCGI();
+    virtual string          CGIPath();
+    size_t                  CGITimeout();
 private:
     void validateDirective(const string& key, const string& value);
     void validateRoot(const string& value);
