@@ -129,11 +129,6 @@ void Response::initCGI()
     }
 }
 
-// void Response::executeCGI()
-// {
-
-// }
-
 bool Response::checkGGIProcess()
 {
     if (isCGIEnded)
@@ -210,10 +205,11 @@ void Response::handleCGI()
         return;
     if (isCGIEnded)
     {
-        std::cout << "#################### CGI ended ####################" << std::endl;
-        std::cout << "Status: " << cgiStatus << std::endl;
         if (cgiStatus == 500)
+        {
+            remove(cgiOutPutFile.c_str());
             handleError(500);
+        }
         else
             handleCGIResponse();
     }
@@ -221,7 +217,6 @@ void Response::handleCGI()
 
 std::string Response::extractCGIHeaders()
 {
-    // open file cgiOutPutFile and start reading line by line and if line is \r stop and return
     std::ifstream file(cgiOutPutFile.c_str());
     std::string line;
     std::string headerKey;
@@ -238,12 +233,11 @@ std::string Response::extractCGIHeaders()
             headerValue = line.substr(pos + 1);
             cgiHeaderSize += line.size();
             std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
-            this->header.setHeader(headerKey, headerValue);
+            this->header.setCGIHeader(headerKey, headerValue);
             headerValue.clear();
             headerKey.clear();
         }
     }
-    // std::cout << "########################Final Header: " << this->header.getCGIHeader() << std::endl;
     return this->header.getCGIHeader();
 }
 
@@ -256,7 +250,6 @@ void Response::handleCGIResponse()
         std::cout << "Headers: " << headers << std::endl;
         int contentLength = 0;
         struct stat statbuf;
-        // std::cout << "File: ./tmp/" << cgiOutPutFile << std::endl;
         if (stat(cgiOutPutFile.c_str(), &statbuf) == -1)
         {
             std::cerr << "Error getting file stats: " << strerror(errno) << std::endl;
@@ -295,5 +288,8 @@ void Response::handleCGIResponse()
     }
     sendNextChunk();
     if (bufferToSend.size() == 0 && reachedEOF)
+    {
         ended = true;
+        remove(cgiOutPutFile.c_str());
+    }
 }
