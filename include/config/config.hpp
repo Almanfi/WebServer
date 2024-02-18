@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 15:44:31 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 19:24:46 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 03:57:37 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -219,6 +219,19 @@ public:
             return msg.c_str();
         }
     };
+    class MISSING_CGI_PATH: public std::exception {
+        string msg;
+    public :
+        ~MISSING_CGI_PATH() throw() {}
+        MISSING_CGI_PATH(const string& cgi_uri) {
+            msg = "Error: cgi_path for `" + cgi_uri
+                + "` is missing at line " + getLineNum();
+        }
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+    };
+    
 };
 
 #endif // CONFIG_HPP

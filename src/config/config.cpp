@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:48:27 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 04:02:22 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,12 @@ void Config::initRules() {
     defaultConfig.insert(std::make_pair("index", "index.html"));
     defaultConfig.insert(std::make_pair("autoindex", "on"));
     defaultConfig.insert(std::make_pair("client_max_body_size", "1m"));
-    defaultConfig.insert(std::make_pair("cgi", "off"));
     defaultConfig.insert(std::make_pair("methods", "GET"));
+    defaultConfig.insert(std::make_pair("upload", "off"));
+    defaultConfig.insert(std::make_pair("upload_path", "/uploads"));
+    defaultConfig.insert(std::make_pair("cgi", "off"));
+    defaultConfig.insert(std::make_pair("cgi_timeout", "30"));
+    
 }
 
 Config::~Config() {

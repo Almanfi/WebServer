@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:15:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 04:40:56 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,14 +25,18 @@ void Location::setAlloedDirective() {
     if (!directive.empty()) {
         return ;
     }
-    directive.insert(std::make_pair("root", 1));
-    directive.insert(std::make_pair("index", 0));
-    directive.insert(std::make_pair("autoindex", 1));
-    directive.insert(std::make_pair("client_max_body_size", 1));
-    directive.insert(std::make_pair("cgi", 0));
-    directive.insert(std::make_pair("methods", 0));
-    directive.insert(std::make_pair("return", 1));
-    directive.insert(std::make_pair("error_page", 1));
+    // directive.insert(std::make_pair("root", 1));
+    // directive.insert(std::make_pair("index", 0));
+    // directive.insert(std::make_pair("autoindex", 1));
+    // directive.insert(std::make_pair("client_max_body_size", 1));
+    // directive.insert(std::make_pair("cgi", 0));
+    // directive.insert(std::make_pair("methods", 0));
+    // directive.insert(std::make_pair("return", 1));
+    // directive.insert(std::make_pair("error_page", 1));
+    // directive.insert(std::make_pair("upload", 1));
+    // directive.insert(std::make_pair("upload_path", 1));
+    // directive.insert(std::make_pair("cgi_timeout", 1));
+    // directive.insert(std::make_pair("cgi_path", 1));
 }
 
 map<string, void (Location::*) (const string&)> Location::validationMap;
@@ -50,6 +54,10 @@ void Location::initValidationMap() {
     validationMap.insert(std::make_pair("methods", &Location::validateMethods));
     validationMap.insert(std::make_pair("return", &Location::validateReturn));
     validationMap.insert(std::make_pair("error_page", &Location::validateErrorPage));
+    validationMap.insert(std::make_pair("cgi_path", &Location::validateCgiPath));
+    validationMap.insert(std::make_pair("cgi_timeout", &Location::validateCgiTimeout));
+    validationMap.insert(std::make_pair("upload", &Location::validateUpload));
+    validationMap.insert(std::make_pair("upload_path", &Location::validateUploadPath));
 
     httpAllowedMethods.push_back("GET");
     httpAllowedMethods.push_back("POST");
@@ -97,10 +105,45 @@ void Location::validateClientMaxBodySize(const string& value) {
     }
 }
 
+void Location::validateUpload(const string& value) {
+    if (value.empty() || (value != "on" && value != "off"))
+        throw LocationException::INVALID_VALUE("upload", value);
+}
+
+void Location::validateUploadPath(const string& value) {
+    if (value.empty())
+        throw LocationException::INVALID_VALUE("upload_path", value);
+    if (value[0] != '/')
+        throw LocationException::INVALID_VALUE("upload_path", value);
+    if (value.find(" ") != string::npos)
+        throw LocationException::INVALID_VALUE("upload_path",
+                        value + " (too many arguments)");
+}
+
 void Location::validateCgi(const string& value) {
     if (value.empty() || (value != "on" && value != "off"))
         throw LocationException::INVALID_VALUE("cgi", value);
 }
+
+void Location::validateCgiPath(const string& value) {
+    if (value.empty())
+        throw LocationException::INVALID_VALUE("cgi_path", value);
+    if (value[0] != '/')
+        throw LocationException::INVALID_VALUE("cgi_path", value);
+    if (value.find(" ") != string::npos)
+        throw LocationException::INVALID_VALUE("cgi_path",
+                        value + " (too many arguments)");
+}
+
+void Location::validateCgiTimeout(const string& value) {
+    stringstream ss(value);
+    ssize_t val;
+    ss >> val;
+    if (value.empty() || ss.fail() || val < 0) {
+        throw LocationException::INVALID_VALUE("cgi_timeout", value);
+    }
+}
+
 //TODO come back add allowed methods
 void Location::validateMethods(const string& value) {
     if (value.empty())
@@ -120,6 +163,17 @@ void Location::validateReturn(const string& value) {
     if (value.empty()) {
         throw LocationException::INVALID_VALUE("return", value);
     }
+    stringstream ss(value);
+    int code;
+    ss >> code;
+    if (ss.fail() || code < 100 || code > 599)
+        throw LocationException::INVALID_VALUE("return", value);
+    string urlOrBody;
+    ss >> urlOrBody;
+    if (urlOrBody.empty() == false && ss.eof() == false)
+        throw LocationException::INVALID_VALUE("return",
+                        value + " (too many arguments)");
+    
 }
 
 void Location::validateErrorPage(const string& value) {
@@ -162,17 +216,18 @@ void Location::insertDirective(const string& key, const string& value) {
 
 
 void Location::setNewLoc() {
-    string uri = Parser::getTok(); // validate URI!
+    string uri = Parser::getTok(); // TODO validate URI!
     if (uri.empty() || uri == "{")
         throw LocationException::MISSING_LOCATION_URI();
-    if (uri[0] != '/')
+    if (uri[0] != '/' && uri[0] != '*')
         throw LocationException::INVALID_LOCATION_URI(uri);
     map<string, Location>::iterator it;
     it = innerLocations.insert(std::make_pair(uri, Location(uri))).first;
-
     Location& loc = it->second;
     loc.setServer(*serv);
     loc.set();
+    if (uri[0] == '*' && loc.getInfo("cgi_path").empty()) // TODO check for cgi necessary args
+        throw LocationException::MISSING_CGI_PATH(uri);
 }
 void Location::setServer(Server& servRef) {
     serv = &servRef;
@@ -255,6 +310,15 @@ void Location::propagate() {
 
 Location& Location::getLocation(const string& location) {
     string loc = location;
+    for (map<string, Location>::iterator it = innerLocations.begin();
+                                    it != innerLocations.end(); it++) {
+        if (it->first[0] != '*')
+            continue;
+        string extention = it->first.substr(1);
+        if (location.find(extention) == std::string::npos)
+            continue;
+        return (it->second);
+    }
     while (loc != "") {
         map<string, Location>::iterator it;
         it = innerLocations.find(loc);
@@ -375,6 +439,7 @@ string Location::returnUrl() {
 }
 
 bool Location::allowUpload() {
+    // TODO what is the directive to set this? is it inside upload_dir?
     bool upload = true;
     return (upload);
 }

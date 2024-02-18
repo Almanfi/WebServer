@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:15:02 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 04:42:00 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,10 +77,16 @@ private:
     void validateAutoindex(const string& value);
     void validateClientMaxBodySize(const string& value);
     void validateCgi(const string& value);
+    void validateCgiPath(const string& value);
+    void validateCgiTimeout(const string& value);
     void validateMethods(const string& value);
     void validateReturn(const string& value);
     void validateErrorPage(const string& value);
     void insertDirective(const string& key, const string& value);
+    void validateUpload(const string& value);
+    void validateUploadPath(const string& value);
+    
+    
 
     void setNewLoc();
     map<string, string> info;
