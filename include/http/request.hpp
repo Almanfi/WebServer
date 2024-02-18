@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:22:38 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 19:21:10 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ class ISBuffer;
 class Request : public IRequest {
 public:
     Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
-            IServerSocket& servSock, IClientConf* config);
+            IServerSocket& servSock, IClientConf** configPtr);
     ~Request();
     bool    parse();
     string  getHeader(const string& key);
@@ -123,9 +123,9 @@ private:
     IHeader&            headers;
     bool                headerComplete;
     bool                haveRequestLine;
-    ITransferStrategy*  strategy; 
+    ITransferStrategy*  strategy;
     IServerSocket&      servSock;
-    IClientConf*        config;
+    IClientConf**       configPtr;
 };
 
 #endif // REQUEST_HPP

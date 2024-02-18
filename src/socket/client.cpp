@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:57:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 19:27:03 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -214,7 +214,7 @@ ISocketManager* ClientResourceManagerFactory::createSocketManager(sock_fd& fd, I
 }
 
 IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
-							IServerSocket& servSock, IClientConf* config) {
+							IServerSocket& servSock, IClientConf** config) {
 	return new Request(buffer, file, headers, servSock, config);
 }
 
@@ -245,7 +245,7 @@ ClientResourceManagerFacade::ClientResourceManagerFacade (
     _buffer = factory->createBuffer();
     _requestHeaders = factory->createRequestHeader();
     _request = factory->createRequest(*_buffer, *_file, *_requestHeaders
-                                    , servSock, _config);
+                                    , servSock, &_config);
     _response = factory->createResponse(*_requestHeaders, *_file, *_config, _fd);
     _socketManager = factory->createSocketManager(_fd, *_buffer);
     if (!_buffer || !_uuid || !_file
@@ -309,7 +309,7 @@ IRequest& ClientResourceManagerFacade::request() {
 			createUniqFile();
         if (!_requestHeaders)
             _requestHeaders = factory->createRequestHeader();
-		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders, *_servSock, _config);
+		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders, *_servSock, &_config);
 	}
 	return *_request;
 }
