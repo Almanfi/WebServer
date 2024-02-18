@@ -1,6 +1,6 @@
 #include "socket.hpp"
 
-Response::Response(IHeader& requestHeaders, IUniqFile& file, IClientConf& config, int fd) :
+Response::Response(IHeader& requestHeaders, IUniqFile& file, IClientConf* config, int fd) :
         started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
         newUUID(), CGItmpFile("./tmp", newUUID), requestHeaders(requestHeaders), body(file),
         config(config), fd(fd)
@@ -11,9 +11,8 @@ Response::~Response()
 {
 }
 
-void Response::initResponse(Client *client)
+void Response::initResponse(IClientConf* conf)
 {
-    (void ) client;
     // headers
     // file
 
@@ -21,6 +20,7 @@ void Response::initResponse(Client *client)
     // this->servSock = &client->servSock;
     // this->uuid = &client->uuid;
     // this->fd = 0;  // TODO fd
+    config = conf;
     this->method = requestHeaders.getMethod();
     this->uri = decodingURI(requestHeaders.getUri());
     std::cout << "uri: " << uri << std::endl;
@@ -35,7 +35,11 @@ void Response::setLocation()
     this->location.methods.push_back(GET);
     this->location.methods.push_back(POST);
     this->location.methods.push_back(DELETE);
-    // config.methods();
+    vector<string> methods = config->methods();
+    for (vector<string>::iterator it = methods.begin(); it != methods.end(); it++)
+    {
+        cout << "method: " << *it << endl;
+    }
 
     this->location.root = "./nginx-html";
     // config.root();

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:19:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 20:52:06 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,9 +65,9 @@ public:
 	virtual IUniqFile* createUniqFile(string rootPath, Iuuid& uuid) = 0;
 	virtual ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer) = 0;
 	virtual IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
-							IServerSocket& servSock, IClientConf* config) = 0;
+							IServerSocket& servSock, IClientConf** config) = 0;
 	virtual Response* createResponse(IHeader& requestHeaders, IUniqFile& file,
-													IClientConf& config, int fd) = 0;
+													IClientConf* config, int fd) = 0;
 };
 
 class ClientResourceManagerFactory : public IClientResourceManagerFactory {
@@ -83,8 +83,8 @@ public:
 	IUniqFile* createUniqFile(string rootPath, Iuuid& uuid);
 	ISocketManager* createSocketManager(sock_fd& fd, ISBuffer& buffer);
 	IRequest* createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
-							IServerSocket& servSock, IClientConf* config);
-	Response* createResponse(IHeader& requestHeaders, IUniqFile& file, IClientConf& config, int fd);
+							IServerSocket& servSock, IClientConf** config);
+	Response* createResponse(IHeader& requestHeaders, IUniqFile& file, IClientConf* config, int fd);
 };
 
 class IClientResourceManagerFacade {

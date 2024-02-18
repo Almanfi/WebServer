@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:57:15 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 20:57:11 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ Client::~Client() {
 ssize_t Client::send() {
     ssize_t bytes_sent = 0;
     if(!response.isStarted())
-        response.initResponse(this);
+        response.initResponse(RMF->configRef());
     response.sendResponse();
     // sendFile(fd, "./tmp/en.subject.pdf");
     if(response.isEnded())
@@ -214,12 +214,12 @@ ISocketManager* ClientResourceManagerFactory::createSocketManager(sock_fd& fd, I
 }
 
 IRequest* ClientResourceManagerFactory::createRequest(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
-							IServerSocket& servSock, IClientConf* config) {
+							IServerSocket& servSock, IClientConf** config) {
 	return new Request(buffer, file, headers, servSock, config);
 }
 
 Response* ClientResourceManagerFactory::createResponse(
-    IHeader& requestHeaders, IUniqFile& file, IClientConf& config, int fd) {
+    IHeader& requestHeaders, IUniqFile& file, IClientConf* config, int fd) {
 	return new Response(requestHeaders, file, config, fd);
 }
 
@@ -245,8 +245,8 @@ ClientResourceManagerFacade::ClientResourceManagerFacade (
     _buffer = factory->createBuffer();
     _requestHeaders = factory->createRequestHeader();
     _request = factory->createRequest(*_buffer, *_file, *_requestHeaders
-                                    , servSock, _config);
-    _response = factory->createResponse(*_requestHeaders, *_file, *_config, _fd);
+                                    , servSock, &_config);
+    _response = factory->createResponse(*_requestHeaders, *_file, _config, _fd);
     _socketManager = factory->createSocketManager(_fd, *_buffer);
     if (!_buffer || !_uuid || !_file
         || !_requestHeaders || !_request
@@ -309,7 +309,7 @@ IRequest& ClientResourceManagerFacade::request() {
 			createUniqFile();
         if (!_requestHeaders)
             _requestHeaders = factory->createRequestHeader();
-		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders, *_servSock, _config);
+		_request = factory->createRequest(*_buffer, *_file, *_requestHeaders, *_servSock, &_config);
 	}
 	return *_request;
 }
@@ -327,7 +327,7 @@ Response& ClientResourceManagerFacade::response() {
         if (!_requestHeaders) {
             _requestHeaders = factory->createRequestHeader();
         }
-	    _response = factory->createResponse(*_requestHeaders, *_file, *_config, _fd);
+	    _response = factory->createResponse(*_requestHeaders, *_file, _config, _fd);
 	}
 	return *_response;
 }

@@ -87,14 +87,14 @@ class Response
 
         IHeader& requestHeaders;
         IUniqFile& body;
-        IClientConf& config;
+        IClientConf* config;
         sock_fd fd;
 
 
     public:
-        Response(IHeader& requestHeaders, IUniqFile& body, IClientConf& config, int fd);
+        Response(IHeader& requestHeaders, IUniqFile& body, IClientConf* config, int fd);
         ~Response();
-        void initResponse(Client *client);
+        void initResponse(IClientConf* conf);
         void sendNextChunk();
         void setLocation();
         void sendResponse();

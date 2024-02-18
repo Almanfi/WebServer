@@ -6,24 +6,24 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:55:48 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/18 20:53:08 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "socket.hpp"
 
 Request::Request(ISBuffer& buffer, IUniqFile& file, IHeader& headers,
-            IServerSocket& servSock, IClientConf* config) :
+            IServerSocket& servSock, IClientConf** configPtr) :
         buffer(buffer), file(file), headers(headers),
         headerComplete(false), haveRequestLine(false),
-        strategy(NULL), servSock(servSock), config(config) {
+        strategy(NULL), servSock(servSock), configPtr(configPtr) {
 }
 
 Request::~Request() {
     delete strategy;
 }
 
-Request::Request(const Request& other) : 
+Request::Request(const Request& other) :
         buffer(other.buffer),
         file(other.file),
         headers(other.headers),
@@ -31,7 +31,7 @@ Request::Request(const Request& other) :
         haveRequestLine(other.haveRequestLine),
         strategy(other.strategy),
         servSock(other.servSock),
-        config(other.config) {
+        configPtr(other.configPtr) {
     throw std::runtime_error("Request::Request: copy constructor forbidden");
 }
 
@@ -42,7 +42,7 @@ Request& Request::operator=(const Request& other) {
 
 void Request::setConfig() {
     string configName = headers.getHeader(HOST) + headers.getUri();
-    config = &servSock.getLocation(configName);
+    *configPtr = &(servSock.getLocation(configName));
 }
 
 void Request::parseHeaders() {
@@ -91,7 +91,7 @@ bool    Request::parse() {
     if (!headerComplete)
         parseHeaders();
     if (headerComplete) {
-        cout << "====== this is for server " << config->getInfo("server_name") << endl;
+        cout << "====== this is for server " << (*configPtr)->getInfo("server_name") << endl;
         if (strategy->transfer(buffer, file) == COMPLETE) {
             return (true);
         }
@@ -105,16 +105,16 @@ string Request::getHeader(const string& key) {
 
 void Request::setTransferStrategy() {
     if (headers.getHeader(TRANSFER_ENCODING) == "chunked")
-        this->strategy = new ChunkedTransferStrategy(*config);
+        this->strategy = new ChunkedTransferStrategy(*(*configPtr));
     if (headers.getMethod() == POST) {
         size_t contentLength;
         string contentLengthStr = headers.getHeader(CONTENT_LENGTH);
         stringstream ss(contentLengthStr);
         ss >> contentLength;
-        this->strategy = new NormalTransferStrategy(*config, contentLength);
+        this->strategy = new NormalTransferStrategy(*(*configPtr), contentLength);
     }
     else {
-        this->strategy = new NormalTransferStrategy(*config, 0);
+        this->strategy = new NormalTransferStrategy(*(*configPtr), 0);
     }
     cout << "transfer strategy set" << endl;
 }
