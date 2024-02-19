@@ -1,5 +1,6 @@
 #include "../../include/response/headers.hpp"
 #include <iostream>
+
 Headers::Headers()
 {
     content_type["html"] = "text/html";
@@ -18,7 +19,13 @@ Headers::Headers()
     content_type["png"] = "image/png";
     content_type["ico"] = "image/x-icon";
     content_type["jng"] = "image/x-jng";
+    content_type["bmp"] = "image/bmp";
+    content_type["svg"] = "image/svg+xml";
+    content_type["svgz"] = "image/svg+xml";
+    content_type["tif"] = "image/tiff";
+    content_type["tiff"] = "image/tiff";
     content_type["wbmp"] = "image/vnd.wap.wbmp";
+    content_type["avif"] = "image/avif";
     content_type["jar"] = "application/java-archive";
     content_type["war"] = "application/java-archive";
     content_type["ear"] = "application/java-archive";
@@ -182,6 +189,10 @@ void Headers::setContentLength(int content_length)
 void Headers::setContentType(const std::string &path)
 {
     headersField["Content-Type"] = getContentType(path);
+    if (headersField["Content-Type"].find("video") != std::string::npos || headersField["Content-Type"].find("audio") != std::string::npos)
+    {
+        headersField["Accept-Ranges"] = "bytes";
+    }
 }
 
 void Headers::setConnection(const std::string &connection)
@@ -216,8 +227,6 @@ void Headers::setHeader(const std::string &key, const std::string &value)
 
 std::string Headers::getCGIHeader()
 {
-    // loking for status code in headers
-    // char *end;
     std::string header;
     std::string status_code = cgiHeaders.find("Status")->second;
     if (status_code.empty())

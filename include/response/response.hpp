@@ -25,7 +25,7 @@ class Client;
 typedef struct s_location
 {
     map<int, std::string> error_page;
-    vector<t_method> methods;
+    vector<std::string> methods;
     vector<string> index;
     string root;
     string return_url;

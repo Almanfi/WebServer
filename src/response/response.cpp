@@ -11,6 +11,16 @@ Response::~Response()
 {
 }
 
+static std::string convertT_method(t_method method)
+{
+    if (method == GET)
+        return "GET";
+    else if (method == POST)
+        return "POST";
+    else if (method == DELETE)
+        return "DELETE";
+    return "INVALID";
+}
 void Response::initResponse(IClientConf* conf)
 {
     // headers
@@ -22,52 +32,63 @@ void Response::initResponse(IClientConf* conf)
     // this->fd = 0;  // TODO fd
     config = conf;
     this->method = requestHeaders.getMethod();
+    // std::cout << "******************** method: " << requestHeaders.getMethod() << std::endl;
     this->uri = decodingURI(requestHeaders.getUri());
     std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     setLocation();
+    // TODO allow dot in root
     this->locationPath = joinPath(location.root, uri);
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
 }
 
 void Response::setLocation()
 {
-    this->location.methods.push_back(GET);
-    this->location.methods.push_back(POST);
-    this->location.methods.push_back(DELETE);
-    vector<string> methods = config->methods();
-    for (vector<string>::iterator it = methods.begin(); it != methods.end(); it++)
-    {
-        cout << "method: " << *it << endl;
-    }
-
-    this->location.root = "./nginx-html";
+    // this->location.methods.push_back(GET);
+    // this->location.methods.push_back(POST);
+    // this->location.methods.push_back(DELETE);
+    // vector<string> methods = config->methods();
+    // for (vector<string>::iterator it = methods.begin(); it != methods.end(); it++)
+    // {
+    //     cout << "method: " << *it << endl;
+    // }
+    this->location.methods = config->methods(); 
+    // this->location.root = "./nginx-html";
     // config.root();
+    this->location.root = config->root();
 
-    this->location.index.push_back("index.html");
-    this->location.index.push_back("index.htm");
-    this->location.index.push_back("page8.html");
+    // this->location.index.push_back("index.html");
+    // this->location.index.push_back("index.htm");
+    // this->location.index.push_back("page8.html");
     // config.index();
+    this->location.index = config->index();
 
-    this->location.error_page[404] = "404.html";
+    this->location.error_page[404] = "404.html"; // TODO fix in handle error
     this->location.error_page[500] = "500.html";
     // config.getErrorPage(404);
 
-    this->location.autoindex = true;
+    // this->location.autoindex = true;
     // config.autoindex();
+    this->location.autoindex = config->autoindex();
 
-    this->location.return_code = 0;
+    // this->location.return_code = 0;
     // config.returnCode();
-    this->location.return_url = "";
+    this->location.return_code = config->returnCode();
+    // this->location.return_url = "";
     // config.returnUrl();
-    this->location.allow_upload = true;
+    this->location.return_url = config->returnUrl();
+    // this->location.allow_upload = true;
     // config.allowUpload();
-    this->location.upload_path = "nginx-html/";
+    this->location.allow_upload = config->allowUpload();
+    // this->location.upload_path = "nginx-html/";
     // config.uploadPath();
-    this->location.allow_CGI = true;
+    this->location.upload_path = config->uploadPath();
+    // this->location.allow_CGI = true;
     // config.allowCGI();
-    this->location.CGI_path = "/usr/bin/php-cgi";
+    this->location.allow_CGI = config->allowCGI();
+    // this->location.CGI_path = "/usr/bin/php-cgi";
     // config.CGIPath();
+    this->location.CGI_path = config->CGIPath();
 }
 
 void Response::sendResponse()
@@ -95,8 +116,10 @@ void Response::sendResponse()
 void Response::handleGet()
 {
     cout << "++++++++++++ handleGet ++++++++++++" << endl;
-    if (stat(locationPath.c_str(), &buff) != 0)
+    std::cout << "locationPath: " << locationPath << std::endl;
+    if (stat((locationPath).c_str(), &buff) != 0)
     {
+        std::cout << "Get stat errno: " << errno << std::endl;
         if (errno == ENOENT)
             handleError(404);
         else if (errno == EACCES)
@@ -177,9 +200,11 @@ void Response::handleDelete()
 
 void Response::handleDirectory()
 {
+    std::cout << "++++++++++++ handleDirectory ++++++++++++" << std::endl;
     for (size_t i = 0; i < location.index.size(); i++)
     {
         std::string path = joinPath(locationPath, location.index[i]);
+        std::cout << "handleDirectory path: " << path << std::endl;
         if (stat(path.c_str(), &buff) == 0 && S_ISREG(buff.st_mode))
         {
             sendFile(path);
@@ -187,13 +212,13 @@ void Response::handleDirectory()
         }
     }
     if (location.autoindex)
-        sendDirectory(location.root + uri);
+        sendDirectory(locationPath);
     else
         handleError(403);
 }
 void Response::handleFile()
 {
-    sendFile(location.root + uri);
+    sendFile(locationPath);
 }
 
 void Response::sendFile(const std::string &path)
@@ -289,12 +314,16 @@ bool Response::isStarted()
 }
 void Response::sendDirectory(const std::string &path)
 {
+    std::cout << "++++++++++++ sendDirectory ++++++++++++" << std::endl;
+    std::cout << "Directory path: " << path << std::endl;
+     // TODO fix later
     DIR *dir = NULL;
+
     std::string listingPageHTML;
 
     if (!started)
     {
-        dir = opendir(path.c_str());
+        dir = opendir( path.c_str());
         if (!dir)
         {
             // perror("opendir");
@@ -303,7 +332,9 @@ void Response::sendDirectory(const std::string &path)
             else
                 return handleError(500);
         }
+
         listingPageHTML = generateDirectoryListingPage(dir);
+        // std::cout << "listingPageHTML: " << listingPageHTML << std::endl;
         header.setStatusCode(301);
         header.setHeader("Connection", "close");
         header.setHeader("Content-Type", "text/html");
@@ -389,6 +420,46 @@ static std::string formatDateTime(time_t timestamp)
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
     return buffer;
 }
+static std::string getExtension(const std::string &path)
+{
+    size_t pos = path.find_last_of('.');
+    if (pos == std::string::npos)
+        return "";
+    return path.substr(pos + 1);
+}
+static std::string toLower(const std::string &str)
+{
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    return lowerStr;
+}
+static bool isImage(const std::string &ext)
+{
+    return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "gif" || ext == "apng" || ext == "avif" || ext == "jfif" || ext == "pjpeg" || ext == "pjp" || ext == "svg" || ext == "webp";
+}
+
+static bool isVideo(const std::string &ext)
+{
+    return ext == "avi" || ext == "flv" || ext == "mov" || ext == "mp4" || ext == "mpg" || ext == "mpeg" || ext == "wmv";
+}
+static bool isAudio(const std::string &ext)
+{
+    return ext == "mp3" || ext == "wav" || ext == "wma" || ext == "aac" || ext == "flac" || ext == "ogg" || ext == "alac" || ext == "aiff";
+}
+
+static std::string formatSize(size_t size)
+{
+    std::stringstream formattedSize;
+    if (size < 1024)
+        formattedSize << size << " B";
+    else if (size < 1024 * 1024)
+        formattedSize << size / 1024 << " KB";
+    else if (size < 1024 * 1024 * 1024)
+        formattedSize << size / (1024 * 1024) << " MB";
+    else
+        formattedSize << size / (1024 * 1024 * 1024) << " GB";
+    return formattedSize.str();
+}
 
 std::string Response::generateListHTML(struct dirent *entry)
 {
@@ -404,8 +475,24 @@ std::string Response::generateListHTML(struct dirent *entry)
         html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">&#128281;"
              << " " << entry->d_name << "/</a></td><td> </td><td>  </td></tr>\n";
     else
-        html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">&#128195;"
-             << " " << entry->d_name << "</a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td>" << buffer.st_size << "</td></tr>\n";
+    {
+        std::string icone; 
+        std::string ext = toLower(getExtension(entry->d_name));
+        if(isImage(ext))
+        {
+            std::cout << "isImage" << std::endl;
+            icone = "&#128247;";
+        }
+        else if(isVideo(ext))
+            icone = "&#128253;";
+        else if( isAudio(ext))
+            icone = "&#127925;";
+        else
+            icone = "&#128195;";
+        
+        html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">" << icone
+             << " " << entry->d_name << "</a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td>" << formatSize(buffer.st_size) << "</td></tr>\n";
+    }
     return html.str();
 }
 std::string Response::generateDirectoryListingPage(DIR *dir)
@@ -483,9 +570,12 @@ bool Response::checkForValidMethod()
 {
     for (size_t i = 0; i < location.methods.size(); i++)
     {
-        if (location.methods[i] == requestHeaders.getMethod())
+        // std::cout << "method in location : " << location.methods[i] << std::endl;
+        // std::cout << "method: " << method << std::endl;
+        if (location.methods[i] == convertT_method(method))
             return true;
     }
+    // std::cout << "++++++++++++ checkForValidMethod ++++++++++++" << std::endl;
     return false;
 }
 
