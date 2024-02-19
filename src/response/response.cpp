@@ -20,7 +20,7 @@ static std::string convertT_method(t_method method)
         return "DELETE";
     return "INVALID";
 }
-void Response::initResponse(IClientConf *conf)
+void Response::initResponse(IClientConf *conf,int status_code)
 {
     // this->fd = 0;  // TODO fd
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
@@ -30,17 +30,15 @@ void Response::initResponse(IClientConf *conf)
     std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     this->locationPath = joinPath(config->root(), uri);
+    this->status_code = status_code;
 }
 
 void Response::sendResponse()
 {
     if (!started)
         cout << "++++++++++++ sendResponse ++++++++++++" << endl;
-    // 1 check if there any error in the request
-    // 2 check if the method is allowed
-    // 3 check if the request is a redirection
-    // 4 check if the request is a CGI
-    // 5 handle methods
+    if(this->status_code != 200)
+        handleError(this->status_code);
     if (config->allowCGI())
         handleCGI();
     else if (!checkForValidMethod())

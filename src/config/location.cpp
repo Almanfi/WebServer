@@ -226,8 +226,6 @@ void Location::setNewLoc() {
     Location& loc = it->second;
     loc.setServer(*serv);
     loc.set();
-    if (uri[0] == '*' && loc.getInfo("cgi_path").empty()) // TODO check for cgi necessary args
-        throw LocationException::MISSING_CGI_PATH(uri);
 }
 void Location::setServer(Server& servRef) {
     serv = &servRef;

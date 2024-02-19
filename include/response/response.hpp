@@ -46,6 +46,8 @@ class Response
         Headers header;
         fstream file;
         t_method method;
+
+        int status_code;
         //----------------------CGI----------------------//
         std::string cgiOutPutFile;
         std::map<std::string, std::string> env;
@@ -74,7 +76,7 @@ class Response
     public:
         Response(IHeader& requestHeaders, IUniqFile& body, IClientConf* config, int fd);
         ~Response();
-        void initResponse(IClientConf* conf);
+        void initResponse(IClientConf* conf,int status_code);
         void sendNextChunk();
         // void setLocation();
         void sendResponse();
