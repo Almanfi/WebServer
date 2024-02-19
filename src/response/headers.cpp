@@ -189,10 +189,10 @@ void Headers::setContentLength(int content_length)
 void Headers::setContentType(const std::string &path)
 {
     headersField["Content-Type"] = getContentType(path);
-    if (headersField["Content-Type"].find("video") != std::string::npos || headersField["Content-Type"].find("audio") != std::string::npos)
-    {
-        headersField["Accept-Ranges"] = "bytes";
-    }
+    // if (headersField["Content-Type"].find("video") != std::string::npos || headersField["Content-Type"].find("audio") != std::string::npos)
+    // {
+    //     headersField["Accept-Ranges"] = "bytes";
+    // }
 }
 
 void Headers::setConnection(const std::string &connection)

@@ -36,66 +36,65 @@ void Response::initResponse(IClientConf* conf)
     this->uri = decodingURI(requestHeaders.getUri());
     std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
-    setLocation();
-    // TODO allow dot in root
-    this->locationPath = joinPath(location.root, uri);
+    // setLocation();
+    this->locationPath = joinPath(config->root(), uri);
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
 }
 
-void Response::setLocation()
-{
-    // this->location.methods.push_back(GET);
-    // this->location.methods.push_back(POST);
-    // this->location.methods.push_back(DELETE);
-    // vector<string> methods = config->methods();
-    // for (vector<string>::iterator it = methods.begin(); it != methods.end(); it++)
-    // {
-    //     cout << "method: " << *it << endl;
-    // }
-    this->location.methods = config->methods(); 
-    // this->location.root = "./nginx-html";
-    // config.root();
-    this->location.root = config->root();
+// void Response::setLocation()
+// {
+//     // this->location.methods.push_back(GET);
+//     // this->location.methods.push_back(POST);
+//     // this->location.methods.push_back(DELETE);
+//     // vector<string> methods = config->methods();
+//     // for (vector<string>::iterator it = methods.begin(); it != methods.end(); it++)
+//     // {
+//     //     cout << "method: " << *it << endl;
+//     // }
+//     // this->location.methods = config->methods(); 
+//     // this->location.root = "./nginx-html";
+//     // config.root();
+//     // this->location.root = config->root();
 
-    // this->location.index.push_back("index.html");
-    // this->location.index.push_back("index.htm");
-    // this->location.index.push_back("page8.html");
-    // config.index();
-    this->location.index = config->index();
+//     // this->location.index.push_back("index.html");
+//     // this->location.index.push_back("index.htm");
+//     // this->location.index.push_back("page8.html");
+//     // config.index();
+//     // this->location.index = config->index();
 
-    this->location.error_page[404] = "404.html"; // TODO fix in handle error
-    this->location.error_page[500] = "500.html";
-    // config.getErrorPage(404);
+//     // this->location.error_page[404] = "404.html"; // TODO fix in handle error
+//     // this->location.error_page[500] = "500.html";
+//     // config.getErrorPage(404);
 
-    // this->location.autoindex = true;
-    // config.autoindex();
-    this->location.autoindex = config->autoindex();
+//     // this->location.autoindex = true;
+//     // config.autoindex();
+//     // this->location.autoindex = config->autoindex();
 
-    // this->location.return_code = 0;
-    // config.returnCode();
-    this->location.return_code = config->returnCode();
-    // this->location.return_url = "";
-    // config.returnUrl();
-    this->location.return_url = config->returnUrl();
-    // this->location.allow_upload = true;
-    // config.allowUpload();
-    this->location.allow_upload = config->allowUpload();
-    // this->location.upload_path = "nginx-html/";
-    // config.uploadPath();
-    this->location.upload_path = config->uploadPath();
-    // this->location.allow_CGI = true;
-    // config.allowCGI();
-    this->location.allow_CGI = config->allowCGI();
-    // this->location.CGI_path = "/usr/bin/php-cgi";
-    // config.CGIPath();
-    this->location.CGI_path = config->CGIPath();
-}
+//     // this->location.return_code = 0;
+//     // config.returnCode();
+//     // this->location.return_code = config->returnCode();
+//     // this->location.return_url = "";
+//     // config.returnUrl();
+//     // this->location.return_url = config->returnUrl();
+//     // this->location.allow_upload = true;
+//     // config.allowUpload();
+//     // this->location.allow_upload = config->allowUpload();
+//     // this->location.upload_path = "nginx-html/";
+//     // config.uploadPath();
+//     // this->location.upload_path = config->uploadPath();
+//     // this->location.allow_CGI = true;
+//     // config.allowCGI();
+//     // this->location.allow_CGI = config->allowCGI();
+//     // this->location.CGI_path = "/usr/bin/php-cgi";
+//     // config.CGIPath();
+//     // this->location.CGI_path = config->CGIPath();
+// }
 
 void Response::sendResponse()
 {
     if (!started)
         cout << "++++++++++++ sendResponse ++++++++++++" << endl;
-    if (location.allow_CGI)
+    if (config->allowCGI())
         handleCGI();
     else if (!checkForValidMethod())
         handleError(405);
@@ -139,9 +138,9 @@ void Response::handleGet()
 void Response::handlePost()
 {
     std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
-    std::string newPath = joinPath(location.upload_path, uri);
+    std::string newPath = joinPath(config->uploadPath(), uri);
     std::string oldPath =     body.getPath();
-    if (location.allow_upload)
+    if (config->allowUpload())
     {
         if (rename(oldPath.c_str(), newPath.c_str()) != 0)
         {
@@ -169,8 +168,8 @@ void Response::handlePost()
 void Response::handleDelete()
 {
     std::cout << "++++++++++++ handleDelete ++++++++++++" << std::endl;
-    std::string pathToDelete = joinPath(location.upload_path, uri);
-    if (location.allow_upload)
+    std::string pathToDelete = joinPath(config->uploadPath(), uri);
+    if (config->allowUpload())
     {
         if (stat(pathToDelete.c_str(), &buff) != 0)
         {
@@ -201,9 +200,9 @@ void Response::handleDelete()
 void Response::handleDirectory()
 {
     std::cout << "++++++++++++ handleDirectory ++++++++++++" << std::endl;
-    for (size_t i = 0; i < location.index.size(); i++)
+    for (size_t i = 0; i < config->index().size(); i++)
     {
-        std::string path = joinPath(locationPath, location.index[i]);
+        std::string path = joinPath(locationPath, config->index()[i]);
         std::cout << "handleDirectory path: " << path << std::endl;
         if (stat(path.c_str(), &buff) == 0 && S_ISREG(buff.st_mode))
         {
@@ -211,7 +210,7 @@ void Response::handleDirectory()
             return;
         }
     }
-    if (location.autoindex)
+    if (config->autoindex())
         sendDirectory(locationPath);
     else
         handleError(403);
@@ -276,9 +275,9 @@ void Response::sendNextChunk()
 void Response::handleError(int error_code)
 {
     std::string errorPage;
-    if (location.error_page.find(error_code) != location.error_page.end())
+    if (config->getErrorPage(error_code) != "")
     {
-        std::string path = joinPath(locationPath, location.error_page[error_code]);
+        std::string path = joinPath(locationPath, config->getErrorPage(error_code));
         if (stat(path.c_str(), &buff) == 0 && S_ISREG(buff.st_mode))
         {
             sendFile(path);
@@ -568,11 +567,10 @@ std::string Response::generateDirectoryListingPage(DIR *dir)
 
 bool Response::checkForValidMethod()
 {
-    for (size_t i = 0; i < location.methods.size(); i++)
-    {
+    for (size_t i = 0; i < config->methods().size(); i++){
         // std::cout << "method in location : " << location.methods[i] << std::endl;
         // std::cout << "method: " << method << std::endl;
-        if (location.methods[i] == convertT_method(method))
+        if (config->methods()[i] == convertT_method(method))
             return true;
     }
     // std::cout << "++++++++++++ checkForValidMethod ++++++++++++" << std::endl;
@@ -581,26 +579,26 @@ bool Response::checkForValidMethod()
 
 bool Response::handleRedirection()
 {
-    if (location.return_code >= 301 && location.return_code <= 399)
+    if (config->returnCode() >= 301 && config->returnCode() <= 399)
     {
-        header.setStatusCode(location.return_code);
+        header.setStatusCode(config->returnCode());
         header.setHeader("Connection", "close");
         header.setHeader("Content-Type", "text/html");
-        header.setHeader("Location", location.return_url);
+        header.setHeader("Location", config->returnUrl());
         bufferToSend = header.getHeader();
         sendNextChunk();
         if (bufferToSend.size() == 0)
             ended = true;
         return true;
     }
-    else if (location.return_code >= 100 && location.return_code < 599)
+    else if (config->returnCode() >= 100 && config->returnCode() < 599)
     {
-        header.setStatusCode(location.return_code);
+        header.setStatusCode(config->returnCode());
         header.setHeader("Connection", "close");
         header.setHeader("Content-Type", "application/octet-stream");
-        header.setContentLength(location.return_url.size());
+        header.setContentLength(config->returnUrl().size());
         bufferToSend = header.getHeader();
-        bufferToSend.append(location.return_url);
+        bufferToSend.append(config->returnUrl());
         sendNextChunk();
         if (bufferToSend.size() == 0)
             ended = true;

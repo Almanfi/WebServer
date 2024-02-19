@@ -22,22 +22,22 @@ class Request;
 class ServerSocket;
 class Client;
 
-typedef struct s_location
-{
-    map<int, std::string> error_page;
-    vector<std::string> methods;
-    vector<string> index;
-    string root;
-    string return_url;
-    int return_code;
-    bool autoindex;
-    bool allow_upload;
-    std::string upload_path;
-    bool allow_CGI; 
-    std::string CGI_path;
-    std::string CGI_timeout;
+// typedef struct s_location
+// {
+//     // map<int, std::string> error_page;
+//     // vector<std::string> methods;
+//     // vector<string> index;
+//     // string root;
+//     // string return_url;
+//     // int return_code;
+//     // bool autoindex;
+//     // bool allow_upload;
+//     // std::string upload_path;
+//     // bool allow_CGI; 
+//     // std::string CGI_path;
+//     std::string CGI_timeout;
 
-} t_location;
+// } t_location;
 
 class Response
 {
@@ -62,7 +62,7 @@ class Response
         Headers header;
         fstream file;
         t_method method;
-        t_location location;
+        // t_location location;
         //----------------------CGI----------------------//
         std::string cgiOutPutFile;
         std::map<std::string, std::string> env;
@@ -96,7 +96,7 @@ class Response
         ~Response();
         void initResponse(IClientConf* conf);
         void sendNextChunk();
-        void setLocation();
+        // void setLocation();
         void sendResponse();
         void handleDirectory();
         void handleFile();

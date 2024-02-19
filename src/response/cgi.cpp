@@ -114,9 +114,9 @@ void Response::initCGI()
             std::cerr << "Error duplicating file descriptors: " << strerror(errno) << std::endl;
             exit(1);
         }
-        char *args[3] = {strdup(location.CGI_path.c_str()), strdup(locationPath.c_str()), NULL};
+        char *args[3] = {strdup(config->CGIPath().c_str()), strdup(locationPath.c_str()), NULL};
         char **env = getEnvironmentVariables();
-        int ret = execve(location.CGI_path.c_str(), args, env);
+        int ret = execve(config->CGIPath().c_str(), args, env);
         if (ret == -1)
         {
             std::cerr << "Error executing CGI: " << strerror(errno) << std::endl;
@@ -155,8 +155,15 @@ bool Response::checkGGIProcess()
         }
         else if (res == 0)
         {
+            // char *end;
             std::clock_t now = std::clock();
-            if (static_cast<double>(now - cgiStartTimer) / CLOCKS_PER_SEC > 10)
+            size_t timeLimit;
+            // double timeLimit = std::stod(config->CGITimeout(), &end);
+            if(config->CGITimeout() < 10)
+                timeLimit = config->CGITimeout();
+            else
+                timeLimit = 10;
+            if (static_cast<double>(now - cgiStartTimer) / CLOCKS_PER_SEC > timeLimit)
             {
                 std::cerr << "CGI timed out" << std::endl;
                 kill(cgiPid, SIGKILL);
