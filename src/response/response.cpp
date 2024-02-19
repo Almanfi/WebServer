@@ -1,7 +1,7 @@
 #include "socket.hpp"
 
 Response::Response(IHeader &requestHeaders, IUniqFile &file, IClientConf *config, int fd) : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
-                                                                                            newUUID(), CGItmpFile("./tmp", newUUID), requestHeaders(requestHeaders), body(file),
+                                                                                            requestHeaders(requestHeaders), body(file),
                                                                                             config(config), fd(fd)
 {
 }
@@ -36,12 +36,17 @@ void Response::sendResponse()
 {
     if (!started)
         cout << "++++++++++++ sendResponse ++++++++++++" << endl;
+    // 1 check if there any error in the request
+    // 2 check if the method is allowed
+    // 3 check if the request is a redirection
+    // 4 check if the request is a CGI
+    // 5 handle methods
     if (config->allowCGI())
         handleCGI();
     else if (!checkForValidMethod())
         handleError(405);
-    else if (handleRedirection())
-        return;
+    else if (config->returnCode() != 0)
+        handleRedirection();
     else
     {
         if (method == GET)
@@ -287,9 +292,6 @@ void Response::sendDirectory(const std::string &path)
     closedir(dir);
 }
 
-
-
-
 bool Response::checkForValidMethod()
 {
     for (size_t i = 0; i < config->methods().size(); i++)
@@ -302,7 +304,8 @@ bool Response::checkForValidMethod()
 
 bool Response::handleRedirection()
 {
-    if (config->returnCode() >= 301 && config->returnCode() <= 399)
+    std::cout << "++++++++++++ handleRedirection ++++++++++++" << std::endl;
+    if (config->returnCode() == 301 || config->returnCode() == 302 || config->returnCode() == 303 || config->returnCode() == 307 || config->returnCode() == 308)
     {
         header.setStatusCode(config->returnCode());
         header.setHeader("Connection", "close");
@@ -314,7 +317,7 @@ bool Response::handleRedirection()
             ended = true;
         return true;
     }
-    else if (config->returnCode() >= 100 && config->returnCode() < 599)
+    else
     {
         header.setStatusCode(config->returnCode());
         header.setHeader("Connection", "close");
