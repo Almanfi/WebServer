@@ -1,41 +1,5 @@
 #include "socket.hpp"
 
-// static std::string getExtension(std::string path)
-// {
-//     for (int i = path.size() - 1; i >= 0; i--)
-//     {
-//         if (path[i] == '.')
-//             return path.substr(i + 1);
-//     }
-//     return "";
-// }
-
-// static std::string ToString(int n)
-// {
-//     std::stringstream ss;
-//     ss << n;
-//     return ss.str();
-// }
-
-// static std::string t_methodToString(t_method method)
-// {
-//     if (method == GET)
-//         return "GET";
-//     else if (method == POST)
-//         return "POST";
-//     else
-//         return "DELETE";
-// }
-
-std::string generateRandomFileName(const std::string &prefix, const std::string &extension)
-{
-    std::srand(static_cast<unsigned int>(std::time(0)));
-    int randomValue = std::rand();
-    std::stringstream ss;
-    ss << randomValue;
-    std::string fileName = prefix + ss.str() + extension;
-    return fileName;
-}
 
 char **Response::getEnvironmentVariables()
 {

@@ -1,9 +1,8 @@
 #include "socket.hpp"
 
-Response::Response(IHeader& requestHeaders, IUniqFile& file, IClientConf* config, int fd) :
-        started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
-        newUUID(), CGItmpFile("./tmp", newUUID), requestHeaders(requestHeaders), body(file),
-        config(config), fd(fd)
+Response::Response(IHeader &requestHeaders, IUniqFile &file, IClientConf *config, int fd) : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
+                                                                                            newUUID(), CGItmpFile("./tmp", newUUID), requestHeaders(requestHeaders), body(file),
+                                                                                            config(config), fd(fd)
 {
 }
 
@@ -21,74 +20,17 @@ static std::string convertT_method(t_method method)
         return "DELETE";
     return "INVALID";
 }
-void Response::initResponse(IClientConf* conf)
+void Response::initResponse(IClientConf *conf)
 {
-    // headers
-    // file
-
-    // this->request = &client->request;
-    // this->servSock = &client->servSock;
-    // this->uuid = &client->uuid;
     // this->fd = 0;  // TODO fd
+    cout << "++++++++++++ initResponse ++++++++++++" << endl;
     config = conf;
     this->method = requestHeaders.getMethod();
-    // std::cout << "******************** method: " << requestHeaders.getMethod() << std::endl;
     this->uri = decodingURI(requestHeaders.getUri());
     std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
-    // setLocation();
     this->locationPath = joinPath(config->root(), uri);
-    cout << "++++++++++++ initResponse ++++++++++++" << endl;
 }
-
-// void Response::setLocation()
-// {
-//     // this->location.methods.push_back(GET);
-//     // this->location.methods.push_back(POST);
-//     // this->location.methods.push_back(DELETE);
-//     // vector<string> methods = config->methods();
-//     // for (vector<string>::iterator it = methods.begin(); it != methods.end(); it++)
-//     // {
-//     //     cout << "method: " << *it << endl;
-//     // }
-//     // this->location.methods = config->methods(); 
-//     // this->location.root = "./nginx-html";
-//     // config.root();
-//     // this->location.root = config->root();
-
-//     // this->location.index.push_back("index.html");
-//     // this->location.index.push_back("index.htm");
-//     // this->location.index.push_back("page8.html");
-//     // config.index();
-//     // this->location.index = config->index();
-
-//     // this->location.error_page[404] = "404.html"; // TODO fix in handle error
-//     // this->location.error_page[500] = "500.html";
-//     // config.getErrorPage(404);
-
-//     // this->location.autoindex = true;
-//     // config.autoindex();
-//     // this->location.autoindex = config->autoindex();
-
-//     // this->location.return_code = 0;
-//     // config.returnCode();
-//     // this->location.return_code = config->returnCode();
-//     // this->location.return_url = "";
-//     // config.returnUrl();
-//     // this->location.return_url = config->returnUrl();
-//     // this->location.allow_upload = true;
-//     // config.allowUpload();
-//     // this->location.allow_upload = config->allowUpload();
-//     // this->location.upload_path = "nginx-html/";
-//     // config.uploadPath();
-//     // this->location.upload_path = config->uploadPath();
-//     // this->location.allow_CGI = true;
-//     // config.allowCGI();
-//     // this->location.allow_CGI = config->allowCGI();
-//     // this->location.CGI_path = "/usr/bin/php-cgi";
-//     // config.CGIPath();
-//     // this->location.CGI_path = config->CGIPath();
-// }
 
 void Response::sendResponse()
 {
@@ -109,7 +51,6 @@ void Response::sendResponse()
         else if (method == DELETE)
             handleDelete();
     }
-    // started = true;
 }
 
 void Response::handleGet()
@@ -139,7 +80,7 @@ void Response::handlePost()
 {
     std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
     std::string newPath = joinPath(config->uploadPath(), uri);
-    std::string oldPath =     body.getPath();
+    std::string oldPath = body.getPath();
     if (config->allowUpload())
     {
         if (rename(oldPath.c_str(), newPath.c_str()) != 0)
@@ -234,7 +175,6 @@ void Response::sendFile(const std::string &path)
         fileToSend.open(path.c_str(), std::ios::in | std::ios::out | std::ios::app);
         if (!fileToSend.is_open())
         {
-            // perror("open");
             if (errno == EACCES)
                 return handleError(403);
             else
@@ -315,25 +255,22 @@ void Response::sendDirectory(const std::string &path)
 {
     std::cout << "++++++++++++ sendDirectory ++++++++++++" << std::endl;
     std::cout << "Directory path: " << path << std::endl;
-     // TODO fix later
     DIR *dir = NULL;
 
     std::string listingPageHTML;
 
     if (!started)
     {
-        dir = opendir( path.c_str());
+        dir = opendir(path.c_str());
         if (!dir)
         {
-            // perror("opendir");
             if (errno == EACCES)
                 return handleError(403);
             else
                 return handleError(500);
         }
 
-        listingPageHTML = generateDirectoryListingPage(dir);
-        // std::cout << "listingPageHTML: " << listingPageHTML << std::endl;
+        listingPageHTML = generateDirectoryListingPage(dir, uri, locationPath);
         header.setStatusCode(301);
         header.setHeader("Connection", "close");
         header.setHeader("Content-Type", "text/html");
@@ -350,230 +287,16 @@ void Response::sendDirectory(const std::string &path)
     closedir(dir);
 }
 
-std::string Response::generateErrorPage(int errorCode, const std::string &errorMsg)
-{
-    std::stringstream htmlPage;
 
-    htmlPage << "<!DOCTYPE html>\n";
-    htmlPage << "<html>\n";
-    htmlPage << "<head>\n";
-    htmlPage << "  <title>Error " << errorCode << "</title>\n";
-    htmlPage << "  <style>\n";
-    htmlPage << "    * {\n";
-    htmlPage << "      transition: all 0.6s;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    html {\n";
-    htmlPage << "      height: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    body {\n";
-    htmlPage << "      font-family: 'Lato', sans-serif;\n";
-    htmlPage << "      color: #333;\n";
-    htmlPage << "      margin: 0;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    #main {\n";
-    htmlPage << "      display: table;\n";
-    htmlPage << "      width: 100%;\n";
-    htmlPage << "      height: 100vh;\n";
-    htmlPage << "      text-align: center;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    .fof {\n";
-    htmlPage << "      display: table-cell;\n";
-    htmlPage << "      vertical-align: middle;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    .fof h1 {\n";
-    htmlPage << "      font-size: 50px;\n";
-    htmlPage << "      display: inline-block;\n";
-    htmlPage << "      padding-right: 12px;\n";
-    htmlPage << "      animation: type .5s alternate infinite;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    @keyframes type {\n";
-    htmlPage << "      from { box-shadow: inset -3px 0px 0px #888; }\n";
-    htmlPage << "      to { box-shadow: inset -3px 0px 0px transparent; }\n";
-    htmlPage << "    }\n";
-    htmlPage << "  </style>\n";
-    htmlPage << "</head>\n";
-    htmlPage << "<body>\n";
-    htmlPage << "  <div id=\"main\">\n";
-    htmlPage << "    <div class=\"fof\">\n";
-    htmlPage << "      <h1>Error " << errorCode << "</h1>\n";
-    htmlPage << "      <p>" << errorMsg << "</p>\n";
-    htmlPage << "    </div>\n";
-    htmlPage << "  </div>\n";
-    htmlPage << "</body>\n";
-    htmlPage << "</html>\n";
 
-    return htmlPage.str();
-}
-
-static bool compareDirent(const struct dirent *a, const struct dirent *b)
-{
-    if (a->d_type == DT_DIR && b->d_type != DT_DIR)
-        return true;
-    return std::strcmp(a->d_name, b->d_name) < 0;
-}
-
-static std::string formatDateTime(time_t timestamp)
-{
-    struct tm *localTime = localtime(&timestamp);
-    char buffer[80];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localTime);
-    return buffer;
-}
-static std::string getExtension(const std::string &path)
-{
-    size_t pos = path.find_last_of('.');
-    if (pos == std::string::npos)
-        return "";
-    return path.substr(pos + 1);
-}
-static std::string toLower(const std::string &str)
-{
-    std::string lowerStr = str;
-    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
-    return lowerStr;
-}
-static bool isImage(const std::string &ext)
-{
-    return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "gif" || ext == "apng" || ext == "avif" || ext == "jfif" || ext == "pjpeg" || ext == "pjp" || ext == "svg" || ext == "webp";
-}
-
-static bool isVideo(const std::string &ext)
-{
-    return ext == "avi" || ext == "flv" || ext == "mov" || ext == "mp4" || ext == "mpg" || ext == "mpeg" || ext == "wmv";
-}
-static bool isAudio(const std::string &ext)
-{
-    return ext == "mp3" || ext == "wav" || ext == "wma" || ext == "aac" || ext == "flac" || ext == "ogg" || ext == "alac" || ext == "aiff";
-}
-
-static std::string formatSize(size_t size)
-{
-    std::stringstream formattedSize;
-    if (size < 1024)
-        formattedSize << size << " B";
-    else if (size < 1024 * 1024)
-        formattedSize << size / 1024 << " KB";
-    else if (size < 1024 * 1024 * 1024)
-        formattedSize << size / (1024 * 1024) << " MB";
-    else
-        formattedSize << size / (1024 * 1024 * 1024) << " GB";
-    return formattedSize.str();
-}
-
-std::string Response::generateListHTML(struct dirent *entry)
-{
-    std::stringstream html;
-    struct stat buffer;
-    if (stat(joinPath(locationPath, entry->d_name).c_str(), &buffer) != 0)
-        return "";
-    if (entry->d_type == DT_DIR && std::strcmp(entry->d_name, "..") != 0)
-        html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">&#128193;"
-             << " "
-             << "<b>" << entry->d_name << "/</b></a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td> - </td></tr>\n";
-    else if (std::strcmp(entry->d_name, "..") == 0)
-        html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">&#128281;"
-             << " " << entry->d_name << "/</a></td><td> </td><td>  </td></tr>\n";
-    else
-    {
-        std::string icone; 
-        std::string ext = toLower(getExtension(entry->d_name));
-        if(isImage(ext))
-        {
-            std::cout << "isImage" << std::endl;
-            icone = "&#128247;";
-        }
-        else if(isVideo(ext))
-            icone = "&#128253;";
-        else if( isAudio(ext))
-            icone = "&#127925;";
-        else
-            icone = "&#128195;";
-        
-        html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">" << icone
-             << " " << entry->d_name << "</a></td><td>" << formatDateTime(buffer.st_mtime) << "</td><td>" << formatSize(buffer.st_size) << "</td></tr>\n";
-    }
-    return html.str();
-}
-std::string Response::generateDirectoryListingPage(DIR *dir)
-{
-    std::stringstream htmlPage;
-    struct dirent *entry;
-    std::vector<struct dirent *> entries;
-    while ((entry = readdir(dir)) != NULL)
-    {
-        entries.push_back(entry);
-    }
-
-    htmlPage << "<!DOCTYPE html>\n";
-    htmlPage << "<html>\n";
-    htmlPage << "<head>\n";
-    htmlPage << "  <title>Directory Listing</title>\n";
-    htmlPage << "  <style>\n";
-    htmlPage << "    * {\n";
-    htmlPage << "      background: #333;\n";
-    htmlPage << "      transition: all 0.6s;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    html {\n";
-    htmlPage << "      height: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    body {\n";
-    htmlPage << "      font-family: 'Lato', sans-serif;\n";
-    htmlPage << "      margin: 0;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    #main {\n";
-    htmlPage << "      width: 100%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    table {\n";
-    htmlPage << "      width: 80%;\n";
-    htmlPage << "      margin: 0 auto;\n";
-    htmlPage << "      border-collapse: collapse;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    th, td {\n";
-    htmlPage << "      border: 1px solid #333;\n";
-    htmlPage << "      padding: 6px;\n";
-    htmlPage << "      text-align: left;\n";
-    htmlPage << "      color: #fff;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    a {\n";
-    htmlPage << "      color: #fff;\n";
-    htmlPage << "      text-decoration: none;\n";
-    htmlPage << "    }\n";
-    htmlPage << "    h1 {\n";
-    htmlPage << "      color: #fff;\n";
-    htmlPage << "      margin-left: 10%;\n";
-    htmlPage << "      margin-top: 2%;\n";
-    htmlPage << "      margin-bottom: 2%;\n";
-    htmlPage << "    }\n";
-    htmlPage << "  </style>\n";
-    htmlPage << "</head>\n";
-    htmlPage << "<body>\n";
-    htmlPage << "  <div id=\"main\">\n";
-    htmlPage << "    <h1> Index of " << uri << "</h1>\n";
-    htmlPage << "    <table>\n";
-    std::sort(entries.begin(), entries.end(), compareDirent);
-    for (size_t i = 0; i < entries.size(); i++)
-    {
-        if (entries[i]->d_name[0] == '.' && std::strcmp(entries[i]->d_name, "..") != 0)
-            continue;
-        htmlPage << generateListHTML(entries[i]);
-    }
-    htmlPage << "    </table>\n";
-    htmlPage << "  </div>\n";
-    htmlPage << "</body>\n";
-    htmlPage << "</html>\n";
-
-    return htmlPage.str();
-}
 
 bool Response::checkForValidMethod()
 {
-    for (size_t i = 0; i < config->methods().size(); i++){
-        // std::cout << "method in location : " << location.methods[i] << std::endl;
-        // std::cout << "method: " << method << std::endl;
+    for (size_t i = 0; i < config->methods().size(); i++)
+    {
         if (config->methods()[i] == convertT_method(method))
             return true;
     }
-    // std::cout << "++++++++++++ checkForValidMethod ++++++++++++" << std::endl;
     return false;
 }
 
@@ -606,52 +329,3 @@ bool Response::handleRedirection()
     }
     return false;
 }
-
-std::string Response::joinPath(const std::string &path1, const std::string &path2)
-{
-    if (path1[path1.size() - 1] == '/' && path2[0] == '/')
-        return path1 + path2.substr(1);
-    else if (path1[path1.size() - 1] != '/' && path2[0] != '/')
-        return path1 + "/" + path2;
-    else
-        return path1 + path2;
-}
-
-std::string Response::decodingURI(const std::string &uri)
-{
-    std::string decodedURI;
-    char *end;
-    size_t i = 0;
-    while (i < uri.size())
-    {
-        if (uri[i] == '%')
-        {
-            char c = std::strtol(uri.substr(i + 1, 2).c_str(), &end, 16);
-            decodedURI.push_back(c);
-            i += 3;
-        }
-        else
-        {
-            decodedURI.push_back(uri[i]);
-            i++;
-        }
-    }
-    return (decodedURI);
-}
-
-// void Response::uriParser()
-// {
-
-//     size_t pos = uri.find('?');
-//     if(pos != std::string::npos)
-//     {   std::string newURI;
-//         newURI = uri.substr(0, pos);
-//         std::string query = uri.substr(pos + 1);
-//         std::stringstream ss(query);
-//         std::string key;
-//         std::string value;
-//         while(std::getline(ss, key, '=') && std::getline(ss, value, '&'))
-//             query[key] = value;
-//         uri = newURI;
-//     }
-// }

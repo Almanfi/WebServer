@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include "headers.hpp"
 #include <dirent.h>
+#include "../../include/response/utils.hpp"
 
 class Request;
 class ServerSocket;
@@ -105,16 +106,13 @@ class Response
         void handleError(int error_code);
         bool isEnded();
         bool isStarted();
-        std::string generateErrorPage(int errorCode, const std::string& errorMsg);
-        std::string generateDirectoryListingPage(DIR* dir);
+        // std::string generateErrorPage(int errorCode, const std::string& errorMsg);
         bool checkForValidMethod();
         bool handleRedirection();
         void handleGet();
         void handlePost();
         void handleDelete();
-        std::string joinPath(const std::string &path1, const std::string &path2);
-        std::string generateListHTML(struct dirent* entry);
-        std::string decodingURI(const std::string &uri);
+
         // void uriParser();
 
         // ----------------------CGI----------------------//
