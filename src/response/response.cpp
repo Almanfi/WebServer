@@ -34,6 +34,9 @@ void Response::initResponse(IClientConf *conf,int status_code)
     std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     this->locationPath = joinPath(config->root(), uri);
+    std::cout << "----------- uri: " << uri << std::endl;   
+    std::cout << "----------- root: " << config->root() << std::endl;
+    std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
 }
 
@@ -43,7 +46,7 @@ void Response::sendResponse()
         cout << "++++++++++++ sendResponse ++++++++++++" << endl;
     if(this->status_code != 200)
         handleError(this->status_code);
-    if (config->allowCGI())
+    if (isForCGI())
         handleCGI();
     else if (!checkForValidMethod())
         handleError(405);
@@ -58,6 +61,25 @@ void Response::sendResponse()
         else if (method == DELETE)
             handleDelete();
     }
+}
+
+bool Response::isForCGI()
+{
+    struct stat buff;
+   if(!config->allowCGI())
+        return false;
+    if (stat(locationPath.c_str(), &buff) != 0)
+    {
+        if (errno == ENOENT)
+            handleError(404);
+        else if (errno == EACCES)
+            handleError(403);
+        else
+            handleError(500);
+    }
+    if(S_ISDIR(buff.st_mode))
+        return false;
+    return true;
 }
 
 void Response::handleGet()

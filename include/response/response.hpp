@@ -98,6 +98,7 @@ class Response
 
         // ----------------------CGI----------------------//
         char **getEnvironmentVariables();
+        bool isForCGI();
         // void executeCGI();
         bool checkGGIProcess();
         void uriParser();

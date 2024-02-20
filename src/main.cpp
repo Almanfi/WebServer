@@ -25,7 +25,7 @@ int main() {
     signal(SIGPIPE, SIG_IGN);
     try
     {
-        Config& conf = Config::init("config/default.config");
+        Config& conf = Config::init("config/default.conf");
         // conf.print();
 
         // Location& loc = conf.getLocation("127.0.0.3/a/b");
