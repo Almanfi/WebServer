@@ -262,3 +262,14 @@ std::string generateDirectoryListingPage(DIR *dir , std::string uri, std::string
 
     return htmlPage.str();
 }
+
+std::string convertT_method(t_method method)
+{
+    if (method == GET)
+        return "GET";
+    else if (method == POST)
+        return "POST";
+    else if (method == DELETE)
+        return "DELETE";
+    return "INVALID";
+}

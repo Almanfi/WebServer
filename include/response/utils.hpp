@@ -18,6 +18,7 @@
 #include <cstring>
 #include <algorithm>
 #include <ctime>
+#include "socket.hpp"
 
 
 std::string generateRandomFileName(const std::string &prefix, const std::string &extension);
@@ -28,6 +29,7 @@ std::string decodingURI(const std::string &uri);
 std::string formatSize(size_t size);
 std::string joinPath(const std::string &path1, const std::string &path2);
 std::string toLower(const std::string &str);
+std::string convertT_method(t_method method);
 bool compareDirent(const struct dirent *a, const struct dirent *b);
 bool isImage(const std::string &ext);
 bool isVideo(const std::string &ext);

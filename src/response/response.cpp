@@ -10,16 +10,19 @@ Response::~Response()
 {
 }
 
-static std::string convertT_method(t_method method)
+void Response::uriParser()
 {
-    if (method == GET)
-        return "GET";
-    else if (method == POST)
-        return "POST";
-    else if (method == DELETE)
-        return "DELETE";
-    return "INVALID";
+    std::string tmp = this->uri;
+    std::string::size_type pos = tmp.find("?");
+    if (pos != std::string::npos)
+    {
+        this->query = tmp.substr(pos + 1);
+        this->uri = tmp.substr(0, pos);
+    }
+    else
+        this->query = "";
 }
+
 void Response::initResponse(IClientConf *conf,int status_code)
 {
     // this->fd = 0;  // TODO fd
@@ -27,6 +30,7 @@ void Response::initResponse(IClientConf *conf,int status_code)
     config = conf;
     this->method = requestHeaders.getMethod();
     this->uri = decodingURI(requestHeaders.getUri());
+    uriParser();
     std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     this->locationPath = joinPath(config->root(), uri);

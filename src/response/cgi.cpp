@@ -6,16 +6,22 @@ char **Response::getEnvironmentVariables()
     env["AUTH_TYPE"] = "";
     // env["CONTENT_LENGTH"] = ToString(this->bodyStat.st_size);
     // env["CONTENT_TYPE"] = request->getHeader("Content-Type");// TODO I changed this
+    // std::cout << "inside env Location Path: " << this->locationPath << std::endl;
+    // print query
+    // std::cout << "inside env Query: " << this->query << std::endl;
     env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
+    env["REQUEST_METHOD"] = convertT_method(method);
+    env["REQUEST_URI"] = this->uri;
+    env["SCRIPT_FILENAME"] = this->locationPath;
     env["REDIRECT_STATUS"] = "200";
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
     env["PATH_INFO"] = this->locationPath;
     env["PATH_TRANSLATED"] = this->locationPath;
     env["QUERY_STRING"] = this->query;
-    env["REMOTE_ADDR"] = "";  // need to be change later
-    env["REMOTE_HOST"] = "";  // need to be change later
-    env["REMOTE_IDENT"] = ""; // need to be change later
-    env["REMOTE_USER"] = "";  // need to be change later
+    // env["REMOTE_ADDR"] = "";  // need to be change later
+    // env["REMOTE_HOST"] = "";  // need to be change later
+    // env["REMOTE_IDENT"] = ""; // need to be change later
+    // env["REMOTE_USER"] = "";  // need to be change later
     // env["REQUEST_METHOD"] = t_methodToString(request->headers.method); // TODO
     env["SCRIPT_NAME"] = this->locationPath;
     env["SERVER_NAME"] = "Webserv";
@@ -34,24 +40,14 @@ char **Response::getEnvironmentVariables()
     return env;
 }
 
-void Response::uriParser()
-{
-    std::string tmp = this->uri;
-    std::string::size_type pos = tmp.find("?");
-    if (pos != std::string::npos)
-    {
-        this->query = tmp.substr(pos + 1);
-        this->uri = tmp.substr(0, pos);
-    }
-    else
-        this->query = "";
-}
+
 
 // --------------- using tmpfile -----------------//
 
 void Response::initCGI()
 {
     cgiOutPutFile = "./tmp/" + generateRandomFileName("cgi", ".cgi");
+    // std::cout << "CGI Output File: " << cgiOutPutFile << std::endl;
     cgiFd[1] = open(cgiOutPutFile.c_str(), O_CREAT | O_RDWR, 0666);
     if (cgiFd[1] == -1)
     {
@@ -121,17 +117,18 @@ bool Response::checkGGIProcess()
         {
             // char *end;
             std::clock_t now = std::clock();
-            size_t timeLimit;
+            int timeLimit;
             // double timeLimit = std::stod(config->CGITimeout(), &end);
-            if(config->CGITimeout() < 10)
+            if(config->CGITimeout() < 5)
                 timeLimit = config->CGITimeout();
             else
-                timeLimit = 10;
+                timeLimit = 5;
             if (static_cast<double>(now - cgiStartTimer) / CLOCKS_PER_SEC > timeLimit)
             {
                 std::cerr << "CGI timed out" << std::endl;
                 kill(cgiPid, SIGKILL);
-                cgiStatus = 500;
+                handleError(504);
+                cgiStatus = 504;
                 isCGIEnded = true;
                 return false;
             }
@@ -195,6 +192,7 @@ std::string Response::extractCGIHeaders()
     std::string headerKey;
     std::string headerValue;
     std::string headers;
+    cgiHeaderSize = 0;
     while (std::getline(file, line))
     {
         if (line == "\n" || line == "\r\n" || line == "\r" || line == "")

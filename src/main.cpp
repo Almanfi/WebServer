@@ -22,7 +22,7 @@
 
 
 int main() {
-    //signal(SIGPIPE, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
     try
     {
         Config& conf = Config::init("config/default.config");
