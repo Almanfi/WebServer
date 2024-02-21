@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/11 17:45:20 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/21 22:03:29 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,6 +90,7 @@ public:
     virtual string getHeader(const string& key) = 0;
     virtual t_method getMethod() const = 0;
     virtual const string& getUri() const = 0;
+    virtual KeyVal& getKeyVal() = 0;
 };
 
 class Header : public IHeader {
@@ -108,10 +109,10 @@ public:
     const string& getUri() const;
     void insertHeader(const string& key, const string& value);
     void setRequestLine(const string& value);
+    KeyVal& getKeyVal();
 
     static void initHeadersRules();
 private:
-    KeyVal& getKeyVal();
     void validateHeader(const string& key, const string& value);
     void validateHeader(KeyVal::const_iterator& header);
     
