@@ -20,11 +20,14 @@ char **Response::getEnvironmentVariables()
     // env["REMOTE_IDENT"] = ""; // need to be change later
     // env["REMOTE_USER"] = "";  // need to be change later
     struct stat bodyStat;
-    if (stat(this->locationPath.c_str(), &bodyStat) == -1)
+    std::cout << " +++++++++++++++ >>>>>>> Body Path: " << this->bodyPath << std::endl;
+    if (stat((this->bodyPath).c_str(), &bodyStat) == -1)
     {
         std::cerr << "Error getting file stats: " << strerror(errno) << std::endl;
+
         return NULL;
     }
+    std::cout << " +++++++++++++++ >>>>>>> Body Stat: " << bodyStat.st_size << std::endl;
     fillEnv();
     env["AUTH_TYPE"] = "";
     env["CONTENT_LENGTH"] = ToString(bodyStat.st_size);
@@ -217,7 +220,7 @@ std::string Response::extractCGIHeaders()
             headerKey = line.substr(0, pos);
             headerValue = line.substr(pos + 1);
             cgiHeaderSize += line.size();
-            std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
+            // std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
             this->header.setCGIHeader(headerKey, headerValue);
             headerValue.clear();
             headerKey.clear();
@@ -232,7 +235,7 @@ void Response::handleCGIResponse()
     {
         std::string headers = extractCGIHeaders();
         std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
-        std::cout << "Headers: " << headers << std::endl;
+        // std::cout << "Headers: " << headers << std::endl;
         int contentLength = 0;
         struct stat statbuf;
         if (stat(cgiOutPutFile.c_str(), &statbuf) == -1)

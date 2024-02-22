@@ -99,7 +99,7 @@ void Response::handleGet()
     }
     if (S_ISDIR(buff.st_mode))
     {
-        std::cout << "S_ISDIR" << std::endl;
+        // std::cout << "S_ISDIR" << std::endl;
         if (locationPath[locationPath.size() - 1] != '/')
         {
             header.setStatusCode(301);
