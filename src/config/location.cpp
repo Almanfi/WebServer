@@ -308,15 +308,6 @@ void Location::propagate() {
 
 Location& Location::getLocation(const string& location) {
     string loc = location;
-    for (map<string, Location>::iterator it = innerLocations.begin();
-                                    it != innerLocations.end(); it++) {
-        if (it->first[0] != '*')
-            continue;
-        string extention = it->first.substr(1);
-        if (location.find(extention) == std::string::npos)
-            continue;
-        return (it->second);
-    }
     while (loc != "") {
         map<string, Location>::iterator it;
         it = innerLocations.find(loc);
@@ -344,6 +335,8 @@ void Location::printThis(int space) {
     cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
     cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
     cout << sp << "   *error page\t\t\tis " << getInfo("error_page") << endl;
+    cout << sp << "   *upload\t\t\tis " << getInfo("upload") << endl;
+    cout << sp << "   *upload_path\t\t\tis " << getInfo("upload_path") << endl;
 }
 
 string Location::getErrorPage(const string& code) {

@@ -27,6 +27,7 @@ int main() {
     {
         Config& conf = Config::init("config/default.conf");
         // conf.print();
+        // cout<< "type is " << Config::getMimeType("html");
 
         // Location& loc = conf.getLocation("127.0.0.3/a/b");
         // loc.print(0);
