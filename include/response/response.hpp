@@ -78,34 +78,30 @@ class Response
         ~Response();
         void initResponse(IClientConf* conf,int status_code);
         void sendNextChunk();
-        // void setLocation();
         void sendResponse();
         void handleDirectory();
         void handleFile();
         void sendDirectory(const std::string &path);
         void sendFile(const std::string &path);
         void handleError(int error_code);
-        bool isEnded();
-        bool isStarted();
-        // std::string generateErrorPage(int errorCode, const std::string& errorMsg);
-        bool checkForValidMethod();
-        bool handleRedirection();
         void handleGet();
         void handlePost();
         void handleDelete();
-
-        // void uriParser();
-
+        bool isStarted();
+        bool checkForValidMethod();
+        bool isEnded();
+        bool handleRedirection();
+        
         // ----------------------CGI----------------------//
         char **getEnvironmentVariables();
         bool isForCGI();
-        // void executeCGI();
         bool checkGGIProcess();
         void uriParser();
         void initCGI();
         void handleCGI();
         void handleCGIResponse();
         std::string extractCGIHeaders();
+        void fillEnv();
 
 
 };

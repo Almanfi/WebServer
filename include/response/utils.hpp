@@ -30,6 +30,8 @@ std::string formatSize(size_t size);
 std::string joinPath(const std::string &path1, const std::string &path2);
 std::string toLower(const std::string &str);
 std::string convertT_method(t_method method);
+std::string ToString(int num);
+std::string FormatEnvKey(const std::string &key);
 bool compareDirent(const struct dirent *a, const struct dirent *b);
 bool isImage(const std::string &ext);
 bool isVideo(const std::string &ext);

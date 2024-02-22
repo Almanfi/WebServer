@@ -273,3 +273,18 @@ std::string convertT_method(t_method method)
         return "DELETE";
     return "INVALID";
 }
+
+std::string ToString(int num)
+{
+    std::stringstream ss;
+    ss << num;
+    return ss.str();
+}
+
+std::string FormatEnvKey(const std::string &key)
+{
+    std::string formattedKey = key;
+    std::transform(formattedKey.begin(), formattedKey.end(), formattedKey.begin(), ::toupper);
+    std::replace(formattedKey.begin(), formattedKey.end(), '-', '_');
+    return formattedKey;
+}

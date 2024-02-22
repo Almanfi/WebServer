@@ -98,7 +98,21 @@ void Response::handleGet()
         return;
     }
     if (S_ISDIR(buff.st_mode))
+    {
+        std::cout << "S_ISDIR" << std::endl;
+        if (locationPath[locationPath.size() - 1] != '/')
+        {
+            header.setStatusCode(301);
+            header.setHeader("Connection", "close");
+            header.setHeader("Location", uri + "/");
+            bufferToSend = header.getHeader();
+            sendNextChunk();
+            if (bufferToSend.size() == 0)
+                ended = true;
+            return;
+        }
         handleDirectory();
+    }
     else if (S_ISREG(buff.st_mode))
         handleFile();
     else

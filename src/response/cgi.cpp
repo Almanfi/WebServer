@@ -1,14 +1,34 @@
 #include "socket.hpp"
 
+void Response::fillEnv()
+{
+    for (std::map<std::string, std::string>::iterator it = requestHeaders.getKeyVal().begin(); it != requestHeaders.getKeyVal().end(); it++)
+    {
+        if (it->first == "Content-Type" || it->first == "Content-Length")
+            continue;
+        env[FormatEnvKey(it->first)] = it->second;
+    }
+}
 
 char **Response::getEnvironmentVariables()
 {
-    env["AUTH_TYPE"] = "";
-    // env["CONTENT_LENGTH"] = ToString(this->bodyStat.st_size);
-    // env["CONTENT_TYPE"] = request->getHeader("Content-Type");// TODO I changed this
     // std::cout << "inside env Location Path: " << this->locationPath << std::endl;
     // print query
     // std::cout << "inside env Query: " << this->query << std::endl;
+    // env["REMOTE_ADDR"] = "";  // need to be change later
+    // env["REMOTE_HOST"] = "";  // need to be change later
+    // env["REMOTE_IDENT"] = ""; // need to be change later
+    // env["REMOTE_USER"] = "";  // need to be change later
+    struct stat bodyStat;
+    if (stat(this->locationPath.c_str(), &bodyStat) == -1)
+    {
+        std::cerr << "Error getting file stats: " << strerror(errno) << std::endl;
+        return NULL;
+    }
+    fillEnv();
+    env["AUTH_TYPE"] = "";
+    env["CONTENT_LENGTH"] = ToString(bodyStat.st_size);
+    env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
     env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
     env["REQUEST_METHOD"] = convertT_method(method);
     env["REQUEST_URI"] = this->uri;
@@ -18,15 +38,11 @@ char **Response::getEnvironmentVariables()
     env["PATH_INFO"] = this->locationPath;
     env["PATH_TRANSLATED"] = this->locationPath;
     env["QUERY_STRING"] = this->query;
-    // env["REMOTE_ADDR"] = "";  // need to be change later
-    // env["REMOTE_HOST"] = "";  // need to be change later
-    // env["REMOTE_IDENT"] = ""; // need to be change later
-    // env["REMOTE_USER"] = "";  // need to be change later
-    // env["REQUEST_METHOD"] = t_methodToString(request->headers.method); // TODO
     env["SCRIPT_NAME"] = this->locationPath;
     env["SERVER_NAME"] = "Webserv";
     env["SERVER_PORT"] = "9992";
     env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    env["REQUEST_METHOD"] = convertT_method(method);
     char **env = new char *[this->env.size() + 1];
     int i = 0;
     for (std::map<std::string, std::string>::iterator it = this->env.begin(); it != this->env.end(); it++)
@@ -39,8 +55,6 @@ char **Response::getEnvironmentVariables()
     env[i] = NULL;
     return env;
 }
-
-
 
 // --------------- using tmpfile -----------------//
 
@@ -119,7 +133,7 @@ bool Response::checkGGIProcess()
             std::clock_t now = std::clock();
             int timeLimit;
             // double timeLimit = std::stod(config->CGITimeout(), &end);
-            if(config->CGITimeout() < 5)
+            if (config->CGITimeout() < 5)
                 timeLimit = config->CGITimeout();
             else
                 timeLimit = 5;
