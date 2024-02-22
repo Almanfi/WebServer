@@ -128,7 +128,7 @@ ssize_t SBuffer::send(sock_fd fd, int flags) {
         throw std::exception();
     }
     cout << "sendSize = " << sendSize << endl;
-    cout << "buffer = " << *this << endl; // for debuging
+//    cout << "buffer = " << *this << endl; // for debuging
     start += sendSize;
     count -= sendSize;
     return (sendSize);

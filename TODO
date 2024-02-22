@@ -11,3 +11,7 @@ remove request with ..
 use makedir to create tmp
 
 add eppol event checking
+
+/////////////
+// apload path //
+upload path in location takes the default path even if the path is given in the location block

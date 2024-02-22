@@ -154,7 +154,7 @@ ssize_t SocketManager::send() {
 ssize_t SocketManager::recv() {
     ssize_t bytes_received = _buffer.recv(_fd, 0); // TODO check flags later
     cout << "bytes_received = " << bytes_received << endl;
-    cout << "buffer = " << dynamic_cast<SBuffer&>(_buffer) << endl;
+    // cout << "buffer = " << dynamic_cast<SBuffer&>(_buffer) << endl;
     return bytes_received;
 	// return ::recv(_fd, &_buffer, _buffer.size(), 0); // TODO check flags later
 }

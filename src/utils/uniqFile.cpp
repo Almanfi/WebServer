@@ -56,7 +56,8 @@ string UniqFile::getPath() {
 
 void UniqFile::write(const char* __s, std::streamsize __n) {
     cout << "writing to file" << endl; // TODO remove cout.
-    cout.write(__s, __n); // TODO remove cout.
+    // Do not use cout.write here, it will write to the console what CGI is trying to write to the file.
+    // cout.write(__s, __n); // TODO remove cout.
     cout << endl << "-----------------" << endl; // TODO remove cout.
     _file.write(__s, __n);
 }
