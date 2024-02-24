@@ -38,10 +38,10 @@ char **Response::getEnvironmentVariables()
     env["SCRIPT_FILENAME"] = this->locationPath;
     env["REDIRECT_STATUS"] = "200";
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
-    env["PATH_INFO"] = this->locationPath;
-    env["PATH_TRANSLATED"] = this->locationPath;
+    env["PATH_INFO"] = this->uri;
+    env["PATH_TRANSLATED"] = this->uri;
     env["QUERY_STRING"] = this->query;
-    env["SCRIPT_NAME"] = this->locationPath;
+    env["SCRIPT_NAME"] = "";
     env["SERVER_NAME"] = "Webserv";
     env["SERVER_PORT"] = "9992";
     env["SERVER_PROTOCOL"] = "HTTP/1.1";
@@ -51,6 +51,7 @@ char **Response::getEnvironmentVariables()
     for (std::map<std::string, std::string>::iterator it = this->env.begin(); it != this->env.end(); it++)
     {
         std::string tmp = it->first + "=" + it->second;
+        // std::cerr << "env: " << tmp << endl;
         env[i] = new char[tmp.size() + 1];
         strcpy(env[i], tmp.c_str());
         i++;

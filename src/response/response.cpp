@@ -122,6 +122,7 @@ void Response::handleGet()
 void Response::handlePost()
 {
     std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
+    std::cout << "Upload Path: " << config->uploadPath() + uri << std::endl;
     std::string newPath = joinPath(config->uploadPath(), uri);
     std::string oldPath = body.getPath();
     if (config->allowUpload())

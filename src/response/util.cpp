@@ -184,7 +184,7 @@ std::string generateListHTML(struct dirent *entry, std::string uri, std::string 
             icone = "&#128253;";
         else if (isAudio(ext))
             icone = "&#127925;";
-        else
+        else 
             icone = "&#128195;";
 
         html << "<tr><td><a href=\"" << joinPath(uri, entry->d_name) << "\">" << icone
@@ -286,5 +286,5 @@ std::string FormatEnvKey(const std::string &key)
     std::string formattedKey = key;
     std::transform(formattedKey.begin(), formattedKey.end(), formattedKey.begin(), ::toupper);
     std::replace(formattedKey.begin(), formattedKey.end(), '-', '_');
-    return formattedKey;
+    return "HTTP_" + formattedKey;
 }
