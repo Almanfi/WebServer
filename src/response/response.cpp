@@ -30,10 +30,10 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
     config = conf;
     servSock = servSocket;
     // finding config ---------------------------------------
-    string host = requestHeaders.getHeader("host");
-    string uri = requestHeaders.getUri(); // you have to remove queary string
-    IClientConf& newConf = servSock->getLocation(host + uri);
-    (void) newConf;
+    // string host = requestHeaders.getHeader("host");
+    // string uri = requestHeaders.getUri(); // you have to remove queary string
+    // IClientConf& newConf = servSock->getLocation(host + uri);
+    // (void) newConf;
     // ------------------------------------------------------
     this->method = requestHeaders.getMethod();
     this->uri = decodingURI(requestHeaders.getUri());
@@ -46,22 +46,69 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
     std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
 }
+void Response::getNewLocation()
+{
+   struct stat buff;
+   if(stat(locationPath.c_str(), &buff) != 0)
+   {
+       if(errno == ENOENT)
+           handleError(404);
+       else if(errno == EACCES)
+           handleError(403);
+       else
+           handleError(500);
+   }
+    if(S_ISDIR(buff.st_mode))
+    {
+         if(locationPath[locationPath.size() - 1] != '/')
+         {
+              header.setStatusCode(301);
+              header.setHeader("Connection", "close");
+              header.setHeader("Location", uri + "/");
+              bufferToSend = header.getHeader();
+              sendNextChunk();
+              if(bufferToSend.size() == 0)
+                ended = true;
+              return;
+         
+        }
+        for(size_t i = 0; i < config->index().size(); i++)
+        {
+            std::string path = joinPath(locationPath, config->index()[i]);
+            if(stat(path.c_str(), &buff) == 0)
+            {
+                this->uri = joinPath(uri, config->index()[i]);
+                this->requestHeaders.setUri(uri);
+                // cout << "inside new location ++++++++++++ uri: " << uri << "++++++++++++" << endl;
+                IClientConf& newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
+                initResponse(&newConf, status_code, servSock);
+                break;
+            }
+        }
+    }
+
+
+}
 
 void Response::sendResponse()
 {
+
     if (!started)
         cout << "++++++++++++ sendResponse ++++++++++++" << endl;
     if(this->status_code != 200)
         handleError(this->status_code);
-    if (isForCGI())
-        handleCGI();
     else if (!checkForValidMethod())
         handleError(405);
     else if (config->returnCode() != 0)
         handleRedirection();
     else
     {
-        if (method == GET)
+        getNewLocation();
+        cout << "################ uri: " << uri << "################" << endl;
+        cout << "################ locationPath: " << locationPath << "################" << endl;
+        if (isForCGI())
+            handleCGI();
+        else if (method == GET)
             handleGet();
         else if (method == POST)
             handlePost();
@@ -121,7 +168,10 @@ void Response::handleGet()
         handleDirectory();
     }
     else if (S_ISREG(buff.st_mode))
+    {
+        cout << "S_ISRGE" << endl;
         handleFile();
+    }
     else
         handleError(404);
 }
@@ -218,6 +268,7 @@ void Response::sendFile(const std::string &path)
     std::cout << "++++++++++++++++++++++ in sendFile ++++++++++++++++++++++++++++" << std::endl;
     if (!started)
     {
+        cout << "++++++++++++++++++++++ in sendFile start ++++++++++++++++++++++++++++" << endl;
         header.setStatusCode(200);
         header.setConnection("close");
         header.setContentType(path);

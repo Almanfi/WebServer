@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/21 22:03:29 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/24 21:40:06 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,7 @@ public:
     virtual t_method getMethod() const = 0;
     virtual const string& getUri() const = 0;
     virtual KeyVal& getKeyVal() = 0;
+    virtual void setUri(const string& value) = 0;
 };
 
 class Header : public IHeader {
@@ -110,6 +111,7 @@ public:
     void insertHeader(const string& key, const string& value);
     void setRequestLine(const string& value);
     KeyVal& getKeyVal();
+    void setUri(const string& value);
 
     static void initHeadersRules();
 private:

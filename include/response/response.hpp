@@ -91,6 +91,7 @@ class Response
         bool checkForValidMethod();
         bool isEnded();
         bool handleRedirection();
+        void getNewLocation();
         
         // ----------------------CGI----------------------//
         char **getEnvironmentVariables();

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 04:02:22 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/24 21:04:57 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -283,7 +283,10 @@ Location& Config::getLocation(const string& uri) {
             break;
         }
     }
-    if (!serv) {
+    if (!serv && !servers.empty()) {
+        serv = &servers[0];
+    } else if (!serv) {
+        cout << "server not found" << endl;
         throw std::runtime_error("Error: server not found");
     }
     return (serv->getRootLocation().getLocation(location));

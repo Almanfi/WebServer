@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/11 18:05:41 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/24 21:39:01 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,10 @@ t_method Header::getMethod() const {
 
 const string& Header::getUri() const {
     return (uri);
+}
+
+void Header::setUri(const string& uri) {
+    this->uri = uri;
 }
 
 void Header::validateHeader(const string& key, const string& value) {

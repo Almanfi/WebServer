@@ -38,10 +38,11 @@ void Headers::setStatusCode(int status_code)
 }
 void Headers::setStatusMessage(int status_code)
 {
-    if (status_message.find(status_code) != status_message.end())
-        headersField[".status_message"] = status_message[status_code];
-    else
-        headersField[".status_message"] = "Internal Server Error";
+    // if (status_message.find(status_code) != status_message.end())
+    //     headersField[".status_message"] = status_message[status_code];
+    // else
+    //     headersField[".status_message"] = "Internal Server Error";
+    headersField[".status_message"] = Config::getStatusCode(status_code);
 }
 
 void Headers::setContentLength(int content_length)
