@@ -41,7 +41,14 @@ Request& Request::operator=(const Request& other) {
 }
 
 void Request::setConfig() {
-    string configName = headers.getHeader(HOST) + headers.getUri();
+    size_t pos;
+    string cleanUri = headers.getUri();
+    for (pos = 0; pos < cleanUri.size(); pos++) {
+        if (cleanUri[pos] == '?' || cleanUri[pos] == '#')
+            break ;
+    }
+    cleanUri = cleanUri.substr(0, pos);
+    string configName = headers.getHeader(HOST) + cleanUri;
     *configPtr = &(servSock.getLocation(configName));
 }
 

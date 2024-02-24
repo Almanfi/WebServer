@@ -308,6 +308,18 @@ void Location::propagate() {
 
 Location& Location::getLocation(const string& location) {
     string loc = location;
+    for (map<string, Location>::iterator it = innerLocations.begin();
+                                    it != innerLocations.end(); it++) {
+        if (it->first[0] != '*')
+            continue;
+        string extention = it->first.substr(1);
+        size_t extPos = location.rfind(extention);
+        if (extPos == std::string::npos)
+            continue;
+        char c = location[extPos + extention.size()];
+        if (c == '/' || c == '?' || c == '#' || c == 0)
+            return (it->second);
+    }
     while (loc != "") {
         map<string, Location>::iterator it;
         it = innerLocations.find(loc);
