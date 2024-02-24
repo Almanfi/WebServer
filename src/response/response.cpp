@@ -2,7 +2,7 @@
 
 Response::Response(IHeader &requestHeaders, IUniqFile &file, IClientConf *config, int fd) : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
                                                                                             requestHeaders(requestHeaders), body(file),
-                                                                                            config(config), fd(fd)
+                                                                                            config(config), fd(fd), servSock(NULL)
 {
 }
 
@@ -23,11 +23,18 @@ void Response::uriParser()
         this->query = "";
 }
 
-void Response::initResponse(IClientConf *conf,int status_code)
+void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* servSocket)
 {
     // this->fd = 0;  // TODO fd
     cout << "++++++++++++ initResponse ++++++++++++" << endl;
     config = conf;
+    servSock = servSocket;
+    // finding config ---------------------------------------
+    string host = requestHeaders.getHeader("host");
+    string uri = requestHeaders.getUri(); // you have to remove queary string
+    IClientConf& newConf = servSock->getLocation(host + uri);
+    (void) newConf;
+    // ------------------------------------------------------
     this->method = requestHeaders.getMethod();
     this->uri = decodingURI(requestHeaders.getUri());
     uriParser();

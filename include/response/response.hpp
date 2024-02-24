@@ -41,7 +41,6 @@ class Response
         struct stat buff;
 
         Request *request;
-        ServerSocket *servSock;
         UUID *uuid;
         Headers header;
         fstream file;
@@ -71,12 +70,13 @@ class Response
         IUniqFile& body;
         IClientConf* config;
         sock_fd fd;
+        IServerSocket* servSock;
 
 
     public:
         Response(IHeader& requestHeaders, IUniqFile& body, IClientConf* config, int fd);
         ~Response();
-        void initResponse(IClientConf* conf,int status_code);
+        void initResponse(IClientConf* conf,int status_code, IServerSocket* servSocket);
         void sendNextChunk();
         void sendResponse();
         void handleDirectory();
