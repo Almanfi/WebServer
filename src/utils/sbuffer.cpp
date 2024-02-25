@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sbuffer.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:38:38 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 14:05:00 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,15 +108,15 @@ ssize_t SBuffer::recv(sock_fd fd, int flags) {
     //     clear(); //
     // if (freeSpace() < 2)
         // moveDataToStart(); // TODO shouldnt move to keep check on the buffer size
-    cout << "in sbuffer recv" << endl;
+   // -- cout << "in sbuffer recv" << endl;
     ssize_t recvSize = ::recv(fd, buffer + end(), freeSpace(), flags);
-    cout << "after sbuffer recv" << endl;
+   // -- cout << "after sbuffer recv" << endl;
     if (recvSize == -1) {
         perror("recv1");
         throw std::exception();
     }
-    // cout << "recvSize = " << recvSize << endl;
-    // cout << "buffer free space = " << begin() << endl;
+    //// -- cout << "recvSize = " << recvSize << endl;
+    //// -- cout << "buffer free space = " << begin() << endl;
     count += recvSize;
     return (recvSize);
 }
@@ -124,11 +124,11 @@ ssize_t SBuffer::recv(sock_fd fd, int flags) {
 ssize_t SBuffer::send(sock_fd fd, int flags) {
     ssize_t sendSize = ::send(fd, buffer + start, count, flags);
     if (sendSize == -1) {
-        perror("send");
+       // perror("send");
         throw std::exception();
     }
-    cout << "sendSize = " << sendSize << endl;
-//    cout << "buffer = " << *this << endl; // for debuging
+   // -- cout << "sendSize = " << sendSize << endl;
+//   // -- cout << "buffer = " << *this << endl; // for debuging
     start += sendSize;
     count -= sendSize;
     return (sendSize);

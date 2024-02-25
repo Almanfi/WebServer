@@ -26,7 +26,7 @@ void Response::uriParser()
 void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* servSocket)
 {
     // this->fd = 0;  // TODO fd
-    cout << "++++++++++++ initResponse ++++++++++++" << endl;
+   // -- cout << "++++++++++++ initResponse ++++++++++++" << endl;
     config = conf;
     servSock = servSocket;
     // finding config ---------------------------------------
@@ -38,12 +38,12 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
     this->method = requestHeaders.getMethod();
     this->uri = decodingURI(requestHeaders.getUri());
     uriParser();
-    std::cout << "uri: " << uri << std::endl;
+    // -- std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     this->locationPath = joinPath(config->root(), uri);
-    std::cout << "----------- uri: " << uri << std::endl;   
-    std::cout << "----------- root: " << config->root() << std::endl;
-    std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
+    // -- std::cout << "----------- uri: " << uri << std::endl;   
+    // -- std::cout << "----------- root: " << config->root() << std::endl;
+    // -- std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
 }
 void Response::getNewLocation()
@@ -79,7 +79,7 @@ void Response::getNewLocation()
             {
                 this->uri = joinPath(uri, config->index()[i]);
                 this->requestHeaders.setUri(uri);
-                // cout << "inside new location ++++++++++++ uri: " << uri << "++++++++++++" << endl;
+                //// -- cout << "inside new location ++++++++++++ uri: " << uri << "++++++++++++" << endl;
                 IClientConf& newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
                 initResponse(&newConf, status_code, servSock);
                 break;
@@ -93,8 +93,8 @@ void Response::getNewLocation()
 void Response::sendResponse()
 {
 
-    if (!started)
-        cout << "++++++++++++ sendResponse ++++++++++++" << endl;
+    // if (!started)
+       // -- cout << "++++++++++++ sendResponse ++++++++++++" << endl;
     if(this->status_code != 200)
         handleError(this->status_code);
     else if (!checkForValidMethod())
@@ -104,8 +104,8 @@ void Response::sendResponse()
     else
     {
         getNewLocation();
-        cout << "################ uri: " << uri << "################" << endl;
-        cout << "################ locationPath: " << locationPath << "################" << endl;
+       // -- cout << "################ uri: " << uri << "################" << endl;
+       // -- cout << "################ locationPath: " << locationPath << "################" << endl;
         if (isForCGI())
             handleCGI();
         else if (method == GET)
@@ -138,11 +138,11 @@ bool Response::isForCGI()
 
 void Response::handleGet()
 {
-    cout << "++++++++++++ handleGet ++++++++++++" << endl;
-    std::cout << "locationPath: " << locationPath << std::endl;
+   // -- cout << "++++++++++++ handleGet ++++++++++++" << endl;
+    // -- std::cout << "locationPath: " << locationPath << std::endl;
     if (stat((locationPath).c_str(), &buff) != 0)
     {
-        std::cout << "Get stat errno: " << errno << std::endl;
+        // -- std::cout << "Get stat errno: " << errno << std::endl;
         if (errno == ENOENT)
             handleError(404);
         else if (errno == EACCES)
@@ -153,7 +153,7 @@ void Response::handleGet()
     }
     if (S_ISDIR(buff.st_mode))
     {
-        // std::cout << "S_ISDIR" << std::endl;
+        // // -- std::cout << "S_ISDIR" << std::endl;
         if (locationPath[locationPath.size() - 1] != '/')
         {
             header.setStatusCode(301);
@@ -169,7 +169,7 @@ void Response::handleGet()
     }
     else if (S_ISREG(buff.st_mode))
     {
-        cout << "S_ISRGE" << endl;
+       // -- cout << "S_ISRGE" << endl;
         handleFile();
     }
     else
@@ -178,8 +178,8 @@ void Response::handleGet()
 
 void Response::handlePost()
 {
-    std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
-    std::cout << "Upload Path: " << config->uploadPath() + uri << std::endl;
+    // -- std::cout << "++++++++++++ handlePost ++++++++++++" << std::endl;
+    // -- std::cout << "Upload Path: " << config->uploadPath() + uri << std::endl;
     std::string newPath = joinPath(config->uploadPath(), uri);
     std::string oldPath = body.getPath();
     if (config->allowUpload())
@@ -209,7 +209,7 @@ void Response::handlePost()
 }
 void Response::handleDelete()
 {
-    std::cout << "++++++++++++ handleDelete ++++++++++++" << std::endl;
+    // -- std::cout << "++++++++++++ handleDelete ++++++++++++" << std::endl;
     std::string pathToDelete = joinPath(config->uploadPath(), uri);
     if (config->allowUpload())
     {
@@ -241,11 +241,11 @@ void Response::handleDelete()
 
 void Response::handleDirectory()
 {
-    std::cout << "++++++++++++ handleDirectory ++++++++++++" << std::endl;
+    // -- std::cout << "++++++++++++ handleDirectory ++++++++++++" << std::endl;
     for (size_t i = 0; i < config->index().size(); i++)
     {
         std::string path = joinPath(locationPath, config->index()[i]);
-        std::cout << "handleDirectory path: " << path << std::endl;
+        // -- std::cout << "handleDirectory path: " << path << std::endl;
         if (stat(path.c_str(), &buff) == 0 && S_ISREG(buff.st_mode))
         {
             sendFile(path);
@@ -265,10 +265,10 @@ void Response::handleFile()
 void Response::sendFile(const std::string &path)
 {
     int size = 0;
-    std::cout << "++++++++++++++++++++++ in sendFile ++++++++++++++++++++++++++++" << std::endl;
+    // -- std::cout << "++++++++++++++++++++++ in sendFile ++++++++++++++++++++++++++++" << std::endl;
     if (!started)
     {
-        cout << "++++++++++++++++++++++ in sendFile start ++++++++++++++++++++++++++++" << endl;
+       // -- cout << "++++++++++++++++++++++ in sendFile start ++++++++++++++++++++++++++++" << endl;
         header.setStatusCode(200);
         header.setConnection("close");
         header.setContentType(path);
@@ -308,7 +308,7 @@ void Response::sendNextChunk()
     sendedSize = send(fd, bufferToSend.c_str(), bufferToSend.size(), 0);
     if (sendedSize == -1)
     {
-        perror("send");
+        //perror("send");
         ended = true;
     }
     bufferToSend.erase(0, sendedSize);
@@ -355,8 +355,8 @@ bool Response::isStarted()
 }
 void Response::sendDirectory(const std::string &path)
 {
-    std::cout << "++++++++++++ sendDirectory ++++++++++++" << std::endl;
-    std::cout << "Directory path: " << path << std::endl;
+    // -- std::cout << "++++++++++++ sendDirectory ++++++++++++" << std::endl;
+    // -- std::cout << "Directory path: " << path << std::endl;
     DIR *dir = NULL;
 
     std::string listingPageHTML;
@@ -401,7 +401,7 @@ bool Response::checkForValidMethod()
 
 bool Response::handleRedirection()
 {
-    std::cout << "++++++++++++ handleRedirection ++++++++++++" << std::endl;
+    // -- std::cout << "++++++++++++ handleRedirection ++++++++++++" << std::endl;
     if (config->returnCode() == 301 || config->returnCode() == 302 || config->returnCode() == 303 || config->returnCode() == 307 || config->returnCode() == 308)
     {
         header.setStatusCode(config->returnCode());

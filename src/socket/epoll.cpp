@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   epoll.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/17 18:44:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:14:48 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,11 +40,11 @@ void Epoll::init(Config& config) {
                 it->second->addServer(servers[i]);
                 delete tmp;
                 tmp = NULL;
-                cout << "duplicate server found" << endl;
-                cout << "server " << servers[i].getInfo(S_HOST) << ":"
-                    << servers[i].getInfo(S_PORT) << " added to server "
-                    << it->second->getServers()[0]->getInfo(S_HOST) << ":"
-                    << it->second->getServers()[0]->getInfo(S_PORT) << endl;
+               // -- cout << "duplicate server found" << endl;
+               // -- cout << "server " << servers[i].getInfo(S_HOST) << ":"
+                    // << servers[i].getInfo(S_PORT) << " added to server "
+                    // << it->second->getServers()[0]->getInfo(S_HOST) << ":"
+                    // << it->second->getServers()[0]->getInfo(S_PORT) << endl;
                 break;
             }
         }
@@ -62,11 +62,11 @@ void Epoll::init(Config& config) {
         servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
         addEvent(tmp->getSockid(), EPOLLIN); // TODO no need to add EPOLLOUT right?
     }
-    cout << "number of servers listening: " << servSockets.size() << endl;
-    for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
-        cout << "server " << it->second->getServers()[0]->getInfo(S_HOST) << ":"
-            << it->second->getServers()[0]->getInfo(S_PORT) << endl;
-    }
+   // -- cout << "number of servers listening: " << servSockets.size() << endl;
+    // for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
+    //    // -- cout << "server " << it->second->getServers()[0]->getInfo(S_HOST) << ":"
+    //         // << it->second->getServers()[0]->getInfo(S_PORT) << endl;
+    // }
     loop();
 }
 
@@ -87,22 +87,22 @@ void Epoll::delEvent(sock_fd fd) {
 }
 
 void Epoll::addClient(sock_fd fd, uint32_t events) {
-    cout    << "new client added on server " 
-            << servSock->getServers()[0]->getInfo(S_HOST) << ":"
-            << servSock->getServers()[0]->getInfo(S_PORT) << endl;
+   // -- cout    << "new client added on server " 
+            // << servSock->getServers()[0]->getInfo(S_HOST) << ":"
+            // << servSock->getServers()[0]->getInfo(S_PORT) << endl;
     IClientResourceManagerFactory* clientRMFactory = new ClientResourceManagerFactory();
     IClientResourceManagerFacade* clientRMF = clientRMFactory->createFacade(fd, *servSock);
     Client* client = new Client(clientRMF);
     clients.insert(std::make_pair(fd, client));
-    cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
+   // -- cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
     addEvent(fd, events);
 }
 
 void Epoll::delClient(sock_fd fd) {
-    cout    << "deleting client on server "
-            << client->getServer().getInfo(S_HOST) << ":"
-            << client->getServer().getInfo(S_PORT) << endl;
-    cout    << "client UUID : " << client->getUUID().getStr() << endl;
+   // -- cout    << "deleting client on server "
+            // << client->getServer().getInfo(S_HOST) << ":"
+            // << client->getServer().getInfo(S_PORT) << endl;
+   // -- cout    << "client UUID : " << client->getUUID().getStr() << endl;
     itrClient it = clients.find(fd);
     if (it == clients.end())
         return ;
@@ -134,7 +134,7 @@ void Epoll::handleClient(int i) {
     //     client->setState(WRITE);
     // events[i].events & EPOLLIN;
     if (client->handleState() == CLOSE) {
-        cout << "++++++++++++ closing ++++++++++++" << endl;
+       // -- cout << "++++++++++++ closing ++++++++++++" << endl;
         delClient(events[i].data.fd);
     }
 }
@@ -145,12 +145,12 @@ void Epoll::checkEvents(int n) {
             // if (events[i].events & EPOLLIN == false)
             //     continue ;// TODO serverr asdded as EPOLLIN only now
             if (clients.size() >= MAX_EVENTS) {
-                std::cout << "Max number of clients reached" << std::endl;
+                // -- std::cout << "Max number of clients reached" << std::endl;
                 continue ;
             }
             sock_fd client_fd = servSock->sockAccept();
             addClient(client_fd, EPOLLIN | EPOLLOUT);
-            std::cout << "New client connected" << std::endl;
+            // -- std::cout << "New client connected" << std::endl;
         } else
             handleClient(i);
     }

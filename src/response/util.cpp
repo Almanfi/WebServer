@@ -177,7 +177,7 @@ std::string generateListHTML(struct dirent *entry, std::string uri, std::string 
         std::string ext = toLower(getExtension(entry->d_name));
         if (isImage(ext))
         {
-            std::cout << "isImage" << std::endl;
+            // -- std::cout << "isImage" << std::endl;
             icone = "&#128247;";
         }
         else if (isVideo(ext))

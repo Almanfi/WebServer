@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 04:40:56 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -285,7 +285,7 @@ string Location::getInfo(const string& key) {
 void Location::print(int space) {
     printThis(space);
     for (map<string, Location>::iterator it = innerLocations.begin(); it != innerLocations.end(); it++) {
-        cout << "____________________ prionting innerLocations " << it->first << " ____________________" << endl;
+       // -- cout << "____________________ prionting innerLocations " << it->first << " ____________________" << endl;
         it->second.print(space + 1);
     }
 }
@@ -338,17 +338,17 @@ void Location::printThis(int space) {
         string sp = "";
     for (int i = 0; i < space; i++)
         sp += "\t";
-    cout << sp << "URI is " << uri << endl;
-    cout << sp << "   *root\t\t\tis " << getInfo("root") << endl;
-    cout << sp << "   *index\t\t\tis " << getInfo("index") << endl;
-    cout << sp << "   *autoindex\t\t\tis " << getInfo("autoindex") << endl;
-    cout << sp << "   *client_max_body_size\tis " << getInfo("client_max_body_size") << endl;
-    cout << sp << "   *cgi\t\t\t\tis " << getInfo("cgi") << endl;
-    cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
-    cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
-    cout << sp << "   *error page\t\t\tis " << getInfo("error_page") << endl;
-    cout << sp << "   *upload\t\t\tis " << getInfo("upload") << endl;
-    cout << sp << "   *upload_path\t\t\tis " << getInfo("upload_path") << endl;
+   // -- cout << sp << "URI is " << uri << endl;
+   // -- cout << sp << "   *root\t\t\tis " << getInfo("root") << endl;
+   // -- cout << sp << "   *index\t\t\tis " << getInfo("index") << endl;
+   // -- cout << sp << "   *autoindex\t\t\tis " << getInfo("autoindex") << endl;
+   // -- cout << sp << "   *client_max_body_size\tis " << getInfo("client_max_body_size") << endl;
+   // -- cout << sp << "   *cgi\t\t\t\tis " << getInfo("cgi") << endl;
+   // -- cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
+   // -- cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
+   // -- cout << sp << "   *error page\t\t\tis " << getInfo("error_page") << endl;
+   // -- cout << sp << "   *upload\t\t\tis " << getInfo("upload") << endl;
+   // -- cout << sp << "   *upload_path\t\t\tis " << getInfo("upload_path") << endl;
 }
 
 string Location::getErrorPage(const string& code) {

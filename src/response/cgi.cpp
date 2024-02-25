@@ -12,22 +12,22 @@ void Response::fillEnv()
 
 char **Response::getEnvironmentVariables()
 {
-    // std::cout << "inside env Location Path: " << this->locationPath << std::endl;
+    // // -- std::cout << "inside env Location Path: " << this->locationPath << std::endl;
     // print query
-    // std::cout << "inside env Query: " << this->query << std::endl;
+    // // -- std::cout << "inside env Query: " << this->query << std::endl;
     // env["REMOTE_ADDR"] = "";  // need to be change later
     // env["REMOTE_HOST"] = "";  // need to be change later
     // env["REMOTE_IDENT"] = ""; // need to be change later
     // env["REMOTE_USER"] = "";  // need to be change later
     struct stat bodyStat;
-    std::cout << " +++++++++++++++ >>>>>>> Body Path: " << this->bodyPath << std::endl;
+    // -- std::cout << " +++++++++++++++ >>>>>>> Body Path: " << this->bodyPath << std::endl;
     if (stat((this->bodyPath).c_str(), &bodyStat) == -1)
     {
-        std::cerr << "Error getting file stats: " << strerror(errno) << std::endl;
+        std::cerr << "Error getting file stats -->: " << strerror(errno) << std::endl;
 
         return NULL;
     }
-    std::cout << " +++++++++++++++ >>>>>>> Body Stat: " << bodyStat.st_size << std::endl;
+    // -- std::cout << " +++++++++++++++ >>>>>>> Body Stat: " << bodyStat.st_size << std::endl;
     fillEnv();
     env["AUTH_TYPE"] = "";
     env["CONTENT_LENGTH"] = ToString(bodyStat.st_size);
@@ -64,9 +64,13 @@ char **Response::getEnvironmentVariables()
 
 void Response::initCGI()
 {
-    cgiOutPutFile = "./tmp/" + generateRandomFileName("cgi", ".cgi");
-    // std::cout << "CGI Output File: " << cgiOutPutFile << std::endl;
-    cgiFd[1] = open(cgiOutPutFile.c_str(), O_CREAT | O_RDWR, 0666);
+    // cgiOutPutFile = "./tmp/" + generateRandomFileName("cgi", ".cgi");
+    char tmp_file_name[] = "./tmp/cgi_XXXXXX";
+    int fd = mkstemp(tmp_file_name);
+    cgiOutPutFile = tmp_file_name;
+
+    // // -- std::cout << "CGI Output File: " << cgiOutPutFile << std::endl;
+    cgiFd[1] = fd;
     if (cgiFd[1] == -1)
     {
         std::cerr << "Error Opening file Output: " << strerror(errno) << std::endl;
@@ -157,10 +161,10 @@ bool Response::checkGGIProcess()
         {
             if (WIFEXITED(processStatus))
             {
-                std::cout << "CGI exited normally" << std::endl;
+                // -- std::cout << "CGI exited normally" << std::endl;
                 // if (WEXITSTATUS(processStatus) == 0)
                 // {
-                //     std::cout << "CGI exited with status 0" << std::endl;
+                //     // -- std::cout << "CGI exited with status 0" << std::endl;
                 //     cgiStatus = 200;
                 // }
                 // else
@@ -221,7 +225,7 @@ std::string Response::extractCGIHeaders()
             headerKey = line.substr(0, pos);
             headerValue = line.substr(pos + 1);
             cgiHeaderSize += line.size();
-            // std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
+            // // -- std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
             this->header.setCGIHeader(headerKey, headerValue);
             headerValue.clear();
             headerKey.clear();
@@ -235,20 +239,21 @@ void Response::handleCGIResponse()
     if (!isHeaderSent)
     {
         std::string headers = extractCGIHeaders();
-        std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
-        // std::cout << "Headers: " << headers << std::endl;
+        // -- std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
+        // // -- std::cout << "Headers: " << headers << std::endl;
         int contentLength = 0;
         struct stat statbuf;
+
         if (stat(cgiOutPutFile.c_str(), &statbuf) == -1)
         {
-            std::cerr << "Error getting file stats: " << strerror(errno) << std::endl;
+            std::cerr << "Error getting file stats: " << strerror(errno)  << "file:" << cgiOutPutFile << std::endl;
             handleError(500);
             return;
         }
         contentLength = statbuf.st_size - cgiHeaderSize;
-        std::cout << "Header size: " << cgiHeaderSize << std::endl;
-        std::cout << "File size: " << statbuf.st_size << std::endl;
-        std::cout << "Content Length: " << contentLength << std::endl;
+        // -- std::cout << "Header size: " << cgiHeaderSize << std::endl;
+        // -- std::cout << "File size: " << statbuf.st_size << std::endl;
+        // -- std::cout << "Content Length: " << contentLength << std::endl;
 
         bufferToSend = headers;
         header.setContentLength(contentLength);

@@ -6,7 +6,7 @@
 /*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/24 21:04:57 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -286,7 +286,7 @@ Location& Config::getLocation(const string& uri) {
     if (!serv && !servers.empty()) {
         serv = &servers[0];
     } else if (!serv) {
-        cout << "server not found" << endl;
+       // -- cout << "server not found" << endl;
         throw std::runtime_error("Error: server not found");
     }
     return (serv->getRootLocation().getLocation(location));
@@ -307,19 +307,19 @@ const string Config::getDefault(const string& key) {
 }
 
 void Config::print () {
-    cout << "*************printing**************" << endl;
-    cout << "server size is " << servers.size() << endl;
+   // -- cout << "*************printing**************" << endl;
+   // -- cout << "server size is " << servers.size() << endl;
     for (size_t i = 0; i < servers.size(); i++) {
-        cout << "server " << i << " server_name is ";
+       // -- cout << "server " << i << " server_name is ";
         for (size_t j = 0; j < servers[i].server_name.size(); j++) {
-            cout << servers[i].server_name[j] << " ";
+           // -- cout << servers[i].server_name[j] << " ";
         }
-        cout << endl;
-        cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
-        cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
-        cout << "server " << i << " error_page is " << servers[i].error_page << endl;
-        // cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
+       // -- cout << endl;
+       // -- cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
+       // -- cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
+       // -- cout << "server " << i << " error_page is " << servers[i].error_page << endl;
+        //// -- cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
         servers[i].getRootLocation().print(0);
-    cout << "*************printing done**************" << endl;
+   // -- cout << "*************printing done**************" << endl;
     }
 }
