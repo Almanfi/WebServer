@@ -47,6 +47,7 @@ class Response
         t_method method;
 
         int status_code;
+        int repeatedInit;
         //----------------------CGI----------------------//
         std::string cgiOutPutFile;
         std::map<std::string, std::string> env;

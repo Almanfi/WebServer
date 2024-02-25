@@ -74,27 +74,28 @@ void Response::initCGI()
     if (cgiFd[1] == -1)
     {
         std::cerr << "Error Opening file Output: " << strerror(errno) << std::endl;
-        return;
+        handleError(500);
     }
     cgiFd[0] = open((bodyPath).c_str(), O_RDONLY);
     if (cgiFd[0] == -1)
     {
         std::cerr << "Error Opening file Input: " << strerror(errno) << std::endl;
-        return;
+        handleError(500);
     }
     cgiStartTimer = std::clock();
     cgiPid = fork();
     if (cgiPid == -1)
     {
         std::cerr << "Error forking: " << strerror(errno) << std::endl;
-        return;
+        handleError(500);
+
     }
     if (cgiPid == 0)
     {
         if (dup2(cgiFd[0], STDIN_FILENO) == -1 || dup2(cgiFd[1], STDOUT_FILENO) == -1)
         {
             std::cerr << "Error duplicating file descriptors: " << strerror(errno) << std::endl;
-            exit(1);
+            exit(42);
         }
         char *args[3] = {strdup(config->CGIPath().c_str()), strdup(locationPath.c_str()), NULL};
         char **env = getEnvironmentVariables();
@@ -102,7 +103,7 @@ void Response::initCGI()
         if (ret == -1)
         {
             std::cerr << "Error executing CGI: " << strerror(errno) << std::endl;
-            exit(1);
+            exit(42);
         }
     }
     else
@@ -172,14 +173,28 @@ bool Response::checkGGIProcess()
                 //     std::cerr << "CGI exited with status " << WEXITSTATUS(processStatus) << std::endl;
                 //     cgiStatus = 500;
                 // }
-                cgiStatus = WEXITSTATUS(processStatus);
-                isCGIEnded = true;
-                return false;
+                // cgiStatus = WEXITSTATUS(processStatus);
+                // isCGIEnded = true;
+                // return false;
+                if(WEXITSTATUS(processStatus)== 42)
+                {
+                    std::cerr << "CGI exited abnormally" << std::endl;
+                    cgiStatus = 502;
+                    handleError(502);
+                    isCGIEnded = true;
+                    return false;
+                }
+                else
+                {
+                    cgiStatus = 200;
+                    isCGIEnded = true;
+                    return false;
+                }
             }
             else
             {
                 std::cerr << "CGI exited abnormally" << std::endl;
-                cgiStatus = 500;
+                cgiStatus = 502;
                 isCGIEnded = true;
                 return false;
             }
