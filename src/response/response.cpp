@@ -2,8 +2,9 @@
 
 Response::Response(IHeader &requestHeaders, IUniqFile &file, IClientConf *config, int fd) : started(false), ended(false), reachedEOF(false), isCGIStarted(false), isCGIEnded(false),
                                                                                             requestHeaders(requestHeaders), body(file),
-                                                                                            config(config), fd(fd), servSock(NULL),repeatedInit(10)
+                                                                                            config(config), fd(fd), servSock(NULL)
 {
+    repeatedInit = 10;
 }
 
 Response::~Response()
@@ -28,7 +29,6 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
     // this->fd = 0;  // TODO fd
    // -- cout << "++++++++++++ initResponse ++++++++++++" << endl;
     config = conf;
-    cout << "config: " << config << endl;
     servSock = servSocket;
     // finding config ---------------------------------------
     // string host = requestHeaders.getHeader("host");
@@ -46,6 +46,8 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
     // -- std::cout << "----------- root: " << config->root() << std::endl;
     // -- std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
+    if (this->repeatedInit == 10)
+        this->original_uri = this->uri;
     this->repeatedInit--;
     if (this->repeatedInit == 0)
     {

@@ -37,6 +37,7 @@ class Response
         bool ended;
         bool reachedEOF;
         bool isCGI;
+        int repeatedInit;
 
         struct stat buff;
 
@@ -47,7 +48,6 @@ class Response
         t_method method;
 
         int status_code;
-        int repeatedInit;
         //----------------------CGI----------------------//
         std::string cgiOutPutFile;
         std::map<std::string, std::string> env;
@@ -72,6 +72,7 @@ class Response
         IClientConf* config;
         sock_fd fd;
         IServerSocket* servSock;
+        std::string original_uri;
 
 
     public:

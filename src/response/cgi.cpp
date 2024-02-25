@@ -34,18 +34,18 @@ char **Response::getEnvironmentVariables()
     env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
     env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
     env["REQUEST_METHOD"] = convertT_method(method);
-    env["REQUEST_URI"] = this->uri;
+    env["REQUEST_URI"] = this->original_uri;
     env["SCRIPT_FILENAME"] = this->locationPath;
     env["REDIRECT_STATUS"] = "200";
     env["GATEWAY_INTERFACE"] = "CGI/1.1";
     env["PATH_INFO"] = this->uri;
-    env["PATH_TRANSLATED"] = this->uri;
+    env["PATH_TRANSLATED"] = this->original_uri;
     env["QUERY_STRING"] = this->query;
     env["SCRIPT_NAME"] = "";
-    env["SERVER_NAME"] = "Webserv";
-    env["SERVER_PORT"] = "9992";
+    env["SERVER_NAME"] = requestHeaders.getHeader("Host");
+    env["SERVER_PORT"] = "9999";
     env["SERVER_PROTOCOL"] = "HTTP/1.1";
-    env["REQUEST_METHOD"] = convertT_method(method);
+    env["REQUEST_SCHEME"] = "http";
     char **env = new char *[this->env.size() + 1];
     int i = 0;
     for (std::map<std::string, std::string>::iterator it = this->env.begin(); it != this->env.end(); it++)
@@ -254,8 +254,9 @@ void Response::handleCGIResponse()
     if (!isHeaderSent)
     {
         std::string headers = extractCGIHeaders();
-        // -- std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
-        // // -- std::cout << "Headers: " << headers << std::endl;
+
+        // std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
+        // std::cout << "Headers: " << headers << std::endl;
         int contentLength = 0;
         struct stat statbuf;
 
@@ -279,15 +280,18 @@ void Response::handleCGIResponse()
             handleError(500);
             return;
         }
+        // cout << "CGI Header size "<< cgiHeaderSize <<'/' << statbuf.st_size << endl;
         fileToSend.seekg(cgiHeaderSize);
         isHeaderSent = true;
     }
-    if (!reachedEOF)
+    if (!reachedEOF && bufferToSend.size() < 1024)
     {
+        // cout << "Sending next chunk" << endl;
         int size = bufferToSend.size();
         char tmpBuffer[1024];
         fileToSend.read(tmpBuffer, 1024 - size);
         size_t readSize = fileToSend.gcount();
+        // cout << "Read size: " << readSize << endl;
         bufferToSend.append(tmpBuffer, readSize);
         if (fileToSend.eof())
         {
@@ -299,6 +303,6 @@ void Response::handleCGIResponse()
     if (bufferToSend.size() == 0 && reachedEOF)
     {
         ended = true;
-        remove(cgiOutPutFile.c_str());
+        // remove(cgiOutPutFile.c_str());
     }
 }
