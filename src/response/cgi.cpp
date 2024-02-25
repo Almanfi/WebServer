@@ -303,6 +303,6 @@ void Response::handleCGIResponse()
     if (bufferToSend.size() == 0 && reachedEOF)
     {
         ended = true;
-        // remove(cgiOutPutFile.c_str());
+        remove(cgiOutPutFile.c_str());
     }
 }
