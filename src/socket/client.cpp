@@ -106,6 +106,8 @@ ssize_t Client::recieve() {
         statusCode = 500;
     }
     file.close();
+    if (statusCode != 200 && RMF->configRef() == NULL)
+        RMF->setDefaultConfig();
    // -- cout << "++++++++++++ recieve end ++++++++++++" << endl;
     return (bytes_received);
 }
@@ -366,6 +368,10 @@ IServerSocket& ClientResourceManagerFacade::servSock() {
 
 IClientConf* ClientResourceManagerFacade::configRef() {
     return _config;
+}
+
+void ClientResourceManagerFacade::setDefaultConfig() {
+    _config = &(_servSock->getLocation("/"));
 }
 
 IClientConf& ClientResourceManagerFacade::config() {
