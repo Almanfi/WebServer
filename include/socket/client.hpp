@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 21:18:11 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 20:48:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,7 +147,8 @@ class Client {
 	Client(IClientResourceManagerFacade* RMF);
 	~Client();
 	
-	const cnx_state&    handleState();
+	const cnx_state&    handleState(bool isEpollIn);
+	bool		checkTimeout();
 	ssize_t     send();
 	ssize_t     recieve();
 	Server&     getServer();
@@ -163,6 +164,7 @@ private:
 	Response&	response;
 	cnx_state   state;
 	int			statusCode;
+	time_t		lastActivity;
 };
 
 #endif // CLIENT_HPP

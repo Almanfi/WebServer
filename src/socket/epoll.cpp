@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/26 16:06:36 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 21:14:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,11 +69,11 @@ void Epoll::init(Config& config) {
         servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
         addEvent(tmp->getSockid(), EPOLLIN); // TODO no need to add EPOLLOUT right?
     }
-   // -- cout << "number of servers listening: " << servSockets.size() << endl;
-    // for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
-    //    // -- cout << "server " << it->second->getServers()[0]->getInfo(S_HOST) << ":"
-    //         // << it->second->getServers()[0]->getInfo(S_PORT) << endl;
-    // }
+   cout << "number of servers listening: " << servSockets.size() << endl;
+    for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
+       cout << "server " << it->second->getServers()[0]->getInfo(S_HOST) << ":"
+            << it->second->getServers()[0]->getInfo(S_PORT) << endl;
+    }
     loop();
 }
 
@@ -94,22 +94,22 @@ void Epoll::delEvent(sock_fd fd) {
 }
 
 void Epoll::addClient(sock_fd fd, uint32_t events) {
-   // -- cout    << "new client added on server " 
-            // << servSock->getServers()[0]->getInfo(S_HOST) << ":"
-            // << servSock->getServers()[0]->getInfo(S_PORT) << endl;
+   cout    << "new client added on server " 
+            << servSock->getServers()[0]->getInfo(S_HOST) << ":"
+            << servSock->getServers()[0]->getInfo(S_PORT) << endl;
     IClientResourceManagerFactory* clientRMFactory = new ClientResourceManagerFactory();
     IClientResourceManagerFacade* clientRMF = clientRMFactory->createFacade(fd, *servSock);
     Client* client = new Client(clientRMF);
     clients.insert(std::make_pair(fd, client));
-   // -- cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
+   cout << "client UUID : " << clients[fd]->getUUID().getStr() << endl;
     addEvent(fd, events);
 }
 
 void Epoll::delClient(sock_fd fd) {
-   // -- cout    << "deleting client on server "
-            // << client->getServer().getInfo(S_HOST) << ":"
-            // << client->getServer().getInfo(S_PORT) << endl;
-   // -- cout    << "client UUID : " << client->getUUID().getStr() << endl;
+   cout    << "deleting client on server "
+            << client->getServer().getInfo(S_HOST) << ":"
+            << client->getServer().getInfo(S_PORT) << endl;
+   cout    << "client UUID : " << client->getUUID().getStr() << endl;
     itrClient it = clients.find(fd);
     if (it == clients.end())
         return ;
@@ -135,13 +135,8 @@ bool Epoll::eventOnServer(sock_fd fd) {
 }
 
 void Epoll::handleClient(int i) {
-    // if (events[i].events & EPOLLIN)
-    //     client->setState(READ);
-    // else
-    //     client->setState(WRITE);
-    // events[i].events & EPOLLIN;
-    if (client->handleState() == CLOSE) {
-       // -- cout << "++++++++++++ closing ++++++++++++" << endl;
+    bool isEpollIn = events[i].events & EPOLLIN;
+    if (client->handleState(isEpollIn) == CLOSE) {
         delClient(events[i].data.fd);
     }
 }
@@ -163,13 +158,26 @@ void Epoll::checkEvents(int n) {
     }
 }
 
-void Epoll::loop() {
-    while (true) {
-        int n = epoll_wait(epollfd, events, MAX_EVENTS, -1);// TODO change timeout
-        if (n == -1) {
-            perror("epoll_wait");
-            throw std::exception();
+void Epoll::handleTimeOut() {
+    vector<sock_fd> client_with_timeout;
+    for (map<sock_fd, Client*>::iterator it = clients.begin();
+                                    it != clients.end(); it++) {
+        if (it->second->checkTimeout()) {
+            client_with_timeout.push_back(it->first);
         }
+    }
+    for (size_t i = 0; i < client_with_timeout.size(); i++) {
+        delClient(client_with_timeout[i]);
+    }
+}
+
+void Epoll::loop() {
+    int timeout = 3000;
+    while (true) {
+        int n = epoll_wait(epollfd, events, MAX_EVENTS, timeout);// TODO change timeout
+        if (n == -1)
+            throw std::runtime_error("epoll_wait failed");
         checkEvents(n);
+        handleTimeOut();
     }
 }

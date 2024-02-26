@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/26 21:15:00 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,8 @@ Client::Client(IClientResourceManagerFacade* RMF) :
                 file(RMF->file()),
                 request(RMF->request()),
                 response(RMF->response()),
-                state(NONE), statusCode(200) {
+                state(NONE), statusCode(200),
+                lastActivity(time(NULL)) {
 }
 
 Client::Client(const Client& other) : RMF(other.RMF) ,
@@ -57,6 +58,8 @@ Client::~Client() {
 // }
 
 ssize_t Client::send() {
+    if (RMF->configRef() == NULL)
+        RMF->setDefaultConfig();
     ssize_t bytes_sent = 0;
     if(!response.isStarted())
         response.initResponse(RMF->configRef(), statusCode, &(RMF->servSock()));
@@ -109,18 +112,22 @@ ssize_t Client::recieve() {
     if (statusCode != 200 && RMF->configRef() == NULL)
         RMF->setDefaultConfig();
    // -- cout << "++++++++++++ recieve end ++++++++++++" << endl;
+   if (bytes_received > 0)
+        lastActivity = time(NULL);
     return (bytes_received);
 }
 
-const cnx_state& Client::handleState() {
+const cnx_state& Client::handleState(bool isEpollIn) {
     if (state == NONE)
         state = READ;
     switch (state) {
         case READ:
-            recieve();
+            if (isEpollIn)
+                recieve();
             break ;
         case WRITE:
-            send();
+            if (!isEpollIn)
+                send();
             break ;
         case CLOSE:
             break ;
@@ -130,6 +137,21 @@ const cnx_state& Client::handleState() {
             break;
     }
     return (state);
+}
+
+bool Client::checkTimeout() {
+    int timeout_s  = 12;
+    time_t now = time(NULL);
+    if (now - lastActivity < timeout_s) {
+        return false;
+    }
+    if (state == READ) {
+        lastActivity = now;
+        statusCode = 408;
+        state = WRITE;
+        return false;
+    }
+    return true;
 }
 
 Server& Client::getServer() {

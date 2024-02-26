@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:43:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 17:20:58 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 20:41:20 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ public:
     void loop();
     void checkEvents(int n);
 private:
+    void handleTimeOut();
     void addClient(sock_fd fd, uint32_t events);
     void delClient(sock_fd fd);
     void addEvent(sock_fd fd, uint32_t events);
