@@ -43,7 +43,7 @@ char **Response::getEnvironmentVariables()
     env["QUERY_STRING"] = this->query;
     env["SCRIPT_NAME"] = "";
     env["SERVER_NAME"] = requestHeaders.getHeader("Host");
-    env["SERVER_PORT"] = "9999";
+    env["SERVER_PORT"] = ToString(config->getPort());
     env["SERVER_PROTOCOL"] = "HTTP/1.1";
     env["REQUEST_SCHEME"] = "http";
     char **env = new char *[this->env.size() + 1];

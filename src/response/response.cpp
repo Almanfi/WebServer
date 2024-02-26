@@ -24,10 +24,10 @@ void Response::uriParser()
         this->query = "";
 }
 
-void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* servSocket)
+void Response::initResponse(IClientConf *conf, int status_code, IServerSocket *servSocket)
 {
     // this->fd = 0;  // TODO fd
-   // -- cout << "++++++++++++ initResponse ++++++++++++" << endl;
+    // -- cout << "++++++++++++ initResponse ++++++++++++" << endl;
     config = conf;
     servSock = servSocket;
     // finding config ---------------------------------------
@@ -42,7 +42,7 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
     // -- std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     this->locationPath = joinPath(config->root(), uri);
-    // -- std::cout << "----------- uri: " << uri << std::endl;   
+    // -- std::cout << "----------- uri: " << uri << std::endl;
     // -- std::cout << "----------- root: " << config->root() << std::endl;
     // -- std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
@@ -57,55 +57,53 @@ void Response::initResponse(IClientConf *conf,int status_code, IServerSocket* se
 }
 void Response::getNewLocation()
 {
-   struct stat buff;
-   if(stat(locationPath.c_str(), &buff) != 0)
-   {
-       if(errno == ENOENT)
-           handleError(404);
-       else if(errno == EACCES)
-           handleError(403);
-       else
-           handleError(500);
-   }
-    if(S_ISDIR(buff.st_mode))
+    struct stat buff;
+    if (stat(locationPath.c_str(), &buff) != 0)
     {
-         if(locationPath[locationPath.size() - 1] != '/')
-         {
-              header.setStatusCode(301);
-              header.setHeader("Connection", "close");
-              header.setHeader("Location", uri + "/");
-              bufferToSend = header.getHeader();
-              sendNextChunk();
-              if(bufferToSend.size() == 0)
+        cout << "Get stat errno: " << errno << endl;
+        if (errno == ENOENT)
+            handleError(404);
+        else if (errno == EACCES)
+            handleError(403);
+        else
+            handleError(500);
+    }
+    if (S_ISDIR(buff.st_mode))
+    {
+        if (locationPath[locationPath.size() - 1] != '/')
+        {
+            header.setStatusCode(301);
+            header.setHeader("Connection", "close");
+            header.setHeader("Location", uri + "/");
+            bufferToSend = header.getHeader();
+            sendNextChunk();
+            if (bufferToSend.size() == 0)
                 ended = true;
-              return;
-         
+            return;
         }
-        for(size_t i = 0; i < config->index().size(); i++)
+        for (size_t i = 0; i < config->index().size(); i++)
         {
             std::string path = joinPath(locationPath, config->index()[i]);
-            //std::cout << "path: " << path << std::endl;
-            if(stat(path.c_str(), &buff) == 0)
+            // std::cout << "path: " << path << std::endl;
+            if (stat(path.c_str(), &buff) == 0)
             {
                 this->uri = joinPath(uri, config->index()[i]);
                 this->requestHeaders.setUri(uri);
                 //// -- cout << "inside new location ++++++++++++ uri: " << uri << "++++++++++++" << endl;
-                IClientConf& newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
+                IClientConf &newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
                 initResponse(&newConf, status_code, servSock);
                 break;
             }
         }
     }
-
-
 }
 
 void Response::sendResponse()
 {
 
     // if (!started)
-       // -- cout << "++++++++++++ sendResponse ++++++++++++" << endl;
-    if(this->status_code != 200)
+    // -- cout << "++++++++++++ sendResponse ++++++++++++" << endl;
+    if (this->status_code != 200)
         handleError(this->status_code);
     else if (!checkForValidMethod())
         handleError(405);
@@ -113,11 +111,12 @@ void Response::sendResponse()
         handleRedirection();
     else
     {
-        getNewLocation();
-        if(this->repeatedInit == 0)
+        if(this->method == GET)
+            getNewLocation();
+        if (this->repeatedInit == 0)
             return;
-       // -- cout << "################ uri: " << uri << "################" << endl;
-       // -- cout << "################ locationPath: " << locationPath << "################" << endl;
+        // -- cout << "################ uri: " << uri << "################" << endl;
+        // -- cout << "################ locationPath: " << locationPath << "################" << endl;
         if (isForCGI())
             handleCGI();
         else if (method == GET)
@@ -132,7 +131,7 @@ void Response::sendResponse()
 bool Response::isForCGI()
 {
     struct stat buff;
-   if(!config->allowCGI())
+    if (!config->allowCGI())
         return false;
     if (stat(locationPath.c_str(), &buff) != 0)
     {
@@ -143,14 +142,14 @@ bool Response::isForCGI()
         else
             handleError(500);
     }
-    if(S_ISDIR(buff.st_mode))
+    if (S_ISDIR(buff.st_mode))
         return false;
     return true;
 }
 
 void Response::handleGet()
 {
-   // -- cout << "++++++++++++ handleGet ++++++++++++" << endl;
+    // -- cout << "++++++++++++ handleGet ++++++++++++" << endl;
     // -- std::cout << "locationPath: " << locationPath << std::endl;
     if (stat((locationPath).c_str(), &buff) != 0)
     {
@@ -181,7 +180,7 @@ void Response::handleGet()
     }
     else if (S_ISREG(buff.st_mode))
     {
-       // -- cout << "S_ISRGE" << endl;
+        // -- cout << "S_ISRGE" << endl;
         handleFile();
     }
     else
@@ -196,6 +195,10 @@ void Response::handlePost()
     std::string oldPath = body.getPath();
     if (config->allowUpload())
     {
+        if(stat(newPath.c_str(), &buff) == 0)
+            return handleError(403);
+        if(S_ISDIR(buff.st_mode))
+            return handleError(403);
         if (rename(oldPath.c_str(), newPath.c_str()) != 0)
         {
             if (errno == ENOENT)
@@ -280,7 +283,7 @@ void Response::sendFile(const std::string &path)
     // -- std::cout << "++++++++++++++++++++++ in sendFile ++++++++++++++++++++++++++++" << std::endl;
     if (!started)
     {
-       // -- cout << "++++++++++++++++++++++ in sendFile start ++++++++++++++++++++++++++++" << endl;
+        // -- cout << "++++++++++++++++++++++ in sendFile start ++++++++++++++++++++++++++++" << endl;
         header.setStatusCode(200);
         header.setConnection("close");
         header.setContentType(path);
@@ -320,7 +323,7 @@ void Response::sendNextChunk()
     sendedSize = send(fd, bufferToSend.c_str(), bufferToSend.size(), 0);
     if (sendedSize == -1)
     {
-        //perror("send");
+        // perror("send");
         ended = true;
     }
     bufferToSend.erase(0, sendedSize);
