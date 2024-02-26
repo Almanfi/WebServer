@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/26 15:14:18 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 15:31:55 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -285,7 +285,7 @@ string Location::getInfo(const string& key) {
 void Location::print(int space) {
     printThis(space);
     for (map<string, Location>::iterator it = innerLocations.begin(); it != innerLocations.end(); it++) {
-        cout << "____________________ prionting innerLocations " << it->first << " ____________________" << endl;
+       // -- cout << "____________________ prionting innerLocations " << it->first << " ____________________" << endl;
         it->second.print(space + 1);
     }
 }
@@ -313,12 +313,12 @@ Location& Location::getLocation(const string& location) {
         if (it->first[0] != '*')
             continue;
         string extention = it->first.substr(1);
-        size_t pos = location.find(extention);
-        if (pos == std::string::npos)
+        size_t extPos = location.rfind(extention);
+        if (extPos == std::string::npos)
             continue;
-        char c = location[pos + extention.size()]; // TODO check this is enough or should I remove query string
-        if (c == '/' || c == '\0' || c == '?' || c == '#')
-            return (it->second.getLocation(location));
+        char c = location[extPos + extention.size()];
+        if (c == '/' || c == '?' || c == '#' || c == 0)
+            return (it->second);
     }
     while (loc != "") {
         map<string, Location>::iterator it;
@@ -338,15 +338,17 @@ void Location::printThis(int space) {
         string sp = "";
     for (int i = 0; i < space; i++)
         sp += "\t";
-    cout << sp << "URI is " << uri << endl;
-    cout << sp << "   *root\t\t\tis " << getInfo("root") << endl;
-    cout << sp << "   *index\t\t\tis " << getInfo("index") << endl;
-    cout << sp << "   *autoindex\t\t\tis " << getInfo("autoindex") << endl;
-    cout << sp << "   *client_max_body_size\tis " << getInfo("client_max_body_size") << endl;
-    cout << sp << "   *cgi\t\t\t\tis " << getInfo("cgi") << endl;
-    cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
-    cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
-    cout << sp << "   *error page\t\t\tis " << getInfo("error_page") << endl;
+   // -- cout << sp << "URI is " << uri << endl;
+   // -- cout << sp << "   *root\t\t\tis " << getInfo("root") << endl;
+   // -- cout << sp << "   *index\t\t\tis " << getInfo("index") << endl;
+   // -- cout << sp << "   *autoindex\t\t\tis " << getInfo("autoindex") << endl;
+   // -- cout << sp << "   *client_max_body_size\tis " << getInfo("client_max_body_size") << endl;
+   // -- cout << sp << "   *cgi\t\t\t\tis " << getInfo("cgi") << endl;
+   // -- cout << sp << "   *methods\t\t\tis " << getInfo("methods") << endl;
+   // -- cout << sp << "   *return\t\t\tis " << getInfo("return") << endl;
+   // -- cout << sp << "   *error page\t\t\tis " << getInfo("error_page") << endl;
+   // -- cout << sp << "   *upload\t\t\tis " << getInfo("upload") << endl;
+   // -- cout << sp << "   *upload_path\t\t\tis " << getInfo("upload_path") << endl;
 }
 
 string Location::getErrorPage(const string& code) {

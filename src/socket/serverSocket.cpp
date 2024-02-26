@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   serverSocket.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 20:39:27 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/24 21:06:07 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,9 @@ Location& ServerSocket::getLocation(const string& uri) {
             break;
         }
     }
-    if (!serv)
+    if (!serv && !servers.empty()) {
+        serv = servers[0];
+    } else if (!serv)
         throw std::runtime_error("Error: server not found");
     return (serv->getLocation(location));
 }

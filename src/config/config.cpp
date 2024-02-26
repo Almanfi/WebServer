@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 04:02:22 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,8 @@ Config& Config::init(const std::string& filePath) {
     }
     Parser::init(filePath);
     instance.initRules();
+    instance.initMime();
+    instance.initStatusCodes();
     instance.isInitialized = true;
     instance.read();
     return instance;
@@ -37,6 +39,164 @@ void Config::destroy() {
 }
 
 Config::Config() : isInitialized(false) {
+}
+
+const string& Config::getMimeType(const string& ext) {
+    map<string, string>::iterator it = mime_types.find(ext);
+    if (it != mime_types.end())
+        return (it->second);
+    return (mime_types["default"]);
+}
+
+const string& Config::getStatusCode(int code) {
+    map<int, string>::iterator it = status_codes.find(code);
+    if (it != status_codes.end())
+        return (it->second);
+    return (status_codes[500]);
+}
+
+void Config::initMime() {
+    mime_types["html"] = "text/html";
+    mime_types["htm"] = "text/html";
+    mime_types["shtml"] = "text/html";
+    mime_types["css"] = "text/css";
+    mime_types["xml"] = "text/xml";
+    mime_types["rss"] = "text/xml";
+    mime_types["gif"] = "image/gif";
+    mime_types["jpeg"] = "image/jpeg";
+    mime_types["jpg"] = "image/jpeg";
+    mime_types["js"] = "application/x-javascript";
+    mime_types["txt"] = "text/plain";
+    mime_types["htc"] = "text/x-component";
+    mime_types["mml"] = "text/mathml";
+    mime_types["png"] = "image/png";
+    mime_types["ico"] = "image/x-icon";
+    mime_types["jng"] = "image/x-jng";
+    mime_types["bmp"] = "image/bmp";
+    mime_types["svg"] = "image/svg+xml";
+    mime_types["svgz"] = "image/svg+xml";
+    mime_types["tif"] = "image/tiff";
+    mime_types["tiff"] = "image/tiff";
+    mime_types["wbmp"] = "image/vnd.wap.wbmp";
+    mime_types["avif"] = "image/avif";
+    mime_types["jar"] = "application/java-archive";
+    mime_types["war"] = "application/java-archive";
+    mime_types["ear"] = "application/java-archive";
+    mime_types["hqx"] = "application/mac-binhex40";
+    mime_types["pdf"] = "application/pdf";
+    mime_types["cco"] = "application/x-cocoa";
+    mime_types["jardiff"] = "application/x-java-archive-diff";
+    mime_types["jnlp"] = "application/x-java-jnlp-file";
+    mime_types["run"] = "application/x-makeself";
+    mime_types["pl"] = "application/x-perl";
+    mime_types["pm"] = "application/x-perl";
+    mime_types["prc"] = "application/x-pilot";
+    mime_types["pdb"] = "application/x-pilot";
+    mime_types["rar"] = "application/x-rar-compressed";
+    mime_types["rpm"] = "application/x-redhat-package-manager";
+    mime_types["sea"] = "application/x-sea";
+    mime_types["swf"] = "application/x-shockwave-flash";
+    mime_types["sit"] = "application/x-stuffit";
+    mime_types["tcl"] = "application/x-tcl";
+    mime_types["tk"] = "application/x-tcl";
+    mime_types["der"] = "application/x-x509-ca-cert";
+    mime_types["pem"] = "application/x-x509-ca-cert";
+    mime_types["crt"] = "application/x-x509-ca-cert";
+    mime_types["xpi"] = "application/x-xpinstall";
+    mime_types["zip"] = "application/zip";
+    mime_types["deb"] = "application/octet-stream";
+    mime_types["bin"] = "application/octet-stream";
+    mime_types["exe"] = "application/octet-stream";
+    mime_types["dll"] = "application/octet-stream";
+    mime_types["dmg"] = "application/octet-stream";
+    mime_types["eot"] = "application/octet-stream";
+    mime_types["iso"] = "application/octet-stream";
+    mime_types["img"] = "application/octet-stream";
+    mime_types["msi"] = "application/octet-stream";
+    mime_types["msp"] = "application/octet-stream";
+    mime_types["msm"] = "application/octet-stream";
+    mime_types["mp3"] = "audio/mpeg";
+    mime_types["mp4"] = "video/mp4";
+    mime_types["ra"] = "audio/x-realaudio";
+    mime_types["mpeg"] = "video/mpeg";
+    mime_types["mpg"] = "video/mpeg";
+    mime_types["mov"] = "video/quicktime";
+    mime_types["flv"] = "video/x-flv";
+    mime_types["avi"] = "video/x-msvideo";
+    mime_types["wmv"] = "video/x-ms-wmv";
+    mime_types["asx"] = "video/x-ms-asf";
+    mime_types["asf"] = "video/x-ms-asf";
+    mime_types["mng"] = "video/x-mng";
+    mime_types["default"] = "application/octet-stream";
+    ///////////////////////////////////////////
+    
+}
+
+void Config::initStatusCodes() {
+    status_codes[100] = "Continue";
+    status_codes[101] = "Switching Protocols";
+    status_codes[102] = "Processing";
+
+    status_codes[200] = "OK";
+    status_codes[201] = "Created";
+    status_codes[202] = "Accepted";
+    status_codes[203] = "Non-Authoritative Information";
+    status_codes[204] = "No Content";
+    status_codes[205] = "Reset Content";
+    status_codes[206] = "Partial Cmime_typesontent";
+    status_codes[207] = "Multi-Status";
+    status_codes[208] = "Already Reported";
+    status_codes[226] = "IM Used";
+
+    status_codes[300] = "Multiple Choices";
+    status_codes[301] = "Moved Permanently";
+    status_codes[302] = "Found";
+    status_codes[303] = "See Other";
+    status_codes[304] = "Not Modified";
+    status_codes[305] = "Use Proxy";
+    status_codes[307] = "Temporary Redirect";
+    status_codes[308] = "Permanent Redirect";
+
+    status_codes[400] = "Bad Request";
+    status_codes[401] = "Unauthorized";
+    status_codes[402] = "Payment Required";
+    status_codes[403] = "Forbidden";
+    status_codes[404] = "Not Found";
+    status_codes[405] = "Method Not Allowed";
+    status_codes[406] = "Not Acceptable";
+    status_codes[407] = "Proxy Authentication Required";
+    status_codes[408] = "Request Timeout";
+    status_codes[409] = "Conflict";
+    status_codes[410] = "Gone";
+    status_codes[411] = "Length Required";
+    status_codes[412] = "Precondition Failed";
+    status_codes[413] = "Payload Too Large";
+    status_codes[414] = "URI Too Long";
+    status_codes[415] = "Unsupported Media Type";
+    status_codes[416] = "Range Not Satisfiable";
+    status_codes[417] = "Expectation Failed";
+    status_codes[418] = "I'm a teapot";
+    status_codes[421] = "Misdirected Request";
+    status_codes[422] = "Unprocessable Entity";
+    status_codes[423] = "Locked";
+    status_codes[424] = "Failed Dependency";
+    status_codes[426] = "Upgrade Required";
+    status_codes[428] = "Precondition Required";
+    status_codes[429] = "Too Many Requests";
+    status_codes[431] = "Request Header Fields Too Large";
+    status_codes[451] = "Unavailable For Legal Reasons";
+
+    status_codes[500] = "Internal Server Error";
+    status_codes[501] = "Not Implemented";
+    status_codes[502] = "Bad Gateway";
+    status_codes[503] = "Service Unavailable";
+    status_codes[504] = "Gateway Timeout";
+    status_codes[505] = "HTTP Version Not Supported";
+    status_codes[506] = "Variant Also Negotiates";
+    status_codes[507] = "Insufficient Storage";
+    status_codes[508] = "Loop Detected";
+    status_codes[510] = "Not Extended";
+    status_codes[511] = "Network Authentication Required";
 }
 
 void Config::initRules() {
@@ -59,6 +219,8 @@ Config::~Config() {
 }
 
 map<string, int> Config::directive;
+map<string, string> Config::mime_types;
+map<int, string> Config::status_codes;
 
 void Config::setAlloedDirective() {
     if (!directive.empty()) {
@@ -121,7 +283,10 @@ Location& Config::getLocation(const string& uri) {
             break;
         }
     }
-    if (!serv) {
+    if (!serv && !servers.empty()) {
+        serv = &servers[0];
+    } else if (!serv) {
+       // -- cout << "server not found" << endl;
         throw std::runtime_error("Error: server not found");
     }
     return (serv->getRootLocation().getLocation(location));
@@ -142,19 +307,19 @@ const string Config::getDefault(const string& key) {
 }
 
 void Config::print () {
-    cout << "*************printing**************" << endl;
-    cout << "server size is " << servers.size() << endl;
+   // -- cout << "*************printing**************" << endl;
+   // -- cout << "server size is " << servers.size() << endl;
     for (size_t i = 0; i < servers.size(); i++) {
-        cout << "server " << i << " server_name is ";
+       // -- cout << "server " << i << " server_name is ";
         for (size_t j = 0; j < servers[i].server_name.size(); j++) {
-            cout << servers[i].server_name[j] << " ";
+           // -- cout << servers[i].server_name[j] << " ";
         }
-        cout << endl;
-        cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
-        cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
-        cout << "server " << i << " error_page is " << servers[i].error_page << endl;
-        // cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
+       // -- cout << endl;
+       // -- cout << "server " << i << " listenIp is " << servers[i].listenIp << endl;
+       // -- cout << "server " << i << " listenPort is " << servers[i].listenPort << endl;
+       // -- cout << "server " << i << " error_page is " << servers[i].error_page << endl;
+        //// -- cout << "server " << i << " location size is " << servers[i].locations.size() << endl;
         servers[i].getRootLocation().print(0);
-    cout << "*************printing done**************" << endl;
+   // -- cout << "*************printing done**************" << endl;
     }
 }

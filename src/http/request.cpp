@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/22 16:42:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 15:31:31 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,14 +41,19 @@ Request& Request::operator=(const Request& other) {
 }
 
 void Request::setConfig() {
-    size_t pos = headers.getUri().find("?");
-    string cleanUri = headers.getUri().substr(0, pos);
-    string configName = headers.getHeader(HOST) + cleanUri; 
+    size_t pos;
+    string cleanUri = headers.getUri();
+    for (pos = 0; pos < cleanUri.size(); pos++) {
+        if (cleanUri[pos] == '?' || cleanUri[pos] == '#')
+            break ;
+    }
+    cleanUri = cleanUri.substr(0, pos);
+    string configName = headers.getHeader(HOST) + cleanUri;
     *configPtr = &(servSock.getLocation(configName));
 }
 
 void Request::parseHeaders() {
-    cout << "parsing headers" << endl;
+   // -- cout << "parsing headers" << endl;
     char *buff = &buffer;
     ssize_t size = buffer.size();
     ssize_t i = 0;
@@ -65,7 +70,7 @@ void Request::parseHeaders() {
             headers.check();
             setConfig();
             setTransferStrategy();
-            cout << "end of headers" << endl;
+           // -- cout << "end of headers" << endl;
             return ;
         }
         string  line(buff, i);
@@ -93,7 +98,7 @@ bool    Request::parse() {
     if (!headerComplete)
         parseHeaders();
     if (headerComplete) {
-        cout << "====== this is for server " << (*configPtr)->getInfo("server_name") << endl;
+       // -- cout << "====== this is for server " << (*configPtr)->getInfo("server_name") << endl;
         if (strategy->transfer(buffer, file) == COMPLETE) {
             return (true);
         }
@@ -118,7 +123,7 @@ void Request::setTransferStrategy() {
     else {
         this->strategy = new NormalTransferStrategy(*(*configPtr), 0);
     }
-    cout << "transfer strategy set" << endl;
+   // -- cout << "transfer strategy set" << endl;
 }
 
 
@@ -187,7 +192,7 @@ bool ChunkedTransferStrategy::findChunckSize(ISBuffer& buffer, size_t& chunkSize
     if (ss.fail())
         throw std::runtime_error("fiald to parse chunck size");
     buffer.skip(i + 2);
-    cout << "chunck size = " << chunkSize << endl;
+   // -- cout << "chunck size = " << chunkSize << endl;
     return (true);
 }
 
@@ -201,7 +206,7 @@ transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& 
         if (hasCRLF(buffer, 0) == false)
             return (INCOMPLETE);
         buffer.clear();
-        cout << "++++++++++++++++++ end of chunck ++++++++++++++++" << endl;
+       // -- cout << "++++++++++++++++++ end of chunck ++++++++++++++++" << endl;
         return (COMPLETE);
     }
     if (static_cast<size_t>(buffer.size()) <= contentLength) {

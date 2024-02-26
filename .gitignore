@@ -36,3 +36,4 @@
 webserver
 
 tmp/
+.vscode/

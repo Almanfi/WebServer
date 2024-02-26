@@ -30,10 +30,14 @@ public:
     static Config& getInstance();
     static Config& init(const string& filePath);
     static void destroy();
+    static const string& getMimeType(const string& ext);
+    static const string& getStatusCode(int code);
     
 private:
     Config();
     void initRules();
+    void initMime();
+    void initStatusCodes();
     static Config instance;
     KeyVal defaultConfig;
     void set(const string& token);
@@ -41,6 +45,8 @@ private:
     void readMainContext();
     deque<Server> servers;
     static map<string, int> directive;
+    static map<string, string> mime_types;
+    static map<int, string> status_codes; 
     bool isInitialized;
 };
 

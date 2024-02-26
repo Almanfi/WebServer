@@ -15,3 +15,6 @@ add eppol event checking
 test with dir as index
 
 make serv class atribute private
+/////////////
+// apload path //
+upload path in location takes the default path even if the path is given in the location block

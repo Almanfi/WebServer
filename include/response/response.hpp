@@ -37,11 +37,11 @@ class Response
         bool ended;
         bool reachedEOF;
         bool isCGI;
+        int repeatedInit;
 
         struct stat buff;
 
         Request *request;
-        ServerSocket *servSock;
         UUID *uuid;
         Headers header;
         fstream file;
@@ -71,41 +71,40 @@ class Response
         IUniqFile& body;
         IClientConf* config;
         sock_fd fd;
+        IServerSocket* servSock;
+        std::string original_uri;
 
 
     public:
         Response(IHeader& requestHeaders, IUniqFile& body, IClientConf* config, int fd);
         ~Response();
-        void initResponse(IClientConf* conf,int status_code);
+        void initResponse(IClientConf* conf,int status_code, IServerSocket* servSocket);
         void sendNextChunk();
-        // void setLocation();
         void sendResponse();
         void handleDirectory();
         void handleFile();
         void sendDirectory(const std::string &path);
         void sendFile(const std::string &path);
         void handleError(int error_code);
-        bool isEnded();
-        bool isStarted();
-        // std::string generateErrorPage(int errorCode, const std::string& errorMsg);
-        bool checkForValidMethod();
-        bool handleRedirection();
         void handleGet();
         void handlePost();
         void handleDelete();
-
-        // void uriParser();
-
+        bool isStarted();
+        bool checkForValidMethod();
+        bool isEnded();
+        bool handleRedirection();
+        void getNewLocation();
+        
         // ----------------------CGI----------------------//
         char **getEnvironmentVariables();
         bool isForCGI();
-        // void executeCGI();
         bool checkGGIProcess();
         void uriParser();
         void initCGI();
         void handleCGI();
         void handleCGIResponse();
         std::string extractCGIHeaders();
+        void fillEnv();
 
 
 };

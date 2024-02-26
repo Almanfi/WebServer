@@ -1,37 +1,57 @@
 #include "socket.hpp"
 
+void Response::fillEnv()
+{
+    for (std::map<std::string, std::string>::iterator it = requestHeaders.getKeyVal().begin(); it != requestHeaders.getKeyVal().end(); it++)
+    {
+        if (it->first == "Content-Type" || it->first == "Content-Length")
+            continue;
+        env[FormatEnvKey(it->first)] = it->second;
+    }
+}
 
 char **Response::getEnvironmentVariables()
 {
-    env["AUTH_TYPE"] = "";
-    // env["CONTENT_LENGTH"] = ToString(this->bodyStat.st_size);
-    // env["CONTENT_TYPE"] = request->getHeader("Content-Type");// TODO I changed this
-    // std::cout << "inside env Location Path: " << this->locationPath << std::endl;
+    // // -- std::cout << "inside env Location Path: " << this->locationPath << std::endl;
     // print query
-    // std::cout << "inside env Query: " << this->query << std::endl;
-    env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
-    env["REQUEST_METHOD"] = convertT_method(method);
-    env["REQUEST_URI"] = this->uri;
-    env["SCRIPT_FILENAME"] = this->locationPath;
-    env["REDIRECT_STATUS"] = "200";
-    env["GATEWAY_INTERFACE"] = "CGI/1.1";
-    env["PATH_INFO"] = this->locationPath;
-    env["PATH_TRANSLATED"] = this->locationPath;
-    env["QUERY_STRING"] = this->query;
+    // // -- std::cout << "inside env Query: " << this->query << std::endl;
     // env["REMOTE_ADDR"] = "";  // need to be change later
     // env["REMOTE_HOST"] = "";  // need to be change later
     // env["REMOTE_IDENT"] = ""; // need to be change later
     // env["REMOTE_USER"] = "";  // need to be change later
-    // env["REQUEST_METHOD"] = t_methodToString(request->headers.method); // TODO
-    env["SCRIPT_NAME"] = this->locationPath;
-    env["SERVER_NAME"] = "Webserv";
-    env["SERVER_PORT"] = "9992";
+    struct stat bodyStat;
+    // -- std::cout << " +++++++++++++++ >>>>>>> Body Path: " << this->bodyPath << std::endl;
+    if (stat((this->bodyPath).c_str(), &bodyStat) == -1)
+    {
+        std::cerr << "Error getting file stats -->: " << strerror(errno) << std::endl;
+
+        return NULL;
+    }
+    // -- std::cout << " +++++++++++++++ >>>>>>> Body Stat: " << bodyStat.st_size << std::endl;
+    fillEnv();
+    env["AUTH_TYPE"] = "";
+    env["CONTENT_LENGTH"] = ToString(bodyStat.st_size);
+    env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
+    env["CONTENT_TYPE"] = requestHeaders.getHeader("Content-Type");
+    env["REQUEST_METHOD"] = convertT_method(method);
+    env["REQUEST_URI"] = this->original_uri;
+    env["SCRIPT_FILENAME"] = this->locationPath;
+    env["REDIRECT_STATUS"] = "200";
+    env["GATEWAY_INTERFACE"] = "CGI/1.1";
+    env["PATH_INFO"] = this->uri;
+    env["PATH_TRANSLATED"] = this->original_uri;
+    env["QUERY_STRING"] = this->query;
+    env["SCRIPT_NAME"] = "";
+    env["SERVER_NAME"] = requestHeaders.getHeader("Host");
+    env["SERVER_PORT"] = "9999";
     env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    env["REQUEST_SCHEME"] = "http";
     char **env = new char *[this->env.size() + 1];
     int i = 0;
     for (std::map<std::string, std::string>::iterator it = this->env.begin(); it != this->env.end(); it++)
     {
         std::string tmp = it->first + "=" + it->second;
+        // std::cerr << "env: " << tmp << endl;
         env[i] = new char[tmp.size() + 1];
         strcpy(env[i], tmp.c_str());
         i++;
@@ -40,39 +60,42 @@ char **Response::getEnvironmentVariables()
     return env;
 }
 
-
-
 // --------------- using tmpfile -----------------//
 
 void Response::initCGI()
 {
-    cgiOutPutFile = "./tmp/" + generateRandomFileName("cgi", ".cgi");
-    // std::cout << "CGI Output File: " << cgiOutPutFile << std::endl;
-    cgiFd[1] = open(cgiOutPutFile.c_str(), O_CREAT | O_RDWR, 0666);
+    // cgiOutPutFile = "./tmp/" + generateRandomFileName("cgi", ".cgi");
+    char tmp_file_name[] = "./tmp/cgi_XXXXXX";
+    int fd = mkstemp(tmp_file_name);
+    cgiOutPutFile = tmp_file_name;
+
+    // // -- std::cout << "CGI Output File: " << cgiOutPutFile << std::endl;
+    cgiFd[1] = fd;
     if (cgiFd[1] == -1)
     {
         std::cerr << "Error Opening file Output: " << strerror(errno) << std::endl;
-        return;
+        handleError(500);
     }
     cgiFd[0] = open((bodyPath).c_str(), O_RDONLY);
     if (cgiFd[0] == -1)
     {
         std::cerr << "Error Opening file Input: " << strerror(errno) << std::endl;
-        return;
+        handleError(500);
     }
     cgiStartTimer = std::clock();
     cgiPid = fork();
     if (cgiPid == -1)
     {
         std::cerr << "Error forking: " << strerror(errno) << std::endl;
-        return;
+        handleError(500);
+
     }
     if (cgiPid == 0)
     {
         if (dup2(cgiFd[0], STDIN_FILENO) == -1 || dup2(cgiFd[1], STDOUT_FILENO) == -1)
         {
             std::cerr << "Error duplicating file descriptors: " << strerror(errno) << std::endl;
-            exit(1);
+            exit(42);
         }
         char *args[3] = {strdup(config->CGIPath().c_str()), strdup(locationPath.c_str()), NULL};
         char **env = getEnvironmentVariables();
@@ -80,7 +103,7 @@ void Response::initCGI()
         if (ret == -1)
         {
             std::cerr << "Error executing CGI: " << strerror(errno) << std::endl;
-            exit(1);
+            exit(42);
         }
     }
     else
@@ -119,7 +142,7 @@ bool Response::checkGGIProcess()
             std::clock_t now = std::clock();
             int timeLimit;
             // double timeLimit = std::stod(config->CGITimeout(), &end);
-            if(config->CGITimeout() < 5)
+            if (config->CGITimeout() < 5)
                 timeLimit = config->CGITimeout();
             else
                 timeLimit = 5;
@@ -139,10 +162,10 @@ bool Response::checkGGIProcess()
         {
             if (WIFEXITED(processStatus))
             {
-                std::cout << "CGI exited normally" << std::endl;
+                // -- std::cout << "CGI exited normally" << std::endl;
                 // if (WEXITSTATUS(processStatus) == 0)
                 // {
-                //     std::cout << "CGI exited with status 0" << std::endl;
+                //     // -- std::cout << "CGI exited with status 0" << std::endl;
                 //     cgiStatus = 200;
                 // }
                 // else
@@ -150,14 +173,28 @@ bool Response::checkGGIProcess()
                 //     std::cerr << "CGI exited with status " << WEXITSTATUS(processStatus) << std::endl;
                 //     cgiStatus = 500;
                 // }
-                cgiStatus = WEXITSTATUS(processStatus);
-                isCGIEnded = true;
-                return false;
+                // cgiStatus = WEXITSTATUS(processStatus);
+                // isCGIEnded = true;
+                // return false;
+                if(WEXITSTATUS(processStatus)== 42)
+                {
+                    std::cerr << "CGI exited abnormally" << std::endl;
+                    cgiStatus = 502;
+                    handleError(502);
+                    isCGIEnded = true;
+                    return false;
+                }
+                else
+                {
+                    cgiStatus = 200;
+                    isCGIEnded = true;
+                    return false;
+                }
             }
             else
             {
                 std::cerr << "CGI exited abnormally" << std::endl;
-                cgiStatus = 500;
+                cgiStatus = 502;
                 isCGIEnded = true;
                 return false;
             }
@@ -203,7 +240,7 @@ std::string Response::extractCGIHeaders()
             headerKey = line.substr(0, pos);
             headerValue = line.substr(pos + 1);
             cgiHeaderSize += line.size();
-            std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
+            // // -- std::cout << "extract Header: " << headerKey << " : " << headerValue << std::endl;
             this->header.setCGIHeader(headerKey, headerValue);
             headerValue.clear();
             headerKey.clear();
@@ -217,20 +254,22 @@ void Response::handleCGIResponse()
     if (!isHeaderSent)
     {
         std::string headers = extractCGIHeaders();
-        std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
-        std::cout << "Headers: " << headers << std::endl;
+
+        // std::cout << "-----------------------Headers: " << headers << "------------------------------" << std::endl;
+        // std::cout << "Headers: " << headers << std::endl;
         int contentLength = 0;
         struct stat statbuf;
+
         if (stat(cgiOutPutFile.c_str(), &statbuf) == -1)
         {
-            std::cerr << "Error getting file stats: " << strerror(errno) << std::endl;
+            std::cerr << "Error getting file stats: " << strerror(errno)  << "file:" << cgiOutPutFile << std::endl;
             handleError(500);
             return;
         }
         contentLength = statbuf.st_size - cgiHeaderSize;
-        std::cout << "Header size: " << cgiHeaderSize << std::endl;
-        std::cout << "File size: " << statbuf.st_size << std::endl;
-        std::cout << "Content Length: " << contentLength << std::endl;
+        // -- std::cout << "Header size: " << cgiHeaderSize << std::endl;
+        // -- std::cout << "File size: " << statbuf.st_size << std::endl;
+        // -- std::cout << "Content Length: " << contentLength << std::endl;
 
         bufferToSend = headers;
         header.setContentLength(contentLength);
@@ -241,15 +280,18 @@ void Response::handleCGIResponse()
             handleError(500);
             return;
         }
+        // cout << "CGI Header size "<< cgiHeaderSize <<'/' << statbuf.st_size << endl;
         fileToSend.seekg(cgiHeaderSize);
         isHeaderSent = true;
     }
-    if (!reachedEOF)
+    if (!reachedEOF && bufferToSend.size() < 1024)
     {
+        // cout << "Sending next chunk" << endl;
         int size = bufferToSend.size();
         char tmpBuffer[1024];
         fileToSend.read(tmpBuffer, 1024 - size);
         size_t readSize = fileToSend.gcount();
+        // cout << "Read size: " << readSize << endl;
         bufferToSend.append(tmpBuffer, readSize);
         if (fileToSend.eof())
         {

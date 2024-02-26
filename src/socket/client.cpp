@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 21:19:10 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ Client::~Client() {
 // }
 
 // ssize_t Client::send() {
-//     cout << "++++++++++++ send ++++++++++++" << endl;
+//    // -- cout << "++++++++++++ send ++++++++++++" << endl;
 //     response.sendResponse();
 //     ssize_t bytes_sent = socketManager.send();
 //     if (bytes_sent == -1) {
@@ -59,7 +59,7 @@ Client::~Client() {
 ssize_t Client::send() {
     ssize_t bytes_sent = 0;
     if(!response.isStarted())
-        response.initResponse(RMF->configRef(), statusCode);
+        response.initResponse(RMF->configRef(), statusCode, &(RMF->servSock()));
     response.sendResponse();
     // sendFile(fd, "./tmp/en.subject.pdf");
     if(response.isEnded())
@@ -69,9 +69,9 @@ ssize_t Client::send() {
 
 
 ssize_t Client::recieve() {
-    cout << "++++++++++++ recieve ++++++++++++" << endl;
+   // -- cout << "++++++++++++ recieve ++++++++++++" << endl;
     ssize_t bytes_received = socketManager.recv();
-    cout << "bytes_received = " << bytes_received << endl;
+   // -- cout << "bytes_received = " << bytes_received << endl;
     if (bytes_received == 0)
         state = CLOSE;
     file.open();
@@ -106,7 +106,9 @@ ssize_t Client::recieve() {
         statusCode = 500;
     }
     file.close();
-    cout << "++++++++++++ recieve end ++++++++++++" << endl;
+    if (statusCode != 200 && RMF->configRef() == NULL)
+        RMF->setDefaultConfig();
+   // -- cout << "++++++++++++ recieve end ++++++++++++" << endl;
     return (bytes_received);
 }
 
@@ -153,8 +155,8 @@ ssize_t SocketManager::send() {
 
 ssize_t SocketManager::recv() {
     ssize_t bytes_received = _buffer.recv(_fd, 0); // TODO check flags later
-    cout << "bytes_received = " << bytes_received << endl;
-    cout << "buffer = " << dynamic_cast<SBuffer&>(_buffer) << endl;
+   // -- cout << "bytes_received = " << bytes_received << endl;
+    //// -- cout << "buffer = " << dynamic_cast<SBuffer&>(_buffer) << endl;
     return bytes_received;
 	// return ::recv(_fd, &_buffer, _buffer.size(), 0); // TODO check flags later
 }
@@ -366,6 +368,10 @@ IServerSocket& ClientResourceManagerFacade::servSock() {
 
 IClientConf* ClientResourceManagerFacade::configRef() {
     return _config;
+}
+
+void ClientResourceManagerFacade::setDefaultConfig() {
+    _config = &(_servSock->getLocation("/"));
 }
 
 IClientConf& ClientResourceManagerFacade::config() {

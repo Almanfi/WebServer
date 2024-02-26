@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 16:57:53 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,11 +231,11 @@ void Server::finalize() {
 string Server::getInfo(const string& key) const {
     // (void )key;
     // const_cast<map<string, string>&>(info).clear();
-    // cout << endl << "Server info : " << endl;
+    //// -- cout << endl << "Server info : " << endl;
     // for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
-    //     cout << it->first << " : " << it->second << endl;
+    //    // -- cout << it->first << " : " << it->second << endl;
     // }
-    // cout << endl;
+    //// -- cout << endl;
     map<string, string>::const_iterator it = info.find(key);
     if (it != info.end())
         return (it->second);

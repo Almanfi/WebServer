@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   uuid.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
+/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 22:18:34 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/06 23:40:00 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/25 13:16:06 by fdiraa           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 template <typename T>
 void bitManip<T>::print_bits(T x) {
     for (int i = 8 * sizeof(T) - 1; i >= 0 ; i--)
-        cout << (CHECK_BIT(i, x) ? 1 : 0);
+       cout << (CHECK_BIT(i, x) ? 1 : 0);
 }
 
 template <typename T>
@@ -23,14 +23,14 @@ void bitManip<T>::print_bits(T* x, int n) {
     int count = 0;
     for (int i = 0; i < n * sizeof(T) * 8 ; i++) {
         if (i % (sizeof(*x) * 8) == 0 && i != 0)
-            cout << "|";
-        cout << 7 - count++ % 8;
+           cout << "|";
+       cout << 7 - count++ % 8;
     }
-    cout << endl;
+   cout << endl;
     for (int i = 0; i < n ; i++) {
         print_bits(*(x + i));
         if (i != n - 1)
-            cout << "|";
+           cout << "|";
     }
 }
 
@@ -56,7 +56,7 @@ void bitManip<T>::reverseBits(T* T_uuid, int T_nbr) {
     char    help;
     int size = sizeof(T) * T_nbr;
     for (int i = 0; i <= size / 2; i++) {
-        cout << " reversing byte " << i << " and " << size - i - 1 << endl;
+       cout << " reversing byte " << i << " and " << size - i - 1 << endl;
         help = uuid[i];
         uuid[i] = reversebyte(uuid[size - i - 1]);
         if (i >= size / 2)

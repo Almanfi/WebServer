@@ -100,6 +100,7 @@ public:
 	virtual IServerSocket&		servSock() = 0;
 	virtual IClientConf*		configRef() = 0;
 	virtual IClientConf&		config() = 0;
+	virtual void				setDefaultConfig() = 0;
 };
 
 class ClientResourceManagerFacade : public IClientResourceManagerFacade {
@@ -128,6 +129,7 @@ public:
 	IServerSocket&		servSock();
 	IClientConf*		configRef();
 	IClientConf&		config();
+	void				setDefaultConfig();
     class ResourceException : public std::exception {
     public:
         ResourceException();
