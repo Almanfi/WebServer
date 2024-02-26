@@ -84,7 +84,7 @@ void Response::getNewLocation()
         for(size_t i = 0; i < config->index().size(); i++)
         {
             std::string path = joinPath(locationPath, config->index()[i]);
-            std::cout << "path: " << path << std::endl;
+            //std::cout << "path: " << path << std::endl;
             if(stat(path.c_str(), &buff) == 0)
             {
                 this->uri = joinPath(uri, config->index()[i]);
