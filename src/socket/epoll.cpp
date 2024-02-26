@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   epoll.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 13:14:48 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/26 16:06:36 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,14 @@ void Epoll::init(Config& config) {
         ServerSocket*   tmp = new ServerSocket(servers[i]);
         for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
             if (tmp->isDupulicate(*it->second)) {
-                it->second->addServer(servers[i]);
+                try {
+                    it->second->addServer(servers[i]);
+                } catch (const std::exception& e) {
+                    delete tmp;
+                    throw std::runtime_error(
+                        string("could not add server " + servers[i].getInfo(S_HOST)
+                                + ":" + servers[i].getInfo(S_PORT)).c_str());
+                }
                 delete tmp;
                 tmp = NULL;
                // -- cout << "duplicate server found" << endl;
