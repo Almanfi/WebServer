@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 04:42:00 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 15:13:55 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ public:
     virtual bool            allowCGI() = 0;
     virtual string          CGIPath() = 0;
     virtual size_t          CGITimeout() = 0;
+    virtual int             getPort() = 0;
 };
 
 class Location  : public IClientConf {
@@ -70,6 +71,7 @@ public:
     virtual bool            allowCGI();
     virtual string          CGIPath();
     size_t                  CGITimeout();
+    int                     getPort();
 private:
     void validateDirective(const string& key, const string& value);
     void validateRoot(const string& value);

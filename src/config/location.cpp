@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 04:40:56 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/26 15:14:18 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -313,9 +313,12 @@ Location& Location::getLocation(const string& location) {
         if (it->first[0] != '*')
             continue;
         string extention = it->first.substr(1);
-        if (location.find(extention) == std::string::npos)
+        size_t pos = location.find(extention);
+        if (pos == std::string::npos)
             continue;
-        return (it->second);
+        char c = location[pos + extention.size()]; // TODO check this is enough or should I remove query string
+        if (c == '/' || c == '\0' || c == '?' || c == '#')
+            return (it->second.getLocation(location));
     }
     while (loc != "") {
         map<string, Location>::iterator it;
@@ -477,4 +480,8 @@ size_t Location::CGITimeout() {
     size_t time;
     ss >> time;
     return (time);
+}
+
+int Location::getPort() {
+    return (serv->listenPort);
 }

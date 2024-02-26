@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 21:18:38 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/22 16:42:34 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,9 @@ Request& Request::operator=(const Request& other) {
 }
 
 void Request::setConfig() {
-    string configName = headers.getHeader(HOST) + headers.getUri();
+    size_t pos = headers.getUri().find("?");
+    string cleanUri = headers.getUri().substr(0, pos);
+    string configName = headers.getHeader(HOST) + cleanUri; 
     *configPtr = &(servSock.getLocation(configName));
 }
 

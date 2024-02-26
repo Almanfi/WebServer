@@ -11,3 +11,7 @@ remove request with ..
 use makedir to create tmp
 
 add eppol event checking
+
+test with dir as index
+
+make serv class atribute private
