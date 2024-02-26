@@ -84,6 +84,7 @@ void Response::getNewLocation()
         for(size_t i = 0; i < config->index().size(); i++)
         {
             std::string path = joinPath(locationPath, config->index()[i]);
+            std::cout << "path: " << path << std::endl;
             if(stat(path.c_str(), &buff) == 0)
             {
                 this->uri = joinPath(uri, config->index()[i]);
@@ -113,6 +114,8 @@ void Response::sendResponse()
     else
     {
         getNewLocation();
+        if(this->repeatedInit == 0)
+            return;
        // -- cout << "################ uri: " << uri << "################" << endl;
        // -- cout << "################ locationPath: " << locationPath << "################" << endl;
         if (isForCGI())
@@ -382,7 +385,7 @@ void Response::sendDirectory(const std::string &path)
         }
 
         listingPageHTML = generateDirectoryListingPage(dir, uri, locationPath);
-        header.setStatusCode(301);
+        header.setStatusCode(200);
         header.setHeader("Connection", "close");
         header.setHeader("Content-Type", "text/html");
         header.setContentLength(listingPageHTML.size());
