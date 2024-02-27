@@ -29,16 +29,6 @@ int main() {
         // conf.print();
         //// -- cout<< "type is " << Config::getMimeType("html");
 
-        cout <<  "by default php and py are deault in a location" << endl;
-        cout <<  "but if specified only the specified one will be allowed" << endl;
-        IClientConf& loc = conf.getLocation("localhost/test");
-        cout << "cgi allowed : " << loc.allowCGI() << endl;
-        cout << "cgi timeout : " << loc.CGITimeout() << endl;
-        cout << "cgi_allowed : " << loc.isCgiFile("/cgi-bin/echo.py") << endl;
-        cout << "cgi executable : " << loc.cgiExecutable("/cgi-bin/echo.py") << endl;
-        cout << "cgi_allowed : " << loc.isCgiFile("/cgi-bin/echo.php") << endl;
-        cout << "cgi executable : " << loc.cgiExecutable("/cgi-bin/echo.php") << endl;
-
         Epoll epoll;
         epoll.init(conf);
     }

@@ -26,27 +26,16 @@ void Response::uriParser()
 
 void Response::initResponse(IClientConf *conf, int status_code, IServerSocket *servSocket, time_t *lastActivity)
 {
-    // this->fd = 0;  // TODO fd
-    // -- cout << "++++++++++++ initResponse ++++++++++++" << endl;
     config = conf;
     servSock = servSocket;
-    // finding config ---------------------------------------
-    // string host = requestHeaders.getHeader("host");
-    // string uri = requestHeaders.getUri(); // you have to remove queary string
-    // IClientConf& newConf = servSock->getLocation(host + uri);
-    // (void) newConf;
-    // ------------------------------------------------------
     this->method = requestHeaders.getMethod();
     this->uri = decodingURI(requestHeaders.getUri());
     uriParser();
-    // -- std::cout << "uri: " << uri << std::endl;
     this->bodyPath = body.getPath();
     this->locationPath = joinPath(config->root(), uri);
-    // -- std::cout << "----------- uri: " << uri << std::endl;
-    // -- std::cout << "----------- root: " << config->root() << std::endl;
-    // -- std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
     this->lastActivity = *lastActivity;
+    this->cgiPath = conf->cgiExecutable(locationPath);
     if (this->repeatedInit == 10)
         this->original_uri = this->uri;
     this->repeatedInit--;
@@ -101,8 +90,6 @@ void Response::getNewLocation()
 void Response::sendResponse()
 {
 
-    // if (!started)
-    // -- cout << "++++++++++++ sendResponse ++++++++++++" << endl;
     if (this->status_code != 200)
         handleError(this->status_code);
     else if (!checkForValidMethod())
@@ -115,8 +102,6 @@ void Response::sendResponse()
             getNewLocation();
         if (this->repeatedInit == 0)
             return;
-        // -- cout << "################ uri: " << uri << "################" << endl;
-        // -- cout << "################ locationPath: " << locationPath << "################" << endl;
         if (isForCGI())
             handleCGI();
         else if (method == GET)
@@ -144,13 +129,14 @@ bool Response::isForCGI()
     }
     if (S_ISDIR(buff.st_mode))
         return false;
+    if (config->cgiExecutable(locationPath) == "")
+        return false;
+    this->cgiPath = config->cgiExecutable(locationPath);
     return true;
 }
 
 void Response::handleGet()
 {
-    // -- cout << "++++++++++++ handleGet ++++++++++++" << endl;
-    // -- std::cout << "locationPath: " << locationPath << std::endl;
     if (stat((locationPath).c_str(), &buff) != 0)
     {
         if (errno == ENOENT)

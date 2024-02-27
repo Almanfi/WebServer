@@ -97,9 +97,9 @@ void Response::initCGI()
             std::cerr << "Error duplicating file descriptors: " << strerror(errno) << std::endl;
             exit(42);
         }
-        char *args[3] = {strdup(config->CGIPath().c_str()), strdup(locationPath.c_str()), NULL};
+        char *args[3] = {strdup(this->cgiPath.c_str()), strdup(locationPath.c_str()), NULL};
         char **env = getEnvironmentVariables();
-        int ret = execve(config->CGIPath().c_str(), args, env);
+        int ret = execve(this->cgiPath.c_str(), args, env);
         if (ret == -1)
         {
             std::cerr << "Error executing CGI: " << strerror(errno) << std::endl;
@@ -163,19 +163,6 @@ bool Response::checkGGIProcess()
             if (WIFEXITED(processStatus))
             {
                 // -- std::cout << "CGI exited normally" << std::endl;
-                // if (WEXITSTATUS(processStatus) == 0)
-                // {
-                //     // -- std::cout << "CGI exited with status 0" << std::endl;
-                //     cgiStatus = 200;
-                // }
-                // else
-                // {
-                //     std::cerr << "CGI exited with status " << WEXITSTATUS(processStatus) << std::endl;
-                //     cgiStatus = 500;
-                // }
-                // cgiStatus = WEXITSTATUS(processStatus);
-                // isCGIEnded = true;
-                // return false;
                 if(WEXITSTATUS(processStatus)== 42)
                 {
                     std::cerr << "CGI exited abnormally" << std::endl;

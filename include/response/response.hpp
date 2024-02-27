@@ -67,6 +67,7 @@ class Response
         int cgiHeaderSize;
         char **envp;
         std::clock_t cgiStartTimer;
+        std::string cgiPath;
 
         IHeader& requestHeaders;
         IUniqFile& body;
