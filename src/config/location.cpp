@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/26 15:31:55 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 19:50:48 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,7 @@ void Location::initValidationMap() {
     validationMap.insert(std::make_pair("cgi_timeout", &Location::validateCgiTimeout));
     validationMap.insert(std::make_pair("upload", &Location::validateUpload));
     validationMap.insert(std::make_pair("upload_path", &Location::validateUploadPath));
+    validationMap.insert(std::make_pair("allowed_cgi", &Location::validateAllowedCgi));
 
     httpAllowedMethods.push_back("GET");
     httpAllowedMethods.push_back("POST");
@@ -201,11 +202,30 @@ void Location::validateErrorPage(const string& value) {
     }
 }
 
+void Location::validateAllowedCgi(const string& value) {
+    if (value.empty())
+        throw LocationException::INVALID_VALUE("allowed_cgi", value);
+    stringstream ss(value);
+    string extention;
+    string executable;
+    ss >> extention;
+    ss >> executable;
+    if (ss.fail() || extention.empty() || executable.empty() || executable[0] != '/') {
+        throw LocationException::INVALID_VALUE("allowed_cgi", value);
+    }
+    string extra;
+    ss >> extra;
+    if (!extra.empty() || !ss.eof()) {
+        throw LocationException::INVALID_VALUE(
+                            "error_page", value + " (too many arguments)");
+    }
+}
+
 void Location::insertDirective(const string& key, const string& value) {
     validateDirective(key, value);
     KeyVal::iterator it = info.find(key);
     if (it != info.end()) {
-        if (key == "error_page") {
+        if (key == "error_page" || key == "allowed_cgi") {
             it->second += " ; " + value;
             return ;
         }
@@ -486,4 +506,37 @@ size_t Location::CGITimeout() {
 
 int Location::getPort() {
     return (serv->listenPort);
+}
+
+bool Location::isCgiFile(const string& path) {
+    string allowedCgi = getInfo("allowed_cgi");
+    if (allowedCgi.empty()) {
+        allowedCgi = Config::getDefault("allowed_cgi");
+    }
+    size_t pos = path.rfind(".");
+    if (pos == string::npos)
+        return (false);
+    string extention = path.substr(pos + 1);
+    pos = allowedCgi.find(extention);
+    if (pos == string::npos || allowedCgi[pos + extention.size()] != ' ')
+        return (false);
+    return (true);
+}
+
+const string Location::cgiExecutable(const string& path) {
+    string allowedCgi = getInfo("allowed_cgi");
+    if (allowedCgi.empty()) {
+        allowedCgi = Config::getDefault("allowed_cgi");
+    }
+    size_t pos = path.rfind(".");
+    if (pos == string::npos)
+        return ("");
+    string extention = path.substr(pos + 1);
+    pos = allowedCgi.find(extention);
+    if (pos == string::npos || allowedCgi[pos + extention.size()] != ' ')
+        return ("");
+    pos = pos + extention.size() + 1;
+    size_t end = allowedCgi.find(" ", pos);
+    string executable = allowedCgi.substr(pos, end - pos);
+    return (executable);
 }

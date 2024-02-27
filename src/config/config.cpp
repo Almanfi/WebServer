@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 19:52:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,7 +211,7 @@ void Config::initRules() {
     defaultConfig.insert(std::make_pair("upload_path", "/uploads"));
     defaultConfig.insert(std::make_pair("cgi", "off"));
     defaultConfig.insert(std::make_pair("cgi_timeout", "30"));
-    
+    defaultConfig.insert(std::make_pair("allowed_cgi", "php /usr/bin/php-cgi ; py /usr/bin/python3"));
 }
 
 Config::~Config() {
