@@ -89,6 +89,10 @@ ssize_t Client::recieve() {
         state = WRITE;
         statusCode = 411;
     }
+    catch (const RequestException::REQUEST_ENTITY_TOO_LARGE& e) {
+        state = WRITE;
+        statusCode = 413;
+    }
     catch (const std::exception& e) {
         state = WRITE;
         statusCode = 500;
