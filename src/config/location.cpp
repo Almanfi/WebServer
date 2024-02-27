@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 19:50:48 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:12:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ void Location::initValidationMap() {
     validationMap.insert(std::make_pair("upload", &Location::validateUpload));
     validationMap.insert(std::make_pair("upload_path", &Location::validateUploadPath));
     validationMap.insert(std::make_pair("allowed_cgi", &Location::validateAllowedCgi));
+    validationMap.insert(std::make_pair("client_timeout", &Location::validateClientTimeout));
 
     httpAllowedMethods.push_back("GET");
     httpAllowedMethods.push_back("POST");
@@ -104,6 +105,10 @@ void Location::validateClientMaxBodySize(const string& value) {
         throw LocationException::INVALID_VALUE(
                             "client_max_body_size", value);
     }
+    if (ss.eof() == false) {
+        throw LocationException::INVALID_VALUE(
+                            "client_max_body_size", value + " (too many arguments)");
+    }
 }
 
 void Location::validateUpload(const string& value) {
@@ -143,6 +148,11 @@ void Location::validateCgiTimeout(const string& value) {
     if (value.empty() || ss.fail() || val < 0) {
         throw LocationException::INVALID_VALUE("cgi_timeout", value);
     }
+    if (ss.eof() == false)
+        throw LocationException::INVALID_VALUE("cgi_timeout",
+                        value + " (too many arguments)");
+    if (val > 60)
+        throw LocationException::INVALID_VALUE("cgi_timeout", value + " (must not exceed 60)");
 }
 
 //TODO come back add allowed methods
@@ -219,6 +229,20 @@ void Location::validateAllowedCgi(const string& value) {
         throw LocationException::INVALID_VALUE(
                             "error_page", value + " (too many arguments)");
     }
+}
+
+void Location::validateClientTimeout(const string& value) {
+    stringstream ss(value);
+    ssize_t val;
+    ss >> val;
+    if (value.empty() || ss.fail() || val < 0) {
+        throw LocationException::INVALID_VALUE("cgi_timeout", value);
+    }
+    if (ss.eof() == false)
+        throw LocationException::INVALID_VALUE("cgi_timeout",
+                        value + " (too many arguments)");
+    if (val > 60)
+        throw LocationException::INVALID_VALUE("cgi_timeout", value + " (must not exceed 60)");
 }
 
 void Location::insertDirective(const string& key, const string& value) {
@@ -539,4 +563,15 @@ const string Location::cgiExecutable(const string& path) {
     size_t end = allowedCgi.find(" ", pos);
     string executable = allowedCgi.substr(pos, end - pos);
     return (executable);
+}
+
+size_t Location::clientTimeout() {
+    string timeout = getInfo("client_timeout");
+    if (timeout.empty()) {
+        timeout = Config::getDefault("client_timeout");
+    }
+    stringstream ss(timeout);
+    size_t time;
+    ss >> time;
+    return (time);
 }

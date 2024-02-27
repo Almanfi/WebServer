@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 16:01:12 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:10:02 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,13 @@ const cnx_state& Client::handleState(bool isEpollIn) {
 }
 
 bool Client::checkTimeout() {
-    int timeout_s  = 12;
+    int timeout_s;
+    if (RMF->configRef() != NULL)
+        timeout_s = RMF->config().clientTimeout();
+    else {
+        IClientConf& rootLoc = RMF->servSock().getLocation("/");
+        timeout_s = rootLoc.clientTimeout();
+    }
     time_t now = time(NULL);
     if (now - lastActivity < timeout_s) {
         return false;
