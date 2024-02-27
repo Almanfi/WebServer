@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sbuffer.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 14:05:00 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 15:08:54 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,19 +104,9 @@ size_t SBuffer::find(const string& str, size_t pos) {
 }
 
 ssize_t SBuffer::recv(sock_fd fd, int flags) {
-    // if (end() == SBUFFER_SIZE) // TODO is this necesary? might delete data
-    //     clear(); //
-    // if (freeSpace() < 2)
-        // moveDataToStart(); // TODO shouldnt move to keep check on the buffer size
-   // -- cout << "in sbuffer recv" << endl;
     ssize_t recvSize = ::recv(fd, buffer + end(), freeSpace(), flags);
-   // -- cout << "after sbuffer recv" << endl;
-    if (recvSize == -1) {
-        perror("recv1");
-        throw std::exception();
-    }
-    //// -- cout << "recvSize = " << recvSize << endl;
-    //// -- cout << "buffer free space = " << begin() << endl;
+    if (recvSize == -1)
+        throw std::runtime_error("could not receive data");
     count += recvSize;
     return (recvSize);
 }
@@ -124,11 +114,8 @@ ssize_t SBuffer::recv(sock_fd fd, int flags) {
 ssize_t SBuffer::send(sock_fd fd, int flags) {
     ssize_t sendSize = ::send(fd, buffer + start, count, flags);
     if (sendSize == -1) {
-       // perror("send");
-        throw std::exception();
+        throw std::runtime_error("could not send data");
     }
-   // -- cout << "sendSize = " << sendSize << endl;
-//   // -- cout << "buffer = " << *this << endl; // for debuging
     start += sendSize;
     count -= sendSize;
     return (sendSize);

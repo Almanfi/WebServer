@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   serverSocket.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/24 21:06:07 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 15:05:34 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,14 +53,14 @@ ServerSocket::~ServerSocket() {
 void ServerSocket::init() {
     sockid = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (sockid == -1)
-        throw SOCKET_EXCEPTION("could not create socket");
+        throw SOCKET_EXCEPTION("could not create socket of server ");
     int opt = 1;
     if (setsockopt(sockid, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-        throw SOCKET_EXCEPTION("could not set socket options");
+        throw SOCKET_EXCEPTION("could not set socket options of server ");
     if (bind(sockid, res->ai_addr, res->ai_addrlen) == -1)
-        throw SOCKET_EXCEPTION("could not bind socket");
+        throw SOCKET_EXCEPTION("could not bind socket of server ");
     if (listen(sockid, MAX_LISTEN) == -1)
-        throw SOCKET_EXCEPTION("could not listen on socket");
+        throw SOCKET_EXCEPTION("could not listen on socket of server ");
 }
 
 bool ServerSocket::isDupulicate(ServerSocket& other) {
@@ -75,8 +75,7 @@ sock_fd ServerSocket::sockAccept() {
     socklen_t client_addr_len = sizeof(client_addr);
     sock_fd client_fd = accept(sockid, (struct sockaddr *)&client_addr, &client_addr_len);
     if (client_fd == -1) {
-        perror("accept");
-        throw std::exception();
+        throw std::runtime_error("could not accept client");
     }
     return (client_fd);
 }

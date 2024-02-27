@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   uniqFile.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/07 00:02:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 14:57:13 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,7 @@ UniqFile::~UniqFile() {
 void UniqFile::createFile() {
     _file.open(_path.c_str(), std::ios::in | std::ios::out | std::ios::trunc);
     if (!_file.is_open()) {
-        perror("open");
-        throw std::exception();
+        throw std::runtime_error("Error: unique file could not be created");
     }
     _file.close();
 }
@@ -46,8 +45,8 @@ void UniqFile::close() {
 }
 
 void UniqFile::remove() {
-    // _file.close();
-    // remove(_path.c_str()); // TODO delete file when client disconnect
+    _file.close();
+    std::remove(_path.c_str()); // TODO delete file when client disconnect
 }
 
 string UniqFile::getPath() {
@@ -55,10 +54,6 @@ string UniqFile::getPath() {
 }
 
 void UniqFile::write(const char* __s, std::streamsize __n) {
-   // -- cout << "writing to file" << endl; // TODO remove// -- cout.
-    // Do not use// -- cout.write here, it will write to the console what CGI is trying to write to the file.
-    //// -- cout.write(__s, __n); // TODO remove// -- cout.
-   // -- cout << endl << "-----------------" << endl; // TODO remove// -- cout.
     _file.write(__s, __n);
 }
 

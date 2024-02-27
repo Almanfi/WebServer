@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/26 21:15:00 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 16:01:12 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -230,6 +230,14 @@ IHeader* ClientResourceManagerFactory::createRequestHeader() {
 }
 
 IUniqFile* ClientResourceManagerFactory::createUniqFile(string rootPath, Iuuid& uuid) {
+    if (access(rootPath.c_str(), F_OK) == 0)
+        return new UniqFile(rootPath, uuid);
+    if (mkdir(rootPath.c_str(), 0777) == -1) {
+        throw std::runtime_error("failed to create tmp directory");
+    }
+    if (access(rootPath.c_str(), W_OK | X_OK) != 0) {
+        throw std::runtime_error("tmp directory is not writable or executable");
+    }
 	return new UniqFile(rootPath, uuid);
 }
 
@@ -252,7 +260,7 @@ Response* ClientResourceManagerFactory::createResponse(
 ClientResourceManagerFacade::ResourceException::ResourceException() {}
 
 const char* ClientResourceManagerFacade::ResourceException::what() const throw() {
-    return ("ResourceException");
+    return ("ResourceException: failed to allocate resources");
 }
 
 ClientResourceManagerFacade::ClientResourceManagerFacade (
@@ -264,17 +272,21 @@ ClientResourceManagerFacade::ClientResourceManagerFacade (
                                 _requestHeaders(NULL), _request(NULL),
                                 _response(NULL), _socketManager(NULL),
                                 _config(NULL) {
-    _uuid = factory->createUUID();
-    _file = factory->createUniqFile("tmp", *_uuid);
-    _buffer = factory->createBuffer();
-    _requestHeaders = factory->createRequestHeader();
-    _request = factory->createRequest(*_buffer, *_file, *_requestHeaders
-                                    , servSock, &_config);
-    _response = factory->createResponse(*_requestHeaders, *_file, _config, _fd);
-    _socketManager = factory->createSocketManager(_fd, *_buffer);
-    if (!_buffer || !_uuid || !_file
-        || !_requestHeaders || !_request
-        || !_response || !_socketManager) {
+    try {
+        _uuid = factory->createUUID();
+        _file = factory->createUniqFile("tmp", *_uuid);
+        _buffer = factory->createBuffer();
+        _requestHeaders = factory->createRequestHeader();
+        _request = factory->createRequest(*_buffer, *_file, *_requestHeaders
+                                        , servSock, &_config);
+        _response = factory->createResponse(*_requestHeaders, *_file, _config, _fd);
+        _socketManager = factory->createSocketManager(_fd, *_buffer);
+    }
+    catch (const std::bad_alloc& e) {
+        cleanupResources();
+        throw ResourceException();
+    }
+    catch (const std::runtime_error& e) {
         cleanupResources();
         throw ResourceException();
     }

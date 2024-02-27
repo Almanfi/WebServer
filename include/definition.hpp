@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   definition.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:44:54 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 13:12:09 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 14:18:23 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 # include <deque>
 # include <map>
 # include <unistd.h>
+# include <sys/stat.h>
 # include <fcntl.h>
 # include <sys/socket.h>
 # include <sys/types.h>

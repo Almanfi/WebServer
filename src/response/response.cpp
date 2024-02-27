@@ -61,7 +61,6 @@ void Response::getNewLocation()
     struct stat buff;
     if (stat(locationPath.c_str(), &buff) != 0)
     {
-        cout << "Get stat errno: " << errno << endl;
         if (errno == ENOENT)
             handleError(404);
         else if (errno == EACCES)
@@ -154,7 +153,6 @@ void Response::handleGet()
     // -- std::cout << "locationPath: " << locationPath << std::endl;
     if (stat((locationPath).c_str(), &buff) != 0)
     {
-        // -- std::cout << "Get stat errno: " << errno << std::endl;
         if (errno == ENOENT)
             handleError(404);
         else if (errno == EACCES)
