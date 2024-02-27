@@ -68,11 +68,11 @@ void Response::getNewLocation()
             // std::cout << "path: " << path << std::endl;
             if (stat(path.c_str(), &buff) == 0)
             {
+                this->uri = joinPath(uri, config->index()[i]);
                 if (query != "")
-                    this->uri = joinPath(uri, config->index()[i]);
+                    this->requestHeaders.setUri(uri + "?" + query);
                 else
-                    this->uri = joinPath(uri, config->index()[i]) + "?" + query;
-                this->requestHeaders.setUri(uri);
+                    this->requestHeaders.setUri(uri);
                 IClientConf &newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
                 initResponse(&newConf, status_code, servSock, &lastActivity);
                 break;
@@ -92,8 +92,7 @@ void Response::sendResponse()
         handleRedirection();
     else
     {
-        if (this->method == GET)
-            getNewLocation();
+        getNewLocation();
         if (this->repeatedInit == 0)
             return;
         if (isForCGI())
