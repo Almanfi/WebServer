@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/07 21:29:02 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 23:03:04 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:34:41 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,12 +231,7 @@ void Config::setAlloedDirective() {
 }
 
 void Config::read() {
-    // try {
-        readMainContext();
-    // }
-    // catch (std::exception& e) {
-        // std::cerr << e.what() << std::endl;
-    // }
+    readMainContext();
     Parser::destroy();
 }
 

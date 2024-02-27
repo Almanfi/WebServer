@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:24 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 19:13:13 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:20:17 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,6 @@ Parser Parser::instance;
 
 Parser::Parser() : lineNumber(0), linePos(0) {
 }
-
-// Parser::Parser(const std::string& filePath) : lineNumber(0), linePos(0) {
-//     configFile.open(filePath.c_str(), std::ios::in);
-//     if (!configFile.is_open()) {
-//         throw std::runtime_error("Failed to open config file " + filePath);
-//     }
-//     instance = this;
-// }
 
 Parser::~Parser() {
     configFile.close();

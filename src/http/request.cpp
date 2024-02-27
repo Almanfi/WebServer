@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/26 15:31:31 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:57:49 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,6 +129,9 @@ void Request::setTransferStrategy() {
 
 NormalTransferStrategy::NormalTransferStrategy(IClientConf& conf, size_t contentLength) :
             config(conf), bodySize(0), contentLength(contentLength) {
+    size_t maxBodySize = config.clientMaxBodySize();
+    if (contentLength > maxBodySize)
+        throw RequestException::REQUEST_ENTITY_TOO_LARGE();
 }
 
 NormalTransferStrategy::NormalTransferStrategy(const NormalTransferStrategy& other) : config(other.config) {
@@ -156,6 +159,7 @@ transferState    NormalTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& f
 
 ChunkedTransferStrategy::ChunkedTransferStrategy(IClientConf& conf) :
             config(conf), bodySize(0), contentLength(0), haveChunckSize(false) {
+    ClientMaxBodySize = config.clientMaxBodySize();
 }
 
 ChunkedTransferStrategy::ChunkedTransferStrategy(const ChunkedTransferStrategy& other) : config(other.config) {
@@ -183,7 +187,7 @@ bool ChunkedTransferStrategy::findChunckSize(ISBuffer& buffer, size_t& chunkSize
     char *chunk = &buffer;
     size_t i = buffer.find("\r\n", 0);
     if (i == string::npos) {
-        if (buffer.freeSpace() < 100) // TODO what if buffer capacity is bellow 100
+        if (buffer.freeSpace() < 100)
             buffer.moveDataToStart();
         return (false);
     }
@@ -192,7 +196,6 @@ bool ChunkedTransferStrategy::findChunckSize(ISBuffer& buffer, size_t& chunkSize
     if (ss.fail())
         throw std::runtime_error("fiald to parse chunck size");
     buffer.skip(i + 2);
-   // -- cout << "chunck size = " << chunkSize << endl;
     return (true);
 }
 
@@ -202,16 +205,17 @@ transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& 
             return (INCOMPLETE);
         haveChunckSize = true;
     }
-    if (contentLength == 0) { // TODO check if this is correct if content length is 0 and we still have a body
+    if (contentLength == 0) {
         if (hasCRLF(buffer, 0) == false)
             return (INCOMPLETE);
         buffer.clear();
-       // -- cout << "++++++++++++++++++ end of chunck ++++++++++++++++" << endl;
         return (COMPLETE);
     }
     if (static_cast<size_t>(buffer.size()) <= contentLength) {
         file.write(&buffer, buffer.size());
         bodySize += buffer.size();
+        if (bodySize > ClientMaxBodySize)
+            throw RequestException::REQUEST_ENTITY_TOO_LARGE();
         contentLength -= buffer.size();
         buffer.clear();
         return (INCOMPLETE);
@@ -221,9 +225,11 @@ transferState    ChunkedTransferStrategy::transfer(ISBuffer& buffer, IUniqFile& 
     file.write(&buffer, contentLength);
     buffer.skip(contentLength + 2);
     bodySize += contentLength;
+    if (bodySize > ClientMaxBodySize)
+        throw RequestException::REQUEST_ENTITY_TOO_LARGE();
     contentLength -= contentLength;
     if (contentLength == 0)
-        haveChunckSize = false;// TODO added this in cas buffer size is not enough to contain the next chunck???
+        haveChunckSize = false;
     return (transfer(buffer, file));
 }
 
@@ -245,4 +251,8 @@ const char* RequestException::HTTP_VERSION_NOT_SUPPORTED::what() const throw() {
 
 const char* RequestException::LENGTH_REQUIRED::what() const throw() {
     return ("411");
+}
+
+const char* RequestException::REQUEST_ENTITY_TOO_LARGE::what() const throw() {
+    return ("413");
 }

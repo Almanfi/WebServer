@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:47:21 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/25 13:13:27 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 23:24:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@ void Server::setAllowedDirective() {
     }
     directive.insert(std::make_pair("server_name", 0));
     directive.insert(std::make_pair("listen", 1));
-    // directive.insert(std::make_pair("error_page", 0));
 }
 
 map<string, int> Server::directive;
@@ -26,18 +25,6 @@ map<string, int> Server::directive;
 Server::Server() : rootLocation("/") {
     setAllowedDirective();
 }
-
-// Server::Server(const Server& serv) :  rootLocation(serv.rootLocation) {
-//     for (map<string, string>::const_iterator it = serv.info.begin(); it != serv.info.end(); it++) {
-//         info.insert(std::make_pair(it->first, it->second));
-//     }
-//     for (vector<string>::const_iterator it = serv.server_name.begin(); it != serv.server_name.end(); it++) {
-//         server_name.push_back(*it);
-//     }
-//     listenIp = serv.listenIp;
-//     listenPort = serv.listenPort;
-//     error_page = serv.error_page;
-// }
 
 Server::~Server() {
 }
@@ -61,42 +48,13 @@ void Server::set() {
 }
 
 void Server::setMainLocation(string& token) {
-    // map<string, Location>::iterator it = locations.find("/");
-    // if (it == locations.end()) {
-    //     locations.insert(std::make_pair("/", Location(c, *this, "/")));
-    //     // deque<Location>& allLoc = c.getLocations();
-    //     // allLoc.push_back(Location(c, *this, p, "/"));
-    //     // Location& loc = allLoc.back();
-    //     // locations.insert(std::make_pair("/", &loc));
-    // }
-    // Location& loc = (locations.find("/")->second);
-    // loc.setLocationInfo(token);
     rootLocation.setLocationInfo(token);
 }
 
-// void Server::setNewLocation() {
-//     // deque<Location>& allLoc = c.getLocations();
-//     string uri = Parser::getTok(); // TODO validate URI!
-//     if (uri.empty() || uri == "{")
-//         throw ServerException::MISSING_LOCATION_URI();
-//     if (uri[0] != '/') 
-//         throw ServerException::INVALID_LOCATION_URI(uri);
-//     locations.insert(std::make_pair(uri, Location(c, *this, uri)));
-//     // allLoc.push_back(Location(c, *this, p, uri));
-//     Location& loc = locations.find(uri)->second;
-//     loc.set();
-//     // locations.insert(std::make_pair(loc.getUri(), &loc));
-// }
-
 void Server::setServerInfo(string& token) {
-    // if (token == "location") {
-    //     setNewLocation();
-    //     return ;
-    // }
     map<string, int>::iterator it = directive.find(token);
     if (it == directive.end()) {
         rootLocation.setLocationInfo(token);
-        // setMainLocation(token);
         return ;
     }
     if (info.find(token) != info.end())
@@ -210,32 +168,12 @@ void Server::checkServerInfo() {
     parseErrorPage();
 }
 
-// void Server::linkLocation() {
-//     Location& rootLoc = (locations.find("/")->second);
-//     for (map<string, Location>::iterator it = locations.begin(); it != locations.end(); it++) {
-//         if (it->first == "/")
-//             continue ;
-//         rootLoc.addToInLoc(it->second);
-//     }
-//     rootLoc.propagate();
-// }
-
 void Server::finalize() {
     checkServerInfo();
-    // if (locations.find("/") == locations.end())
-    //     locations.insert(std::make_pair("/", Location(c, *this, "/")));
     rootLocation.propagate();
-    // linkLocation();
 }
 
 string Server::getInfo(const string& key) const {
-    // (void )key;
-    // const_cast<map<string, string>&>(info).clear();
-    //// -- cout << endl << "Server info : " << endl;
-    // for (map<string, string>::const_iterator it = info.begin(); it != info.end(); it++) {
-    //    // -- cout << it->first << " : " << it->second << endl;
-    // }
-    //// -- cout << endl;
     map<string, string>::const_iterator it = info.find(key);
     if (it != info.end())
         return (it->second);

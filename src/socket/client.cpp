@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 23:10:02 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:16:52 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,21 +41,6 @@ Client::~Client() {
     delete RMF;
 }
 
-// sock_fd Client::getFd() {
-//     return (fd);
-// }
-
-// ssize_t Client::send() {
-//    // -- cout << "++++++++++++ send ++++++++++++" << endl;
-//     response.sendResponse();
-//     ssize_t bytes_sent = socketManager.send();
-//     if (bytes_sent == -1) {
-//         perror("send");
-//         throw std::exception();
-//     }
-//     state = CLOSE;
-//     return (bytes_sent);
-// }
 
 ssize_t Client::send() {
     if (RMF->configRef() == NULL)
@@ -111,7 +96,6 @@ ssize_t Client::recieve() {
     file.close();
     if (statusCode != 200 && RMF->configRef() == NULL)
         RMF->setDefaultConfig();
-   // -- cout << "++++++++++++ recieve end ++++++++++++" << endl;
    if (bytes_received > 0)
         lastActivity = time(NULL);
     return (bytes_received);
@@ -183,24 +167,7 @@ ssize_t SocketManager::send() {
 
 ssize_t SocketManager::recv() {
     ssize_t bytes_received = _buffer.recv(_fd, 0); // TODO check flags later
-   // -- cout << "bytes_received = " << bytes_received << endl;
-    //// -- cout << "buffer = " << dynamic_cast<SBuffer&>(_buffer) << endl;
     return bytes_received;
-	// return ::recv(_fd, &_buffer, _buffer.size(), 0); // TODO check flags later
-}
-
-// ResponseB
-
-ResponseB::ResponseB(ISBuffer& buffer, IUniqFile& file) :
-				buffer(buffer), file(file) {}
-
-void ResponseB::sendResponse() {
-	(void) file;
-	buffer.clear();
-    std::string response = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Hello, World!</h1></body></html>";
-    // std::string response = "HTTP/1.1 300\r\nLocation: https://www.google.com/\r\n\r\n";
-    buffer.write(response);// TODO check size
-	// std::memcpy(&buffer, response.c_str(), response.size());
 }
 
 // ResourceManagerFactory

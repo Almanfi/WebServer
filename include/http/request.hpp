@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 16:34:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/18 19:21:10 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:55:25 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ class ChunkedTransferStrategy : public ITransferStrategy {
     size_t  bodySize;
     size_t  contentLength;
     bool    haveChunckSize;
+    size_t  ClientMaxBodySize;
     ChunkedTransferStrategy(const ChunkedTransferStrategy& other);
     ChunkedTransferStrategy& operator=(const ChunkedTransferStrategy& other);
     bool findChunckSize(ISBuffer& buffer, size_t& chunkSize);
@@ -96,6 +97,10 @@ public:
         const char* what() const throw();
     };
     class LENGTH_REQUIRED : public std::exception {
+    public:
+        const char* what() const throw();
+    };
+    class REQUEST_ENTITY_TOO_LARGE : public std::exception {
     public:
         const char* what() const throw();
     };
