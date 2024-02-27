@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/24 21:39:01 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/27 23:25:33 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,15 +39,11 @@ void Header::checkHeadersConflicts () {
 void Header::checkRequiredHeaders() {
     if (!HAS_REQUEST_LINE(flags))
         throw RequestException::BAD_REQUEST();
-    // if (method == INVALID)
-    //     throw std::runtime_error("Missing Request-Line");
     if (!HAS_HOST(flags))
         throw RequestException::BAD_REQUEST();
     if (method == POST) {
         if (!HAS_CONTENT_LENGTH(flags) && !HAS_TRANSFER_ENCODING(flags))
             throw RequestException::LENGTH_REQUIRED();
-        // if (!HAS_CONTENT_TYPE(flags)) // TODO check if content type is really mandatory
-        //     throw std::runtime_error("Missing Content-Type");
     }
 }
 

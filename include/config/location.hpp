@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 19:38:17 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:45:45 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ public:
     virtual int             getPort() = 0;
     virtual bool            isCgiFile(const string& path) = 0;
     virtual const string    cgiExecutable(const string& path) = 0;
+    virtual size_t          clientTimeout() = 0;
+    virtual size_t          clientMaxBodySize() = 0;
 };
 
 class Location  : public IClientConf {
@@ -76,6 +78,8 @@ public:
     virtual int             getPort();
     virtual bool            isCgiFile(const string& path);
     virtual const string    cgiExecutable(const string& path);
+    virtual size_t          clientTimeout();
+    virtual size_t          clientMaxBodySize();
 private:
     void validateDirective(const string& key, const string& value);
     void validateRoot(const string& value);
@@ -92,6 +96,7 @@ private:
     void validateUpload(const string& value);
     void validateUploadPath(const string& value);
     void validateAllowedCgi(const string& value);
+    void validateClientTimeout(const string& value);
     
     
 

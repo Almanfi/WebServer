@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 19:50:48 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/27 23:52:55 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,18 +25,6 @@ void Location::setAlloedDirective() {
     if (!directive.empty()) {
         return ;
     }
-    // directive.insert(std::make_pair("root", 1));
-    // directive.insert(std::make_pair("index", 0));
-    // directive.insert(std::make_pair("autoindex", 1));
-    // directive.insert(std::make_pair("client_max_body_size", 1));
-    // directive.insert(std::make_pair("cgi", 0));
-    // directive.insert(std::make_pair("methods", 0));
-    // directive.insert(std::make_pair("return", 1));
-    // directive.insert(std::make_pair("error_page", 1));
-    // directive.insert(std::make_pair("upload", 1));
-    // directive.insert(std::make_pair("upload_path", 1));
-    // directive.insert(std::make_pair("cgi_timeout", 1));
-    // directive.insert(std::make_pair("cgi_path", 1));
 }
 
 map<string, void (Location::*) (const string&)> Location::validationMap;
@@ -59,6 +47,7 @@ void Location::initValidationMap() {
     validationMap.insert(std::make_pair("upload", &Location::validateUpload));
     validationMap.insert(std::make_pair("upload_path", &Location::validateUploadPath));
     validationMap.insert(std::make_pair("allowed_cgi", &Location::validateAllowedCgi));
+    validationMap.insert(std::make_pair("client_timeout", &Location::validateClientTimeout));
 
     httpAllowedMethods.push_back("GET");
     httpAllowedMethods.push_back("POST");
@@ -97,12 +86,39 @@ void Location::validateAutoindex(const string& value) {
 }
 
 void Location::validateClientMaxBodySize(const string& value) {
-    stringstream ss(value);
+    if (value.empty()) {
+        throw LocationException::INVALID_VALUE("client_max_body_size", value);
+    }
+    string maxSizeStr = value;
+    char lastChar = value[value.size() - 1];
+    if (std::isdigit(lastChar) == false) {
+        maxSizeStr = maxSizeStr.substr(0, maxSizeStr.size() - 1);
+        switch (lastChar) {
+            case 'k':
+                break;
+            case 'm':
+                break;
+            case 'g':
+                break;
+            default:
+                throw LocationException::INVALID_VALUE(
+                            "client_max_body_size", value);
+        }
+    }
+    stringstream ss(maxSizeStr);
     ssize_t val;
     ss >> val;
-    if (value.empty() || ss.fail() || val < 0) {
+    if (maxSizeStr.empty() || ss.fail() || val < 0) {
         throw LocationException::INVALID_VALUE(
                             "client_max_body_size", value);
+    }
+    if (ss.eof() == false) {
+        throw LocationException::INVALID_VALUE(
+                            "client_max_body_size", value + " (too many arguments)");
+    }
+    if (val > 1024) {
+        throw LocationException::INVALID_VALUE(
+                            "client_max_body_size", value + " (must not exceed 1024(unit))");
     }
 }
 
@@ -143,6 +159,11 @@ void Location::validateCgiTimeout(const string& value) {
     if (value.empty() || ss.fail() || val < 0) {
         throw LocationException::INVALID_VALUE("cgi_timeout", value);
     }
+    if (ss.eof() == false)
+        throw LocationException::INVALID_VALUE("cgi_timeout",
+                        value + " (too many arguments)");
+    if (val > 60)
+        throw LocationException::INVALID_VALUE("cgi_timeout", value + " (must not exceed 60)");
 }
 
 //TODO come back add allowed methods
@@ -219,6 +240,20 @@ void Location::validateAllowedCgi(const string& value) {
         throw LocationException::INVALID_VALUE(
                             "error_page", value + " (too many arguments)");
     }
+}
+
+void Location::validateClientTimeout(const string& value) {
+    stringstream ss(value);
+    ssize_t val;
+    ss >> val;
+    if (value.empty() || ss.fail() || val < 0) {
+        throw LocationException::INVALID_VALUE("cgi_timeout", value);
+    }
+    if (ss.eof() == false)
+        throw LocationException::INVALID_VALUE("cgi_timeout",
+                        value + " (too many arguments)");
+    if (val > 60)
+        throw LocationException::INVALID_VALUE("cgi_timeout", value + " (must not exceed 60)");
 }
 
 void Location::insertDirective(const string& key, const string& value) {
@@ -539,4 +574,44 @@ const string Location::cgiExecutable(const string& path) {
     size_t end = allowedCgi.find(" ", pos);
     string executable = allowedCgi.substr(pos, end - pos);
     return (executable);
+}
+
+size_t Location::clientTimeout() {
+    string timeout = getInfo("client_timeout");
+    if (timeout.empty()) {
+        timeout = Config::getDefault("client_timeout");
+    }
+    stringstream ss(timeout);
+    size_t time;
+    ss >> time;
+    return (time);
+}
+
+size_t Location::clientMaxBodySize() {
+    string maxSizeStr = getInfo("client_max_body_size");
+    if (maxSizeStr.empty()) {
+        maxSizeStr = Config::getDefault("client_max_body_size");
+    }
+    char lastChar = maxSizeStr[maxSizeStr.size() - 1];
+    size_t coificent = 1;
+    if (std::isdigit(lastChar) == false) {
+        maxSizeStr = maxSizeStr.substr(0, maxSizeStr.size() - 1);
+        switch (lastChar) {
+            case 'k':
+                coificent = 1024;
+                break;
+            case 'm':
+                coificent = 1024 * 1024;
+                break;
+            case 'g':
+                coificent = 1024 * 1024 * 1024;
+                break;
+            default:
+                break;
+        }
+    }
+    stringstream ss(maxSizeStr);
+    ssize_t val;
+    ss >> val;
+    return (val * coificent);
 }
