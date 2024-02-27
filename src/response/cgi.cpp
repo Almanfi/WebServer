@@ -41,6 +41,7 @@ char **Response::getEnvironmentVariables()
     env["PATH_INFO"] = this->uri;
     env["PATH_TRANSLATED"] = this->original_uri;
     env["QUERY_STRING"] = this->query;
+    std::cerr << "Query: " << this->query << std::endl;
     env["SCRIPT_NAME"] = "";
     env["SERVER_NAME"] = requestHeaders.getHeader("Host");
     env["SERVER_PORT"] = ToString(config->getPort());

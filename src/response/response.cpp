@@ -48,15 +48,7 @@ void Response::initResponse(IClientConf *conf, int status_code, IServerSocket *s
 void Response::getNewLocation()
 {
     struct stat buff;
-    if (stat(locationPath.c_str(), &buff) != 0)
-    {
-        if (errno == ENOENT)
-            handleError(404);
-        else if (errno == EACCES)
-            handleError(403);
-        else
-            handleError(500);
-    }
+    stat(locationPath.c_str(), &buff);
     if (S_ISDIR(buff.st_mode))
     {
         if (locationPath[locationPath.size() - 1] != '/')
@@ -76,9 +68,11 @@ void Response::getNewLocation()
             // std::cout << "path: " << path << std::endl;
             if (stat(path.c_str(), &buff) == 0)
             {
-                this->uri = joinPath(uri, config->index()[i]);
+                if (query != "")
+                    this->uri = joinPath(uri, config->index()[i]);
+                else
+                    this->uri = joinPath(uri, config->index()[i]) + "?" + query;
                 this->requestHeaders.setUri(uri);
-                //// -- cout << "inside new location ++++++++++++ uri: " << uri << "++++++++++++" << endl;
                 IClientConf &newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
                 initResponse(&newConf, status_code, servSock, &lastActivity);
                 break;
@@ -98,7 +92,7 @@ void Response::sendResponse()
         handleRedirection();
     else
     {
-        if(this->method == GET)
+        if (this->method == GET)
             getNewLocation();
         if (this->repeatedInit == 0)
             return;
@@ -180,9 +174,9 @@ void Response::handlePost()
     std::string oldPath = body.getPath();
     if (config->allowUpload())
     {
-        if(stat(newPath.c_str(), &buff) == 0)
+        if (stat(newPath.c_str(), &buff) == 0)
             return handleError(403);
-        if(S_ISDIR(buff.st_mode))
+        if (S_ISDIR(buff.st_mode))
             return handleError(403);
         if (rename(oldPath.c_str(), newPath.c_str()) != 0)
         {
