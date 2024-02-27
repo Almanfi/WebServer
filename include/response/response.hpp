@@ -48,6 +48,7 @@ class Response
         t_method method;
 
         int status_code;
+        time_t lastActivity;
         //----------------------CGI----------------------//
         std::string cgiOutPutFile;
         std::map<std::string, std::string> env;
@@ -75,10 +76,11 @@ class Response
         std::string original_uri;
 
 
+
     public:
         Response(IHeader& requestHeaders, IUniqFile& body, IClientConf* config, int fd);
         ~Response();
-        void initResponse(IClientConf* conf,int status_code, IServerSocket* servSocket);
+        void initResponse(IClientConf* conf,int status_code, IServerSocket* servSocket,time_t *lastActivity);
         void sendNextChunk();
         void sendResponse();
         void handleDirectory();

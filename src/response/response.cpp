@@ -24,7 +24,7 @@ void Response::uriParser()
         this->query = "";
 }
 
-void Response::initResponse(IClientConf *conf, int status_code, IServerSocket *servSocket)
+void Response::initResponse(IClientConf *conf, int status_code, IServerSocket *servSocket, time_t *lastActivity)
 {
     // this->fd = 0;  // TODO fd
     // -- cout << "++++++++++++ initResponse ++++++++++++" << endl;
@@ -46,6 +46,7 @@ void Response::initResponse(IClientConf *conf, int status_code, IServerSocket *s
     // -- std::cout << "----------- root: " << config->root() << std::endl;
     // -- std::cout << "++++++++++ locationPath: " << locationPath << std::endl;
     this->status_code = status_code;
+    this->lastActivity = *lastActivity;
     if (this->repeatedInit == 10)
         this->original_uri = this->uri;
     this->repeatedInit--;
@@ -91,7 +92,7 @@ void Response::getNewLocation()
                 this->requestHeaders.setUri(uri);
                 //// -- cout << "inside new location ++++++++++++ uri: " << uri << "++++++++++++" << endl;
                 IClientConf &newConf = servSock->getLocation(requestHeaders.getHeader("host") + uri);
-                initResponse(&newConf, status_code, servSock);
+                initResponse(&newConf, status_code, servSock, &lastActivity);
                 break;
             }
         }
@@ -321,6 +322,7 @@ void Response::sendNextChunk()
 {
     int sendedSize = 0;
     sendedSize = send(fd, bufferToSend.c_str(), bufferToSend.size(), 0);
+    this->lastActivity = time(NULL);
     if (sendedSize == -1)
     {
         // perror("send");

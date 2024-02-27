@@ -62,7 +62,7 @@ ssize_t Client::send() {
         RMF->setDefaultConfig();
     ssize_t bytes_sent = 0;
     if(!response.isStarted())
-        response.initResponse(RMF->configRef(), statusCode, &(RMF->servSock()));
+        response.initResponse(RMF->configRef(), statusCode, &(RMF->servSock()), &lastActivity);
     response.sendResponse();
     // sendFile(fd, "./tmp/en.subject.pdf");
     if(response.isEnded())
