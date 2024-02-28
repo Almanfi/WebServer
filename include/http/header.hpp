@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   header.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fdiraa <fdiraa@student.1337.ma>            +#+  +:+       +#+        */
+/*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 18:57:47 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/24 21:40:06 by fdiraa           ###   ########.fr       */
+/*   Updated: 2024/02/28 02:01:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,38 +134,5 @@ private:
     static map<string, t_method> httpMethods;
 
 };
-
-// #define BUFFER_SIZE 1024
-// #define MAX_CONNECTIONS 100
-
-// #define OK 200
-// #define CREATED 201
-// #define ACCEPTED 202
-// #define NO_CONTENT 204
-// #define PARTIAL_CONTENT 206
-// #define MULTIPLE_CHOICES 300
-// #define MOVED_PERMANENTLY 301
-// #define FOUND 302
-// #define SEE_OTHER 303
-// #define NOT_MODIFIED 304
-// #define TEMPORARY_REDIRECT 307
-// #define BAD_REQUEST 400
-// #define UNAUTHORIZED 401
-// #define FORBIDDEN 403
-// #define NOT_FOUND 404
-// #define METHOD_NOT_ALLOWED 405
-// #define REQUEST_TIMEOUT 408
-// #define LENGTH_REQUIRED 411
-// #define PAYLOAD_TOO_LARGE 413
-// #define URI_TOO_LONG 414
-// #define UNSUPPORTED_MEDIA_TYPE 415
-// #define RANGE_NOT_SATISFIABLE 416
-// #define EXPECTATION_FAILED 417
-// #define IM_A_TEAPOT 418
-// #define INTERNAL_SERVER_ERROR 500
-// #define NOT_IMPLEMENTED 501
-// #define BAD_GATEWAY 502
-// #define SERVICE_UNAVAILABLE 503
-// #define GATEWAY_TIMEOUT 504
 
 #endif /*HEADER_HPP*/

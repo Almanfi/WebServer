@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:43:49 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/12 15:54:44 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 02:01:04 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,6 @@ public:
     int     listenPort;
     string  error_page;
     Server();
-    // Server(const Server& serv);
     ~Server();
     void set();
     void linkLocation();

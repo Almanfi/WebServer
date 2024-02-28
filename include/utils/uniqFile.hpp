@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/04 19:42:15 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 14:55:34 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 02:04:29 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,8 +41,5 @@ public:
     virtual void read(char* __s, std::streamsize __n);
     virtual string getPath();
 };
-
-
-
 
 #endif // UNIQFILE_HPP

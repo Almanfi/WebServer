@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:41:43 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/11 19:12:48 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 02:00:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,6 @@ public:
     static std::string getTok();
 private:
     Parser();
-    // Parser(const std::string& filePath);
     static Parser instance;
     std::ifstream configFile;
     int lineNumber;

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:22:27 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 15:08:54 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:52:48 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ SBuffer::SBuffer() : start(0), count(0) {
 }
 
 SBuffer::SBuffer(const SBuffer& other) : start(other.start), count(other.count) {
-    std::memcpy(buffer + start, other.buffer + start, count); // TODO is this safe? debug
+    std::memcpy(buffer + start, other.buffer + start, count);
 }
 
 SBuffer& SBuffer::operator=(const SBuffer& other) {

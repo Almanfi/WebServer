@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/28 00:57:47 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:52:26 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void Epoll::init(Config& config) {
                         + ":" + servers[i].getInfo(S_PORT)).c_str());
         }
         servSockets.insert(std::make_pair(tmp->getSockid(), tmp));
-        addEvent(tmp->getSockid(), EPOLLIN); // TODO no need to add EPOLLOUT right?
+        addEvent(tmp->getSockid(), EPOLLIN);
     }
     cout << "number of servers listening: " << servSockets.size() << endl;
     for (itrServSock it = servSockets.begin(); it != servSockets.end(); it++) {
@@ -177,7 +177,7 @@ void Epoll::handleTimeOut() {
 void Epoll::loop() {
     int timeout = 3000;
     while (true) {
-        int n = epoll_wait(epollfd, events, MAX_EVENTS, timeout);// TODO change timeout
+        int n = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
         if (n == -1)
             throw std::runtime_error("epoll_wait failed");
         checkEvents(n);

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:44:46 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 23:45:45 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 02:00:26 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ public:
 class Location  : public IClientConf {
 public:
     Location(const string& uri);
-    // Location(const Location& loc);
     ~Location();
     void setServer(Server& servRef);
     void set();
@@ -102,7 +101,6 @@ private:
 
     void setNewLoc();
     map<string, string> info;
-    // deque<Location*> inLoc;
     static map<string, int> directive;
     static vector<string> httpAllowedMethods;
     static map<string, void (Location::*) (const string&)> validationMap;

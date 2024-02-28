@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/28 00:57:21 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 02:03:45 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,22 +34,6 @@ private:
 	const sock_fd	_fd;
 	ISBuffer&		_buffer;
 };
-
-class IResponse {
-public:
-    virtual ~IResponse() {};
-    virtual void sendResponse() = 0;
-};
-
-class ResponseB : public IResponse {
-public:
-	ResponseB(ISBuffer& buffer, IUniqFile& file);
-	void sendResponse();
-private:
-	ISBuffer& buffer;
-	IUniqFile& file;
-};
-
 
 class IServerSocket;
 

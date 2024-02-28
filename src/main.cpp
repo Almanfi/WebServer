@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/04 17:34:16 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 20:00:49 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:58:34 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,6 @@ int main() {
     try
     {
         Config& conf = Config::init("config/default.conf");
-        // conf.print();
-        //// -- cout<< "type is " << Config::getMimeType("html");
 
         Epoll epoll;
         epoll.init(conf);

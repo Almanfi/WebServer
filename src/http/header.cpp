@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/17 22:37:56 by codespace         #+#    #+#             */
-/*   Updated: 2024/02/27 23:25:33 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:52:03 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,8 +136,6 @@ void Header::validateContentLength(const string& value) {
     ss >> contentLength;
     if (ss.fail())
         throw RequestException::BAD_REQUEST();
-    // if (contentLength > MAX_CONTENT_LENGTH) // TODO add limit checking here
-    //     throw std::runtime_error("Content-Length too large");
     if (HAS_CONTENT_LENGTH(flags))
         throw RequestException::BAD_REQUEST();
     SET_CONTENT_LENGTH(flags);

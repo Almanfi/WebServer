@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:18:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/07 01:04:07 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 02:04:21 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,9 +36,6 @@ public:
     virtual char* operator&() = 0;
     virtual char&  operator*() = 0;
     virtual size_t write(const string& str) = 0;
-    // virtual char* operator+(size_t i) = 0;
-    // virtual char* operator-(size_t i) = 0;
-    // virtual char& operator[](size_t i) = 0;
 };
 
 class SBuffer  : public ISBuffer {
@@ -70,7 +67,7 @@ public:
 private:
     ssize_t start;
     ssize_t count;
-    char buffer[SBUFFER_SIZE]; // TODO for optimization mallc size + 2 to avoid memmove when buffer is full
+    char buffer[SBUFFER_SIZE];
 };
 
 std::ostream& operator<<(std::ostream& os, SBuffer& buffer);

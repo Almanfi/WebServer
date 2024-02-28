@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/09 16:48:58 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 23:52:55 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:55:50 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,7 +166,6 @@ void Location::validateCgiTimeout(const string& value) {
         throw LocationException::INVALID_VALUE("cgi_timeout", value + " (must not exceed 60)");
 }
 
-//TODO come back add allowed methods
 void Location::validateMethods(const string& value) {
     if (value.empty())
         throw LocationException::INVALID_METHOD("(empty)");
@@ -271,7 +270,7 @@ void Location::insertDirective(const string& key, const string& value) {
 
 
 void Location::setNewLoc() {
-    string uri = Parser::getTok(); // TODO validate URI!
+    string uri = Parser::getTok();
     if (uri.empty() || uri == "{")
         throw LocationException::MISSING_LOCATION_URI();
     if (uri[0] != '/' && uri[0] != '*')
@@ -425,7 +424,7 @@ string Location::getErrorPage(const int code) {
 
 bool Location::isAllowedMethod(const string& method) {
     string methods = getInfo("methods");
-    if (methods.empty()) // TODO add a default value for methods
+    if (methods.empty())
         methods = Config::getDefault("methods");
     if (methods.find(method) == string::npos)
         return (false);
@@ -497,9 +496,13 @@ string Location::returnUrl() {
 }
 
 bool Location::allowUpload() {
-    // TODO what is the directive to set this? is it inside upload_dir?
-    bool upload = true;
-    return (upload);
+    string upload = getInfo("upload");
+    if (upload.empty()) {
+        upload = Config::getDefault("upload");
+    }
+    if (upload == "on")
+        return (true);
+    return (false);
 }
 
 string Location::uploadPath() {

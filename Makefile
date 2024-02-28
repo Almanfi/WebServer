@@ -1,7 +1,42 @@
 TARGET := webserver
 
-SRCS = $(shell find ./src -type f -name "*.cpp")
-HEADS = $(shell find ./include -type f -name "*.hpp")
+SRCS = ./src/main.cpp 		\
+./src/config/location.cpp	\
+./src/config/exception.cpp	\
+./src/config/config.cpp		\
+./src/config/server.cpp		\
+./src/config/parser.cpp		\
+./src/http/header.cpp		\
+./src/http/request.cpp		\
+./src/response/headers.cpp	\
+./src/response/util.cpp		\
+./src/response/response.cpp	\
+./src/response/cgi.cpp		\
+./src/socket/client.cpp		\
+./src/socket/epoll.cpp		\
+./src/socket/serverSocket.cpp \
+./src/utils/uniqFile.cpp	\
+./src/utils/uuid.cpp		\
+./src/utils/sbuffer.cpp		\
+
+HEADS = ./include/config/server.hpp \
+./include/config/parser.hpp			\
+./include/config/exception.hpp		\
+./include/config/location.hpp		\
+./include/config/config.hpp			\
+./include/http/request.hpp			\
+./include/http/header.hpp			\
+./include/response/utils.hpp		\
+./include/response/response.hpp		\
+./include/response/headers.hpp		\
+./include/socket/epoll.hpp			\
+./include/socket/serverSocket.hpp	\
+./include/socket/client.hpp			\
+./include/socket/socket.hpp			\
+./include/utils/uuid.hpp			\
+./include/utils/uniqFile.hpp		\
+./include/utils/sbuffer.hpp			\
+./include/definition.hpp			\
 
 OBJS = $(SRCS:.cpp=.o)
 

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/07 00:02:23 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 14:57:13 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:53:27 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ UniqFile::UniqFile(string rootPath, Iuuid &uuid) : _path(rootPath), _uuid(uuid) 
         _uuid.regen();
     }
     _path = rootPath + "/" + _uuid.getStr();
-    createFile(); // TODO canot use open here? and see if file doesn t exist to create it??
+    createFile();
 }
 
 UniqFile::~UniqFile() {
@@ -35,9 +35,6 @@ void UniqFile::createFile() {
 
 void UniqFile::open() {
     _file.open(_path.c_str(), std::ios::in | std::ios::out | std::ios::app);
-    // if (!_file.is_open()) {
-    //     createFile(); // TODO this create a problem when the file is already created
-    // }
 }
 
 void UniqFile::close() {
@@ -46,7 +43,7 @@ void UniqFile::close() {
 
 void UniqFile::remove() {
     _file.close();
-    std::remove(_path.c_str()); // TODO delete file when client disconnect
+    std::remove(_path.c_str());
 }
 
 string UniqFile::getPath() {
