@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 17:04:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 23:57:49 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:19:35 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,7 @@ string Request::getHeader(const string& key) {
 void Request::setTransferStrategy() {
     if (headers.getHeader(TRANSFER_ENCODING) == "chunked")
         this->strategy = new ChunkedTransferStrategy(*(*configPtr));
-    if (headers.getMethod() == POST) {
+    else if (headers.getMethod() == POST) {
         size_t contentLength;
         string contentLengthStr = headers.getHeader(CONTENT_LENGTH);
         stringstream ss(contentLengthStr);
@@ -123,7 +123,6 @@ void Request::setTransferStrategy() {
     else {
         this->strategy = new NormalTransferStrategy(*(*configPtr), 0);
     }
-   // -- cout << "transfer strategy set" << endl;
 }
 
 
