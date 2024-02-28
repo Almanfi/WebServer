@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:38:36 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 23:16:52 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 01:03:39 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,16 +105,16 @@ ssize_t Client::recieve() {
     return (bytes_received);
 }
 
-const cnx_state& Client::handleState(bool isEpollIn) {
+const cnx_state& Client::handleState(uint32_t event) {
     if (state == NONE)
         state = READ;
     switch (state) {
         case READ:
-            if (isEpollIn)
+            if (event & EPOLLIN)
                 recieve();
             break ;
         case WRITE:
-            if (!isEpollIn)
+            if (event & EPOLLOUT)
                 send();
             break ;
         case CLOSE:
@@ -166,11 +166,11 @@ SocketManager::~SocketManager() {
 }
 
 ssize_t SocketManager::send() {
-    return _buffer.send(_fd, 0); // TODO check flags later
+    return _buffer.send(_fd, 0);
 }
 
 ssize_t SocketManager::recv() {
-    ssize_t bytes_received = _buffer.recv(_fd, 0); // TODO check flags later
+    ssize_t bytes_received = _buffer.recv(_fd, 0);
     return bytes_received;
 }
 

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/19 23:14:40 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 16:01:27 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 00:57:21 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,7 +147,7 @@ class Client {
 	Client(IClientResourceManagerFacade* RMF);
 	~Client();
 	
-	const cnx_state&    handleState(bool isEpollIn);
+	const cnx_state&    handleState(uint32_t event);
 	bool		checkTimeout();
 	ssize_t     send();
 	ssize_t     recieve();

@@ -6,7 +6,7 @@
 /*   By: maboulkh <maboulkh@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/15 15:40:28 by maboulkh          #+#    #+#             */
-/*   Updated: 2024/02/27 16:02:47 by maboulkh         ###   ########.fr       */
+/*   Updated: 2024/02/28 00:57:47 by maboulkh         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ Epoll::~Epoll() {
 }
 
 void Epoll::init(Config& config) {
-    if (MAX_EVENTS < 1) // TODO check on macros at compile time
+    if (MAX_EVENTS < 1)
         throw std::runtime_error("Epoll::Epoll: MAX_EVENTS must be greater than 0");
     Header::initHeadersRules();
     std::memset(&event, 0, sizeof(event));
@@ -128,8 +128,7 @@ bool Epoll::eventOnServer(sock_fd fd) {
 
 void Epoll::handleClient(int i) {
     try {
-        bool isEpollIn = events[i].events & EPOLLIN;
-        if (client->handleState(isEpollIn) == CLOSE) {
+        if (client->handleState(events[i].events) == CLOSE) {
             delClient(events[i].data.fd);
         }
     }
